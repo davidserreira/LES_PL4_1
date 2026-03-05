@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import prisma from './lib/prisma';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -12,6 +13,11 @@ app.use(express.json());
 
 app.get('/', (req, res) => {
     res.send('API REST da Clínica Veterinária a funcionar!');
+});
+
+app.get('/users', async (req, res) => {
+    const users = await prisma.user.findMany();
+    res.json(users);
 });
 
 app.listen(port, () => {
