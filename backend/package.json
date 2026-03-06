@@ -9,6 +9,7 @@
         "build": "tsc"
     },
     "dependencies": {
+        "@prisma/adapter-pg": "^7.4.2",
         "@prisma/client": "^7.4.2",
         "cors": "^2.8.5",
         "dotenv": "^16.4.5",

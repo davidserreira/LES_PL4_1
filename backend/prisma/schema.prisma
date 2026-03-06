@@ -19,6 +19,9 @@ model Produto {
   nome        String
   stock       Float        @default(0)
   stockMinimo Float        @default(0) // US1.4 - Definir Stock Mínimo
+  preco       Float        @default(0)
+  categoria   String?
+  descricao   String?
   criadoEm    DateTime     @default(now())
 
   itensPedido  ItemPedido[]
