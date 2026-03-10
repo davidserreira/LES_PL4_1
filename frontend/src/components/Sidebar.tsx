@@ -1,6 +1,6 @@
 
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory } from 'lucide-react';
 
 interface SidebarProps {
     isCollapsed: boolean;
@@ -47,6 +47,21 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         >
                             <BookOpen size={22} className="shrink-0" />
                             {!isCollapsed && <span className="font-medium">Catálogo</span>}
+                        </NavLink>
+                    </li>
+                    <li>
+                        <NavLink
+                            to="/fornecedores"
+                            className={({ isActive }) =>
+                                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20'
+                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                } ${isCollapsed ? 'justify-center' : ''}`
+                            }
+                            title={isCollapsed ? "Fornecedores" : ""}
+                        >
+                            <Factory size={22} className="shrink-0" />
+                            {!isCollapsed && <span className="font-medium">Fornecedores</span>}
                         </NavLink>
                     </li>
                 </ul>

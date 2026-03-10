@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Catalogo from './pages/Catalogo';
+import Fornecedores from './pages/Fornecedores';
 
 function Dashboard() {
     return (
@@ -26,6 +27,7 @@ function App() {
                     <Routes>
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/catalogo" element={<Catalogo />} />
+                        <Route path="/fornecedores" element={<Fornecedores />} />
                     </Routes>
                 </main>
             </div>
