@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Factory, AlertCircle, CheckCircle2, X, Search } from 'lucide-react';
+import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 
@@ -8,7 +8,11 @@ interface Fornecedor {
     nome: string;
     nif?: string;
     contacto?: string;
+    ativo?: boolean; // Preparatory for future backend implementation
 }
+
+type SortField = 'id' | 'nome';
+type SortOrder = 'asc' | 'desc';
 
 interface Toast {
     message: string;
@@ -22,6 +26,22 @@ const Fornecedores = () => {
     const [toast, setToast] = useState<Toast | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
+    // Sorting state
+    const [sortField, setSortField] = useState<SortField>('id');
+    const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+    // Actions Dropdown state
+    const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setOpenDropdownId(null);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     const filteredFornecedores = fornecedores.filter((f) => {
         const query = searchQuery.toLowerCase();
         return (
@@ -30,6 +50,51 @@ const Fornecedores = () => {
             (f.contacto && f.contacto.toLowerCase().includes(query))
         );
     });
+
+    const sortedFornecedores = [...filteredFornecedores].sort((a, b) => {
+        let aValue = a[sortField];
+        let bValue = b[sortField];
+
+        // Handle string comparison for names
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+            return sortOrder === 'asc'
+                ? aValue.localeCompare(bValue)
+                : bValue.localeCompare(aValue);
+        }
+
+        // Handle numeric comparison for IDs
+        if (typeof aValue === 'number' && typeof bValue === 'number') {
+            return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+
+        return 0;
+    });
+
+    const handleSort = (field: SortField) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
+
+    const getSortIcon = (field: SortField) => {
+        if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-400 group-hover:text-slate-600" />;
+        return sortOrder === 'asc'
+            ? <ArrowUp size={14} className="text-blue-600" />
+            : <ArrowDown size={14} className="text-blue-600" />;
+    };
+
+    const handleActionClick = (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenDropdownId(openDropdownId === id ? null : id);
+    };
+
+    const handleStatusChangeMock = (action: 'ativar' | 'inativar') => {
+        showToast(`A funcionalidade de ${action} fornecedor será implementada em breve!`, 'success');
+        setOpenDropdownId(null);
+    };
 
     const fetchFornecedores = async () => {
         try {
@@ -115,13 +180,22 @@ const Fornecedores = () => {
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Fornecedor</th>
+                                    <th
+                                        onClick={() => handleSort('nome')}
+                                        className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            Fornecedor
+                                            {getSortIcon('nome')}
+                                        </div>
+                                    </th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">NIF</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filteredFornecedores.map((fornecedor) => (
+                                {sortedFornecedores.map((fornecedor) => (
                                     <tr key={fornecedor.id} className="hover:bg-slate-50/80 transition-all group">
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
@@ -142,6 +216,32 @@ const Fornecedores = () => {
                                             <span className="font-medium text-slate-600">
                                                 {fornecedor.contacto || <span className="text-slate-400 text-xs italic">Não definido</span>}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-5 text-center relative">
+                                            <button
+                                                onClick={(e) => handleActionClick(fornecedor.id, e)}
+                                                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                                            >
+                                                <MoreVertical size={18} />
+                                            </button>
+
+                                            {/* Dropdown Menu */}
+                                            {openDropdownId === fornecedor.id && (
+                                                <div className="absolute right-10 top-1/2 -translate-y-1/2 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100">
+                                                    <button
+                                                        onClick={() => handleStatusChangeMock('inativar')}
+                                                        className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                                                    >
+                                                        Inativar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleStatusChangeMock('ativar')}
+                                                        className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                                                    >
+                                                        Ativar
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
