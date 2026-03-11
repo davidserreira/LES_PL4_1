@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Factory, AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { Plus, Factory, AlertCircle, CheckCircle2, X, Search } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 
@@ -20,6 +20,16 @@ const Fornecedores = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<Toast | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredFornecedores = fornecedores.filter((f) => {
+        const query = searchQuery.toLowerCase();
+        return (
+            f.nome.toLowerCase().includes(query) ||
+            (f.nif && f.nif.toLowerCase().includes(query)) ||
+            (f.contacto && f.contacto.toLowerCase().includes(query))
+        );
+    });
 
     const fetchFornecedores = async () => {
         try {
@@ -77,48 +87,84 @@ const Fornecedores = () => {
                 </button>
             </div>
 
+            {fornecedores.length > 0 && (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
+                    <div className="relative w-full max-w-md">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Pesquisar por nome, NIF ou contacto..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
+                        />
+                    </div>
+                    <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap">
+                        A mostrar <span className="font-bold text-slate-700">{filteredFornecedores.length}</span> de <span className="font-bold text-slate-700">{fornecedores.length}</span> fornecedores
+                    </div>
+                </div>
+            )}
+
             {loading ? (
                 <div className="flex justify-center items-center h-64">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                 </div>
             ) : fornecedores.length > 0 ? (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                    <table className="w-full text-left">
-                        <thead className="bg-slate-50 border-b border-slate-200">
-                            <tr>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Fornecedor</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">NIF</th>
-                                <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            {fornecedores.map((fornecedor) => (
-                                <tr key={fornecedor.id} className="hover:bg-slate-50/80 transition-all group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-4">
-                                            <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-blue-600 transition-colors">
-                                                <Factory size={20} />
-                                            </div>
-                                            <div>
-                                                <span className="block font-bold text-slate-900">{fornecedor.nome}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5 text-left">
-                                        <span className="font-mono font-medium text-slate-600">
-                                            {fornecedor.nif || <span className="text-slate-400 text-xs italic">Não definido</span>}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-5 text-left">
-                                        <span className="font-medium text-slate-600">
-                                            {fornecedor.contacto || <span className="text-slate-400 text-xs italic">Não definido</span>}
-                                        </span>
-                                    </td>
+                filteredFornecedores.length > 0 ? (
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Fornecedor</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">NIF</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {filteredFornecedores.map((fornecedor) => (
+                                    <tr key={fornecedor.id} className="hover:bg-slate-50/80 transition-all group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-blue-600 transition-colors">
+                                                    <Factory size={20} />
+                                                </div>
+                                                <div>
+                                                    <span className="block font-bold text-slate-900">{fornecedor.nome}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-left">
+                                            <span className="font-mono font-medium text-slate-600">
+                                                {fornecedor.nif || <span className="text-slate-400 text-xs italic">Não definido</span>}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5 text-left">
+                                            <span className="font-medium text-slate-600">
+                                                {fornecedor.contacto || <span className="text-slate-400 text-xs italic">Não definido</span>}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div className="bg-white p-16 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
+                        <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                            <Search size={40} />
+                        </div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">Nenhum fornecedor encontrado</h3>
+                        <p className="text-slate-500 max-w-md font-medium">
+                            Não encontrámos resultados para "{searchQuery}". Tente usar outros termos de pesquisa.
+                        </p>
+                        <button
+                            onClick={() => setSearchQuery('')}
+                            className="mt-6 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                        >
+                            Limpar pesquisa
+                        </button>
+                    </div>
+                )
             ) : (
                 <div className="bg-white p-20 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
                     <div className="w-24 h-24 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
