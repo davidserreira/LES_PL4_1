@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 
@@ -39,6 +39,14 @@ const Fornecedores = () => {
     const [detalhesFornecedor, setDetalhesFornecedor] = useState<Fornecedor | null>(null);
     const [savingObs, setSavingObs] = useState(false);
 
+    // Filter states
+    const [filterStatus, setFilterStatus] = useState<'todos' | 'ativos' | 'inativos'>('todos');
+    const [filterCategoria, setFilterCategoria] = useState<string>('');
+    const [isFilterCategoryOpen, setIsFilterCategoryOpen] = useState(false);
+
+    // Static Categories (can be imported if centralized)
+    const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
+
     // Close dropdown on click outside
     useEffect(() => {
         const handleClickOutside = () => {
@@ -49,14 +57,25 @@ const Fornecedores = () => {
     }, []);
 
     const filteredFornecedores = fornecedores.filter((f) => {
+        // Text Search
         const query = searchQuery.toLowerCase();
-        return (
+        const matchesSearch =
             f.nome.toLowerCase().includes(query) ||
             f.nif.toLowerCase().includes(query) ||
             f.contacto.toLowerCase().includes(query) ||
             f.email.toLowerCase().includes(query) ||
-            f.categoria.toLowerCase().includes(query)
-        );
+            f.categoria.toLowerCase().includes(query);
+
+        // Status Filter
+        const matchesStatus =
+            filterStatus === 'todos' ? true :
+                filterStatus === 'ativos' ? f.estado === true :
+                    f.estado === false;
+
+        // Category Filter
+        const matchesCategory = filterCategoria === '' || f.categoria === filterCategoria;
+
+        return matchesSearch && matchesStatus && matchesCategory;
     });
 
     const sortedFornecedores = [...filteredFornecedores].sort((a, b) => {
@@ -180,6 +199,79 @@ const Fornecedores = () => {
                 </button>
             </div>
 
+            {/* Filtros */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative z-20">
+                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2">
+                    <Filter size={16} />
+                    Filtros:
+                </div>
+
+                {/* Status Segmented Control */}
+                <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
+                    <button
+                        onClick={() => setFilterStatus('todos')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                    >
+                        Todos
+                    </button>
+                    <button
+                        onClick={() => setFilterStatus('ativos')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'ativos' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                    >
+                        Ativos
+                    </button>
+                    <button
+                        onClick={() => setFilterStatus('inativos')}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'inativos' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                    >
+                        Inativos
+                    </button>
+                </div>
+
+                <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+
+                {/* Category Dropdown */}
+                <div className="relative min-w-[180px]">
+                    <button
+                        onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
+                        className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterCategoria ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                    >
+                        {filterCategoria || 'Todas as Categorias'}
+                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isFilterCategoryOpen && (
+                        <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                            <button
+                                onClick={() => { setFilterCategoria(''); setIsFilterCategoryOpen(false); }}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategoria ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                            >
+                                Todas as Categorias
+                            </button>
+                            {CATEGORIES.map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => { setFilterCategoria(cat); setIsFilterCategoryOpen(false); }}
+                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategoria === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Clear Filters */}
+                {(filterStatus !== 'todos' || filterCategoria !== '') && (
+                    <button
+                        onClick={() => { setFilterStatus('todos'); setFilterCategoria(''); setSearchQuery(''); }}
+                        className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
+                    >
+                        Limpar filtros
+                    </button>
+                )}
+            </div>
+
             {fornecedores.length > 0 && (
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
                     <div className="relative w-full max-w-md">
@@ -295,15 +387,6 @@ const Fornecedores = () => {
                             <Search size={40} />
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 mb-2">Nenhum fornecedor encontrado</h3>
-                        <p className="text-slate-500 max-w-md font-medium">
-                            Não encontrámos resultados para "{searchQuery}". Tente usar outros termos de pesquisa.
-                        </p>
-                        <button
-                            onClick={() => setSearchQuery('')}
-                            className="mt-6 text-blue-600 font-semibold hover:text-blue-700 transition-colors"
-                        >
-                            Limpar pesquisa
-                        </button>
                     </div>
                 )
             ) : (
