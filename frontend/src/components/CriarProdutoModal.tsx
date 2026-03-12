@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-    X, Package, Database, AlertCircle, CheckCircle2,
+    X, Database, AlertCircle, CheckCircle2,
     DollarSign, Tag, FileText, Plus, Loader2,
     Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown
 } from 'lucide-react';

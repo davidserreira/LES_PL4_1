@@ -14,37 +14,82 @@ export const getFornecedores = async (req: Request, res: Response) => {
 
 export const createFornecedor = async (req: Request, res: Response) => {
     try {
-        const { nome, nif, contacto } = req.body;
+        const { nome, nif, contacto, email, categoria, observacoes } = req.body;
 
         // Basic validation
-        if (!nome) {
-            return res.status(400).json({ error: 'O nome é obrigatório' });
-        }
-
-        if (!nif) {
-            return res.status(400).json({ error: 'O NIF é obrigatório' });
-        }
-
-        if (!contacto) {
-            return res.status(400).json({ error: 'O contacto telefónico é obrigatório' });
-        }
+        if (!nome) return res.status(400).json({ error: 'O nome é obrigatório' });
+        if (!nif) return res.status(400).json({ error: 'O NIF é obrigatório' });
+        if (!contacto) return res.status(400).json({ error: 'O contacto telefónico é obrigatório' });
+        if (!email) return res.status(400).json({ error: 'O email é obrigatório' });
+        if (!categoria) return res.status(400).json({ error: 'A categoria é obrigatória' });
 
         const fornecedor = await prisma.fornecedor.create({
             data: {
                 nome,
                 nif,
                 contacto,
+                email,
+                categoria,
+                observacoes: observacoes || null,
             }
         });
         res.status(201).json(fornecedor);
     } catch (error: any) {
         console.error('Erro ao criar fornecedor:', error);
 
-        // Handle unique constraint violation on NIF
+        // Handle unique constraint violation on NIF or Email
         if (error.code === 'P2002') {
-            return res.status(400).json({ error: 'Já existe um fornecedor com este NIF' });
+            const target = error.meta?.target || '';
+            const field = String(target).includes('email') ? 'Email' : 'NIF';
+            return res.status(400).json({ error: `Já existe um fornecedor com este ${field}` });
         }
 
         res.status(500).json({ error: 'Erro ao criar fornecedor', details: error.message });
+    }
+};
+
+export const toggleEstado = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const fornecedor = await prisma.fornecedor.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!fornecedor) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        const updated = await prisma.fornecedor.update({
+            where: { id: parseInt(id) },
+            data: { estado: !fornecedor.estado }
+        });
+
+        res.json(updated);
+    } catch (error: any) {
+        res.status(500).json({ error: 'Erro ao alterar estado do fornecedor' });
+    }
+};
+
+export const updateObservacoes = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { observacoes } = req.body;
+
+        const fornecedor = await prisma.fornecedor.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!fornecedor) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        const updated = await prisma.fornecedor.update({
+            where: { id: parseInt(id) },
+            data: { observacoes: observacoes || null }
+        });
+
+        res.json(updated);
+    } catch (error: any) {
+        res.status(500).json({ error: 'Erro ao atualizar observações do fornecedor' });
     }
 };

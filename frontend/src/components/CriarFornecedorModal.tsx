@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-    X, AlertCircle, CheckCircle2, Factory, Hash, Phone, Loader2, Plus
+    X, AlertCircle, CheckCircle2, Factory, Hash, Phone, Loader2, Plus, Mail, Tag, ChevronDown, Pill, Syringe, Bath, Stethoscope, Layers, FileText
 } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 
@@ -10,21 +10,47 @@ interface CriarFornecedorModalProps {
     onSuccess: () => void;
 }
 
+const CATEGORIES = [
+    { name: 'Medicamentos', icon: Pill, color: 'text-blue-500' },
+    { name: 'Vacinas', icon: Syringe, color: 'text-emerald-500' },
+    { name: 'Higiene', icon: Bath, color: 'text-sky-500' },
+    { name: 'Equipamento', icon: Stethoscope, color: 'text-violet-500' },
+    { name: 'Outros', icon: Layers, color: 'text-slate-500' },
+];
+
 const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorModalProps) => {
     const [nome, setNome] = useState('');
     const [nif, setNif] = useState('');
     const [contacto, setContacto] = useState('');
+    const [email, setEmail] = useState('');
+    const [categoria, setCategoria] = useState('');
+    const [observacoes, setObservacoes] = useState('');
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
+    const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+
+    const categoryRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isOpen) {
             setIsClosing(false);
             setError(null);
+            setIsCategoryOpen(false);
         }
     }, [isOpen]);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+                setIsCategoryOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleClose = () => {
         setIsClosing(true);
@@ -54,6 +80,22 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             return;
         }
 
+        if (!email.trim()) {
+            setError('O email é obrigatório.');
+            return;
+        }
+
+        if (!categoria) {
+            setError('A categoria é obrigatória.');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            setError('O email fornecido não é válido.');
+            return;
+        }
+
         const numericRegex = /^\d{9}$/;
 
         if (!numericRegex.test(nif.trim())) {
@@ -73,6 +115,9 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                 nome,
                 nif,
                 contacto,
+                email,
+                categoria,
+                observacoes: observacoes || undefined,
             });
             onSuccess();
             handleClose();
@@ -80,6 +125,9 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             setNome('');
             setNif('');
             setContacto('');
+            setEmail('');
+            setCategoria('');
+            setObservacoes('');
         } catch (error: any) {
             console.error('Erro ao criar fornecedor:', error);
             setError(error.response?.data?.error || 'Ocorreu um erro ao criar o fornecedor.');
@@ -87,6 +135,8 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             setLoading(false);
         }
     };
+
+    const SelectedCategoryIcon = CATEGORIES.find(c => c.name === categoria)?.icon || Tag;
 
     return (
         <div
@@ -147,6 +197,57 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                             </div>
                         </div>
 
+                        <div className="space-y-1.5 pt-1">
+                            <label className="text-sm font-medium text-slate-700 ml-0.5">Email Profissional/Empresa *</label>
+                            <div className="relative">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <input
+                                    type="email"
+                                    required
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
+                                    placeholder="Ex: geral@empresa.com"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5 pt-1 relative" ref={categoryRef}>
+                            <label className="text-sm font-medium text-slate-700 ml-0.5">Categoria de Fornecimento *</label>
+                            <button
+                                type="button"
+                                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <SelectedCategoryIcon size={16} className={categoria ? CATEGORIES.find(c => c.name === categoria)?.color : "text-slate-400"} />
+                                    <span className={categoria ? "text-slate-900" : "text-slate-400"}>
+                                        {categoria || "Selecionar categoria..."}
+                                    </span>
+                                </div>
+                                <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isCategoryOpen && (
+                                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                    {CATEGORIES.map((item) => (
+                                        <button
+                                            key={item.name}
+                                            type="button"
+                                            onClick={() => {
+                                                setCategoria(item.name);
+                                                setIsCategoryOpen(false);
+                                            }}
+                                            className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600'}`}
+                                        >
+                                            <item.icon size={16} className={item.color} />
+                                            {item.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5 pt-1">
                                 <label className="text-sm font-medium text-slate-700 ml-0.5">NIF *</label>
@@ -176,6 +277,20 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                     />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-2">
+                        <label className="text-sm font-medium text-slate-700 ml-0.5">Observações</label>
+                        <div className="relative">
+                            <FileText className="absolute left-3.5 top-3 text-slate-400" size={16} />
+                            <textarea
+                                value={observacoes}
+                                onChange={(e) => setObservacoes(e.target.value)}
+                                rows={2}
+                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
+                                placeholder="Informação adicional opcional..."
+                            />
                         </div>
                     </div>
 

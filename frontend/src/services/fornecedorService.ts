@@ -7,11 +7,21 @@ export const fornecedorService = {
     },
     create: async (fornecedor: {
         nome: string;
-        nif?: string;
-        contacto?: string;
+        nif: string;
+        contacto: string;
+        email: string;
+        categoria: string;
+        observacoes?: string;
     }) => {
         const response = await api.post('/fornecedores', fornecedor);
         return response.data;
+    },
+    toggleEstado: async (id: number) => {
+        const response = await api.patch(`/fornecedores/${id}/estado`);
+        return response.data;
+    },
+    updateObservacoes: async (id: number, observacoes: string) => {
+        const response = await api.patch(`/fornecedores/${id}/observacoes`, { observacoes });
+        return response.data;
     }
-    // Delete and Update can be added later if needed
 };

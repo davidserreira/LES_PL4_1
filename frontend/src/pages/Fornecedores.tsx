@@ -6,9 +6,13 @@ import CriarFornecedorModal from '../components/CriarFornecedorModal';
 interface Fornecedor {
     id: number;
     nome: string;
-    nif?: string;
-    contacto?: string;
-    ativo?: boolean; // Preparatory for future backend implementation
+    nif: string;
+    contacto: string;
+    email: string;
+    estado: boolean;
+    categoria: string;
+    observacoes?: string;
+    criadoEm: string;
 }
 
 type SortField = 'id' | 'nome';
@@ -30,8 +34,10 @@ const Fornecedores = () => {
     const [sortField, setSortField] = useState<SortField>('id');
     const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
-    // Actions Dropdown state
+    // Actions Dropdown & Details state
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const [detalhesFornecedor, setDetalhesFornecedor] = useState<Fornecedor | null>(null);
+    const [savingObs, setSavingObs] = useState(false);
 
     // Close dropdown on click outside
     useEffect(() => {
@@ -46,8 +52,10 @@ const Fornecedores = () => {
         const query = searchQuery.toLowerCase();
         return (
             f.nome.toLowerCase().includes(query) ||
-            (f.nif && f.nif.toLowerCase().includes(query)) ||
-            (f.contacto && f.contacto.toLowerCase().includes(query))
+            f.nif.toLowerCase().includes(query) ||
+            f.contacto.toLowerCase().includes(query) ||
+            f.email.toLowerCase().includes(query) ||
+            f.categoria.toLowerCase().includes(query)
         );
     });
 
@@ -86,14 +94,34 @@ const Fornecedores = () => {
             : <ArrowDown size={14} className="text-blue-600" />;
     };
 
-    const handleActionClick = (id: number, e: React.MouseEvent) => {
+    const handleActionMouseDown = (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
         setOpenDropdownId(openDropdownId === id ? null : id);
     };
 
-    const handleStatusChangeMock = (action: 'ativar' | 'inativar') => {
-        showToast(`A funcionalidade de ${action} fornecedor será implementada em breve!`, 'success');
-        setOpenDropdownId(null);
+    const handleToggleEstado = async (id: number, currentEstado: boolean) => {
+        try {
+            await fornecedorService.toggleEstado(id);
+            setFornecedores(fornecedores.map(f => f.id === id ? { ...f, estado: !f.estado } : f));
+            showToast(`Fornecedor ${currentEstado ? 'inativado' : 'ativado'} com sucesso!`, 'success');
+            setOpenDropdownId(null);
+        } catch (error) {
+            showToast('Erro ao alterar o estado do fornecedor.', 'error');
+        }
+    };
+
+    const handleSaveObservacoes = async (id: number) => {
+        if (!detalhesFornecedor) return;
+        try {
+            setSavingObs(true);
+            await fornecedorService.updateObservacoes(id, detalhesFornecedor.observacoes || '');
+            setFornecedores(fornecedores.map(f => f.id === id ? { ...f, observacoes: detalhesFornecedor.observacoes } : f));
+            showToast('Observações guardadas com sucesso!', 'success');
+        } catch (error) {
+            showToast('Erro ao guardar observações.', 'error');
+        } finally {
+            setSavingObs(false);
+        }
     };
 
     const fetchFornecedores = async () => {
@@ -189,8 +217,9 @@ const Fornecedores = () => {
                                             {getSortIcon('nome')}
                                         </div>
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">NIF</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Categoria</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
                                     <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
@@ -202,24 +231,30 @@ const Fornecedores = () => {
                                                 <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-blue-600 transition-colors">
                                                     <Factory size={20} />
                                                 </div>
-                                                <div>
+                                                <div className="flex flex-col">
                                                     <span className="block font-bold text-slate-900">{fornecedor.nome}</span>
+                                                    <span className="block text-sm font-medium text-slate-500">{fornecedor.email}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-left">
-                                            <span className="font-mono font-medium text-slate-600">
-                                                {fornecedor.nif || <span className="text-slate-400 text-xs italic">Não definido</span>}
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                                {fornecedor.categoria}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-left">
                                             <span className="font-medium text-slate-600">
-                                                {fornecedor.contacto || <span className="text-slate-400 text-xs italic">Não definido</span>}
+                                                {fornecedor.contacto}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-5 text-left">
+                                            <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-bold border ${fornecedor.estado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                                {fornecedor.estado ? 'Ativo' : 'Inativo'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-center relative">
                                             <button
-                                                onClick={(e) => handleActionClick(fornecedor.id, e)}
+                                                onMouseDown={(e) => handleActionMouseDown(fornecedor.id, e)}
                                                 className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
                                             >
                                                 <MoreVertical size={18} />
@@ -227,18 +262,24 @@ const Fornecedores = () => {
 
                                             {/* Dropdown Menu */}
                                             {openDropdownId === fornecedor.id && (
-                                                <div className="absolute right-10 top-1/2 -translate-y-1/2 w-36 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-20 animate-in fade-in zoom-in-95 duration-100">
+                                                <div
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
+                                                >
                                                     <button
-                                                        onClick={() => handleStatusChangeMock('inativar')}
-                                                        className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                                                        onClick={() => {
+                                                            setDetalhesFornecedor(fornecedor);
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                                                     >
-                                                        Inativar
+                                                        Ver Detalhes
                                                     </button>
                                                     <button
-                                                        onClick={() => handleStatusChangeMock('ativar')}
-                                                        className="w-full text-left px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+                                                        onClick={() => handleToggleEstado(fornecedor.id, fornecedor.estado)}
+                                                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${fornecedor.estado ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                                                     >
-                                                        Ativar
+                                                        {fornecedor.estado ? 'Inativar Fornecedor' : 'Ativar Fornecedor'}
                                                     </button>
                                                 </div>
                                             )}
@@ -292,6 +333,75 @@ const Fornecedores = () => {
                     showToast('Fornecedor registado com sucesso!', 'success');
                 }}
             />
+
+            {/* Detalhes do Fornecedor Modal */}
+            {detalhesFornecedor && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDetalhesFornecedor(null)} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200 overflow-hidden">
+                        <div className="bg-slate-900 p-6 flex justify-between items-start">
+                            <div className="pr-4">
+                                <h2 className="text-xl font-bold text-white leading-tight">{detalhesFornecedor.nome}</h2>
+                                <p className="text-slate-400 text-sm mt-1">{detalhesFornecedor.email}</p>
+                            </div>
+                            <button onClick={() => setDetalhesFornecedor(null)} className="p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors rounded-lg flex-shrink-0">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div className="p-6 space-y-5">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">NIF</span>
+                                    <span className="text-slate-800 font-mono font-semibold">{detalhesFornecedor.nif}</span>
+                                </div>
+                                <div className="flex flex-col bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Contacto</span>
+                                    <span className="text-slate-800 font-semibold">{detalhesFornecedor.contacto}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col border-b border-slate-100 pb-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tipo de Produtos</span>
+                                <span className="text-slate-800 font-medium inline-flex">{detalhesFornecedor.categoria}</span>
+                            </div>
+                            <div className="flex flex-col border-b border-slate-100 pb-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Estado</span>
+                                <div>
+                                    <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-sm font-bold border ${detalhesFornecedor.estado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                        {detalhesFornecedor.estado ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col border-b border-slate-100 pb-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Desde</span>
+                                <span className="text-slate-800 font-medium">
+                                    {new Date(detalhesFornecedor.criadoEm).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                </span>
+                            </div>
+                            <div className="flex flex-col pt-1">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Observações</span>
+                                    <button
+                                        onClick={() => handleSaveObservacoes(detalhesFornecedor.id)}
+                                        disabled={savingObs}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-opacity"
+                                    >
+                                        {savingObs ? 'A Guardar...' : 'Guardar'}
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <textarea
+                                        value={detalhesFornecedor.observacoes || ''}
+                                        onChange={(e) => setDetalhesFornecedor({ ...detalhesFornecedor, observacoes: e.target.value })}
+                                        rows={3}
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
+                                        placeholder="Informação adicional opcional..."
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
