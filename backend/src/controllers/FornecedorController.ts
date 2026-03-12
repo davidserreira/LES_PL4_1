@@ -21,11 +21,19 @@ export const createFornecedor = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'O nome é obrigatório' });
         }
 
+        if (!nif) {
+            return res.status(400).json({ error: 'O NIF é obrigatório' });
+        }
+
+        if (!contacto) {
+            return res.status(400).json({ error: 'O contacto telefónico é obrigatório' });
+        }
+
         const fornecedor = await prisma.fornecedor.create({
             data: {
                 nome,
-                nif: nif || null,
-                contacto: contacto || null,
+                nif,
+                contacto,
             }
         });
         res.status(201).json(fornecedor);
@@ -33,7 +41,7 @@ export const createFornecedor = async (req: Request, res: Response) => {
         console.error('Erro ao criar fornecedor:', error);
 
         // Handle unique constraint violation on NIF
-        if (error.code === 'P2002' && error.meta?.target?.includes('nif')) {
+        if (error.code === 'P2002') {
             return res.status(400).json({ error: 'Já existe um fornecedor com este NIF' });
         }
 

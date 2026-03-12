@@ -44,13 +44,35 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             return;
         }
 
+        if (!nif.trim()) {
+            setError('O NIF é obrigatório.');
+            return;
+        }
+
+        if (!contacto.trim()) {
+            setError('O contacto telefónico é obrigatório.');
+            return;
+        }
+
+        const numericRegex = /^\d{9}$/;
+
+        if (!numericRegex.test(nif.trim())) {
+            setError('O NIF deve conter exatamente 9 números.');
+            return;
+        }
+
+        if (!numericRegex.test(contacto.trim())) {
+            setError('O contacto telefónico deve conter exatamente 9 números.');
+            return;
+        }
+
         setError(null);
         setLoading(true);
         try {
             await fornecedorService.create({
                 nome,
-                nif: nif || undefined,
-                contacto: contacto || undefined,
+                nif,
+                contacto,
             });
             onSuccess();
             handleClose();
@@ -127,11 +149,12 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">NIF</label>
+                                <label className="text-sm font-medium text-slate-700 ml-0.5">NIF *</label>
                                 <div className="relative">
                                     <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
                                         type="text"
+                                        required
                                         value={nif}
                                         onChange={(e) => setNif(e.target.value)}
                                         className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
@@ -140,11 +163,12 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                 </div>
                             </div>
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Contacto Telefónico</label>
+                                <label className="text-sm font-medium text-slate-700 ml-0.5">Contacto Telefónico *</label>
                                 <div className="relative">
                                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
                                         type="text"
+                                        required
                                         value={contacto}
                                         onChange={(e) => setContacto(e.target.value)}
                                         className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"

@@ -31,8 +31,8 @@ model Produto {
 model Fornecedor {
   id         Int            @id @default(autoincrement())
   nome       String
-  nif        String?        @unique
-  contacto   String?
+  nif        String         @unique
+  contacto   String
   
   pedidos    PedidoCompra[]
   produtos   Produto[]      // US1.9 - Associar a Produto
