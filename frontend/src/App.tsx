@@ -1,9 +1,10 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Catalogo from './pages/Catalogo';
 import Fornecedores from './pages/Fornecedores';
+import Login from './pages/Login';
 
 function Dashboard() {
     return (
@@ -18,21 +19,42 @@ function Dashboard() {
 
 function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+    const handleLoginSuccess = () => {
+        setIsAuthenticated(true);
+    };
+
+    const handleLogout = () => {
+        setIsAuthenticated(false);
+    };
 
     return (
         <BrowserRouter>
-            <div className="flex min-h-screen bg-slate-50 font-sans">
-                <Sidebar isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
-                <main className={`flex-1 p-8 transition-all duration-300 ${isSidebarCollapsed ? 'ml-20' : 'ml-64'}`}>
-                    <Routes>
-                        <Route path="/" element={<Dashboard />} />
-                        <Route path="/catalogo" element={<Catalogo />} />
-                        <Route path="/fornecedores" element={<Fornecedores />} />
-                    </Routes>
-                </main>
-            </div>
+            {isAuthenticated ? (
+                <div className="flex min-h-screen bg-slate-50 font-sans">
+                    <Sidebar
+                        isCollapsed={isSidebarCollapsed}
+                        onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        onLogout={handleLogout}
+                    />
+                    <main className="flex-1 p-8 transition-all duration-300">
+                        <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/catalogo" element={<Catalogo />} />
+                            <Route path="/fornecedores" element={<Fornecedores />} />
+                            <Route path="*" element={<Dashboard />} />
+                        </Routes>
+                    </main>
+                </div>
+            ) : (
+                <Routes>
+                    <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+                </Routes>
+            )}
         </BrowserRouter>
     );
 }
+
 
 export default App;
