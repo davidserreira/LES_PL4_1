@@ -139,3 +139,84 @@ export const updateFornecedor = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Erro ao atualizar fornecedor', details: error.message });
     }
 };
+
+const isValidRating = (value: unknown) => {
+    const n = typeof value === 'string' ? Number(value) : value;
+    return typeof n === 'number' && Number.isInteger(n) && n >= 1 && n <= 5;
+};
+
+export const avaliarFornecedor = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const fornecedorId = parseInt(id);
+        const { qualidade, pontualidade, comunicacao, preco, conformidade, comentario } = req.body;
+
+        const fornecedor = await prisma.fornecedor.findUnique({ where: { id: fornecedorId } });
+        if (!fornecedor) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        if (![qualidade, pontualidade, comunicacao, preco, conformidade].every(isValidRating)) {
+            return res.status(400).json({ error: 'Todos os critérios devem ter um valor inteiro entre 1 e 5.' });
+        }
+
+        const avaliacao = await prisma.avaliacao.create({
+            data: {
+                fornecedorId,
+                qualidade: Number(qualidade),
+                pontualidade: Number(pontualidade),
+                comunicacao: Number(comunicacao),
+                preco: Number(preco),
+                conformidade: Number(conformidade),
+                comentario: comentario || null,
+            }
+        });
+
+        res.status(201).json(avaliacao);
+    } catch (error: any) {
+        console.error('Erro ao avaliar fornecedor:', error);
+        res.status(500).json({ error: 'Erro ao registar avaliação do fornecedor', details: error.message });
+    }
+};
+
+export const getAvaliacaoMediaFornecedor = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const fornecedorId = parseInt(id);
+
+        const fornecedor = await prisma.fornecedor.findUnique({ where: { id: fornecedorId } });
+        if (!fornecedor) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        const result = await prisma.avaliacao.aggregate({
+            where: { fornecedorId },
+            _count: { id: true },
+            _avg: {
+                qualidade: true,
+                pontualidade: true,
+                comunicacao: true,
+                preco: true,
+                conformidade: true,
+            }
+        });
+
+        const total = result._count.id;
+        if (!total) {
+            return res.json({ totalAvaliacoes: 0, media: null });
+        }
+
+        const avgs = result._avg;
+        const media =
+            ((avgs.qualidade ?? 0) +
+                (avgs.pontualidade ?? 0) +
+                (avgs.comunicacao ?? 0) +
+                (avgs.preco ?? 0) +
+                (avgs.conformidade ?? 0)) / 5;
+
+        res.json({ totalAvaliacoes: total, media });
+    } catch (error: any) {
+        console.error('Erro ao obter média de avaliação:', error);
+        res.status(500).json({ error: 'Erro ao obter média de avaliação do fornecedor', details: error.message });
+    }
+};

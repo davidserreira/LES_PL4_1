@@ -49,7 +49,11 @@ model Avaliacao {
   fornecedorId Int
   fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id])
   
-  pontuacao    Float      // Ex: 0-10 ou 1-5
+  qualidade    Int        @default(3) // 1-5
+  pontualidade Int        @default(3) // 1-5
+  comunicacao  Int        @default(3) // 1-5
+  preco        Int        @default(3) // 1-5
+  conformidade Int        @default(3) // 1-5
   comentario   String?
   dataCriacao  DateTime   @default(now())
 }

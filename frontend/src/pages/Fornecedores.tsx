@@ -3,6 +3,7 @@ import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, Arro
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
+import AvaliarFornecedorModal from '../components/AvaliarFornecedorModal';
 
 interface Fornecedor {
     id: number;
@@ -39,7 +40,9 @@ const Fornecedores = () => {
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const [detalhesFornecedor, setDetalhesFornecedor] = useState<Fornecedor | null>(null);
     const [fornecedorAEditar, setFornecedorAEditar] = useState<Fornecedor | null>(null);
+    const [fornecedorAAvaliar, setFornecedorAAvaliar] = useState<Pick<Fornecedor, 'id' | 'nome'> | null>(null);
     const [savingObs, setSavingObs] = useState(false);
+    const [avaliacaoMedia, setAvaliacaoMedia] = useState<{ media: number | null; totalAvaliacoes: number } | null>(null);
 
     // Filter states
     const [filterStatus, setFilterStatus] = useState<'todos' | 'ativos' | 'inativos'>('todos');
@@ -166,6 +169,25 @@ const Fornecedores = () => {
     useEffect(() => {
         fetchFornecedores();
     }, []);
+
+    useEffect(() => {
+        if (!detalhesFornecedor) {
+            setAvaliacaoMedia(null);
+            return;
+        }
+
+        let cancelled = false;
+        (async () => {
+            try {
+                const data = await fornecedorService.getAvaliacaoMedia(detalhesFornecedor.id);
+                if (!cancelled) setAvaliacaoMedia(data);
+            } catch {
+                if (!cancelled) setAvaliacaoMedia(null);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [detalhesFornecedor?.id]);
 
     return (
         <div className="space-y-6 relative">
@@ -298,7 +320,7 @@ const Fornecedores = () => {
                 </div>
             ) : fornecedores.length > 0 ? (
                 filteredFornecedores.length > 0 ? (
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
@@ -379,6 +401,15 @@ const Fornecedores = () => {
                                                         Editar Fornecedor
                                                     </button>
                                                     <button
+                                                        onClick={() => {
+                                                            setFornecedorAAvaliar({ id: fornecedor.id, nome: fornecedor.nome });
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        Avaliar Fornecedor
+                                                    </button>
+                                                    <button
                                                         onClick={() => handleToggleEstado(fornecedor.id, fornecedor.estado)}
                                                         className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${fornecedor.estado ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
                                                     >
@@ -438,6 +469,15 @@ const Fornecedores = () => {
                 }}
             />
 
+            <AvaliarFornecedorModal
+                isOpen={fornecedorAAvaliar !== null}
+                fornecedor={fornecedorAAvaliar}
+                onClose={() => setFornecedorAAvaliar(null)}
+                onSuccess={() => {
+                    showToast('Avaliação registada com sucesso!', 'success');
+                }}
+            />
+
             {/* Detalhes do Fornecedor Modal */}
             {detalhesFornecedor && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -475,6 +515,19 @@ const Fornecedores = () => {
                                     </span>
                                 </div>
                             </div>
+                            {avaliacaoMedia?.totalAvaliacoes ? (
+                                <div className="flex flex-col border-b border-slate-100 pb-3">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Pontuação Média</span>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-slate-800 font-semibold">
+                                            {avaliacaoMedia.media?.toFixed(1)} / 5
+                                        </span>
+                                        <span className="text-xs font-bold text-slate-500">
+                                            {avaliacaoMedia.totalAvaliacoes} {avaliacaoMedia.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ) : null}
                             <div className="flex flex-col border-b border-slate-100 pb-3">
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Desde</span>
                                 <span className="text-slate-800 font-medium">

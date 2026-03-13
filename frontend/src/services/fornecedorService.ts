@@ -35,5 +35,20 @@ export const fornecedorService = {
     }) => {
         const response = await api.put(`/fornecedores/${id}`, fornecedor);
         return response.data;
+    },
+    avaliar: async (id: number, avaliacao: {
+        qualidade: number;
+        pontualidade: number;
+        comunicacao: number;
+        preco: number;
+        conformidade: number;
+        comentario?: string;
+    }) => {
+        const response = await api.post(`/fornecedores/${id}/avaliacoes`, avaliacao);
+        return response.data;
+    },
+    getAvaliacaoMedia: async (id: number) => {
+        const response = await api.get(`/fornecedores/${id}/avaliacao-media`);
+        return response.data as { totalAvaliacoes: number; media: number | null };
     }
 };
