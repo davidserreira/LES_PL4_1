@@ -114,8 +114,8 @@ const Fornecedores = () => {
     const getSortIcon = (field: SortField) => {
         if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-400 group-hover:text-slate-600" />;
         return sortOrder === 'asc'
-            ? <ArrowUp size={14} className="text-blue-600" />
-            : <ArrowDown size={14} className="text-blue-600" />;
+            ? <ArrowUp size={14} className="text-emerald-600" />
+            : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
     const handleActionMouseDown = (id: number, e: React.MouseEvent) => {
@@ -216,7 +216,7 @@ const Fornecedores = () => {
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                 >
                     <Plus size={18} />
                     Adicionar Fornecedor
@@ -433,7 +433,7 @@ const Fornecedores = () => {
                 )
             ) : (
                 <div className="bg-white p-20 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                    <div className="w-24 h-24 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                    <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
                         <Factory size={48} />
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900 mb-2">Sem Fornecedores</h3>
