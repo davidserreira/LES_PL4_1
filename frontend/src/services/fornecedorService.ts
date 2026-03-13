@@ -23,5 +23,17 @@ export const fornecedorService = {
     updateObservacoes: async (id: number, observacoes: string) => {
         const response = await api.patch(`/fornecedores/${id}/observacoes`, { observacoes });
         return response.data;
+    },
+    update: async (id: number, fornecedor: {
+        nome: string;
+        nif: string;
+        contacto: string;
+        email: string;
+        categoria: string;
+        observacoes?: string;
+        estado?: boolean;
+    }) => {
+        const response = await api.put(`/fornecedores/${id}`, fornecedor);
+        return response.data;
     }
 };

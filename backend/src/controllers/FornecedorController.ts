@@ -93,3 +93,49 @@ export const updateObservacoes = async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Erro ao atualizar observações do fornecedor' });
     }
 };
+
+export const updateFornecedor = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const { nome, nif, contacto, email, categoria, observacoes, estado } = req.body;
+
+        const existing = await prisma.fornecedor.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!existing) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        if (!nome) return res.status(400).json({ error: 'O nome é obrigatório' });
+        if (!nif) return res.status(400).json({ error: 'O NIF é obrigatório' });
+        if (!contacto) return res.status(400).json({ error: 'O contacto telefónico é obrigatório' });
+        if (!email) return res.status(400).json({ error: 'O email é obrigatório' });
+        if (!categoria) return res.status(400).json({ error: 'A categoria é obrigatória' });
+
+        const updated = await prisma.fornecedor.update({
+            where: { id: parseInt(id) },
+            data: {
+                nome,
+                nif,
+                contacto,
+                email,
+                categoria,
+                observacoes: observacoes ?? existing.observacoes,
+                estado: typeof estado === 'boolean' ? estado : existing.estado,
+            }
+        });
+
+        res.json(updated);
+    } catch (error: any) {
+        console.error('Erro ao atualizar fornecedor:', error);
+
+        if (error.code === 'P2002') {
+            const target = error.meta?.target || '';
+            const field = String(target).includes('email') ? 'Email' : 'NIF';
+            return res.status(400).json({ error: `Já existe um fornecedor com este ${field}` });
+        }
+
+        res.status(500).json({ error: 'Erro ao atualizar fornecedor', details: error.message });
+    }
+};

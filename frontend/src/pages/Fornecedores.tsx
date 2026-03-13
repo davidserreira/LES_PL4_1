@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
+import EditarFornecedorModal from '../components/EditarFornecedorModal';
 
 interface Fornecedor {
     id: number;
@@ -37,6 +38,7 @@ const Fornecedores = () => {
     // Actions Dropdown & Details state
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const [detalhesFornecedor, setDetalhesFornecedor] = useState<Fornecedor | null>(null);
+    const [fornecedorAEditar, setFornecedorAEditar] = useState<Fornecedor | null>(null);
     const [savingObs, setSavingObs] = useState(false);
 
     // Filter states
@@ -356,7 +358,7 @@ const Fornecedores = () => {
                                             {openDropdownId === fornecedor.id && (
                                                 <div
                                                     onMouseDown={(e) => e.stopPropagation()}
-                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-40 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
+                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
                                                 >
                                                     <button
                                                         onClick={() => {
@@ -366,6 +368,15 @@ const Fornecedores = () => {
                                                         className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                                                     >
                                                         Ver Detalhes
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setFornecedorAEditar(fornecedor);
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        Editar Fornecedor
                                                     </button>
                                                     <button
                                                         onClick={() => handleToggleEstado(fornecedor.id, fornecedor.estado)}
@@ -414,6 +425,16 @@ const Fornecedores = () => {
                 onSuccess={() => {
                     fetchFornecedores();
                     showToast('Fornecedor registado com sucesso!', 'success');
+                }}
+            />
+
+            <EditarFornecedorModal
+                isOpen={fornecedorAEditar !== null}
+                fornecedor={fornecedorAEditar}
+                onClose={() => setFornecedorAEditar(null)}
+                onSuccess={() => {
+                    fetchFornecedores();
+                    showToast('Fornecedor atualizado com sucesso!', 'success');
                 }}
             />
 
