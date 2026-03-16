@@ -22,7 +22,11 @@
         "@types/pg": "^8.11.2",
         "dotenv": "^17.3.1",
         "prisma": "^7.4.2",
+        "ts-node": "^10.9.2",
         "ts-node-dev": "^2.0.0",
         "typescript": "^5.3.3"
+    },
+    "prisma": {
+        "seed": "ts-node prisma/seed.ts"
     }
 }
