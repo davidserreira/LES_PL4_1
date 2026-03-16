@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, Lock, User, AlertCircle } from 'lucide-react';
+import { utilizadorService, Utilizador } from '../services/utilizadorService';
 
 interface LoginProps {
-    onLoginSuccess: () => void;
+    onLoginSuccess: (user: Utilizador) => void;
 }
 
 const Login = ({ onLoginSuccess }: LoginProps) => {
@@ -14,20 +15,20 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
 
     const navigate = useNavigate();
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-
         setLoading(true);
-        setTimeout(() => {
-            if (username === 'admin' && password === '1234') {
-                onLoginSuccess();
-                navigate('/');
-            } else {
-                setError('Credenciais inválidas. Tente novamente.');
-            }
+
+        try {
+            const userData = await utilizadorService.login({ username, password });
+            onLoginSuccess(userData);
+            navigate('/');
+        } catch (err: any) {
+            setError(err.response?.data?.error || 'Erro ao realizar login. Tente novamente.');
+        } finally {
             setLoading(false);
-        }, 400);
+        }
     };
 
     return (
@@ -60,8 +61,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                             <p>Login restrito a utilizadores administradores autorizados.</p>
                         </div>
                         <p className="text-[11px] text-slate-500">
-                            Dica: para efeitos de demonstração, utilize <span className="font-semibold text-slate-300">admin</span> /
-                            <span className="font-semibold text-slate-300"> 1234</span>.
+                            Utilize as suas credenciais de acesso corporativas.
                         </p>
                     </div>
                 </div>
@@ -144,8 +144,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                         </button>
 
                         <p className="text-[11px] text-slate-500 mt-3">
-                            Para este protótipo, utilize as credenciais pré-definidas:{' '}
-                            <span className="font-semibold text-slate-300">admin / 1234</span>.
+                            Problemas no acesso? Contacte o administrador do sistema.
                         </p>
                     </form>
                 </div>

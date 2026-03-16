@@ -1,15 +1,17 @@
 
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut } from 'lucide-react';
+import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users } from 'lucide-react';
+import { Utilizador } from '../services/utilizadorService';
 
 interface SidebarProps {
+    user: Utilizador;
     isCollapsed: boolean;
     onToggle: () => void;
     onLogout: () => void;
 }
 
-const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
+const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     const [showLogout, setShowLogout] = useState(false);
 
     useEffect(() => {
@@ -29,6 +31,24 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
         return () => document.removeEventListener('mousedown', handleClick);
     }, []);
 
+    const getRoleLabel = (role: string) => {
+        switch (role) {
+            case 'ADMINISTRADOR': return 'Admin';
+            case 'RESPONSAVEL_STOCK': return 'Gestor Stock';
+            case 'RESPONSAVEL_FINANCEIRO': return 'Financeiro';
+            default: return 'Utilizador';
+        }
+    };
+
+    const menuItems = [
+        { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+        { to: '/catalogo', label: 'Catálogo', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
+        { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR'] },
+        { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },
+    ];
+
+    const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
+
     return (
         <aside className={`bg-slate-900 text-white flex flex-col min-h-screen transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative`}>
             {/* Logo/Header */}
@@ -38,9 +58,9 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
                         type="button"
                         onClick={() => setShowLogout((prev) => !prev)}
                         data-logout-toggle
-                        className="text-2xl font-bold tracking-tight text-emerald-400 hover:text-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:ring-offset-2 focus:ring-offset-slate-900 rounded-lg px-1"
+                        className="text-xl font-bold tracking-tight text-emerald-400 hover:text-emerald-300 focus:outline-none rounded-lg px-1 text-left line-clamp-1"
                     >
-                        Admin
+                        {getRoleLabel(user.role)}
                     </button>
                 )}
                 {isCollapsed && (
@@ -56,9 +76,9 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
                         }}
                         data-logout-toggle
                         className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center font-bold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-                        title="Admin"
+                        title={getRoleLabel(user.role)}
                     >
-                        A
+                        {getRoleLabel(user.role).charAt(0)}
                     </button>
                 )}
             </div>
@@ -75,17 +95,17 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
                             <LogOut size={18} className="text-red-400" />
                         </div>
                         <div>
-                            <p className="text-sm font-semibold text-slate-50">Terminar sessão</p>
-                            <p className="text-xs text-slate-400">Irá voltar ao ecrã de login da área administrativa.</p>
+                            <p className="text-sm font-semibold text-slate-50">Sair do sistema</p>
+                            <p className="text-[10px] text-slate-400 leading-tight">Olá, {user.username}. Deseja terminar a sessão?</p>
                         </div>
                     </div>
                     <div className="flex gap-2 pt-1">
                         <button
                             type="button"
                             onClick={() => setShowLogout(false)}
-                            className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 transition-colors"
+                            className="flex-1 px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-slate-700 text-slate-400 hover:bg-slate-800 transition-colors"
                         >
-                            Cancelar
+                            Voltar
                         </button>
                         <button
                             type="button"
@@ -93,9 +113,9 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
                                 setShowLogout(false);
                                 onLogout();
                             }}
-                            className="flex-1 px-3 py-2 text-xs font-semibold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors"
+                            className="flex-1 px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors"
                         >
-                            Terminar sessão
+                            Sair
                         </button>
                     </div>
                 </div>
@@ -104,51 +124,23 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto py-4">
                 <ul className="space-y-1 px-3">
-                    <li>
-                        <NavLink
-                            to="/"
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                } ${isCollapsed ? 'justify-center' : ''}`
-                            }
-                            title={isCollapsed ? "Dashboard" : ""}
-                        >
-                            <LayoutDashboard size={22} className="shrink-0" />
-                            {!isCollapsed && <span className="font-medium">Dashboard</span>}
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink
-                            to="/catalogo"
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                } ${isCollapsed ? 'justify-center' : ''}`
-                            }
-                            title={isCollapsed ? "Catálogo" : ""}
-                        >
-                            <BookOpen size={22} className="shrink-0" />
-                            {!isCollapsed && <span className="font-medium">Catálogo</span>}
-                        </NavLink>
-                    </li>
-                    <li>
-                        <NavLink
-                            to="/fornecedores"
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                } ${isCollapsed ? 'justify-center' : ''}`
-                            }
-                            title={isCollapsed ? "Fornecedores" : ""}
-                        >
-                            <Factory size={22} className="shrink-0" />
-                            {!isCollapsed && <span className="font-medium">Fornecedores</span>}
-                        </NavLink>
-                    </li>
+                    {filteredItems.map((item) => (
+                        <li key={item.to}>
+                            <NavLink
+                                to={item.to}
+                                className={({ isActive }) =>
+                                    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
+                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+                                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    } ${isCollapsed ? 'justify-center' : ''}`
+                                }
+                                title={isCollapsed ? item.label : ""}
+                            >
+                                <item.icon size={22} className="shrink-0" />
+                                {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
+                            </NavLink>
+                        </li>
+                    ))}
                 </ul>
             </nav>
 
@@ -159,9 +151,8 @@ const Sidebar = ({ isCollapsed, onToggle, onLogout }: SidebarProps) => {
                     className="flex items-center justify-center w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all border border-slate-700"
                     title={isCollapsed ? "Expandir" : "Recolher"}
                 >
-                    {isCollapsed ? <ChevronRight size={20} /> : <div className="flex items-center gap-2"><ChevronLeft size={20} /> <span className="text-xs font-semibold uppercase tracking-wider">Recolher</span></div>}
+                    {isCollapsed ? <ChevronRight size={20} /> : <div className="flex items-center gap-2"><ChevronLeft size={20} /> <span className="text-[10px] font-bold uppercase tracking-widest">Recolher</span></div>}
                 </button>
-
             </div>
         </aside>
     );
