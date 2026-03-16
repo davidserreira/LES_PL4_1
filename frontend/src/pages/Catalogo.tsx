@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
-    Plus, Package, AlertTriangle, CheckCircle2, Trash2, X, AlertCircle, 
+    Plus, Package, AlertTriangle, CheckCircle2, Pencil, X, AlertCircle, 
     Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown 
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
+import EditarProdutoModal from '../components/EditarProdutoModal';
 
 interface Produto {
     id: number;
@@ -15,6 +16,7 @@ interface Produto {
     categoria?: string;
     descricao?: string;
     criadoEm: string;
+    fornecedores?: { id: number; nome: string }[];
 }
 
 interface Toast {
@@ -43,8 +45,8 @@ const Catalogo = () => {
     const [filterStatus, setFilterStatus] = useState<'todos' | 'estavel' | 'critico'>('todos');
     const [isFilterCategoryOpen, setIsFilterCategoryOpen] = useState(false);
 
-    // Delete Confirmation state
-    const [productToDelete, setProductToDelete] = useState<Produto | null>(null);
+    // Edit Modal State
+    const [productToEdit, setProductToEdit] = useState<Produto | null>(null);
 
     const fetchProdutos = async () => {
         try {
@@ -64,18 +66,7 @@ const Catalogo = () => {
         setTimeout(() => setToast(null), 4000);
     };
 
-    const handleDelete = async () => {
-        if (!productToDelete) return;
-        try {
-            await produtoService.delete(productToDelete.id);
-            showToast(`Produto "${productToDelete.nome}" eliminado com sucesso.`, 'success');
-            setProductToDelete(null);
-            fetchProdutos();
-        } catch (error) {
-            console.error('Erro ao eliminar produto:', error);
-            showToast('Erro ao eliminar o produto. Tente novamente.', 'error');
-        }
-    };
+
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -128,6 +119,18 @@ const Catalogo = () => {
         fetchProdutos();
     }, []);
 
+    const handleDelete = async (id: number) => {
+        try {
+            await produtoService.delete(id);
+            showToast('Produto eliminado com sucesso.', 'success');
+            setProductToEdit(null);
+            fetchProdutos();
+        } catch (error) {
+            console.error('Erro ao eliminar produto:', error);
+            showToast('Erro ao eliminar o produto. Tente novamente.', 'error');
+        }
+    };
+
     return (
         <div className="space-y-6 relative">
             {/* Toast Notification */}
@@ -142,46 +145,6 @@ const Catalogo = () => {
                         <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70 transition-opacity">
                             <X size={16} />
                         </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Delete Confirmation Modal */}
-            {productToDelete && (
-                <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-                    <div 
-                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" 
-                        onClick={() => setProductToDelete(null)} 
-                    />
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-6">
-                            <div className="flex items-start gap-4 mb-6">
-                                <div className="w-12 h-12 bg-red-50 rounded-xl flex items-center justify-center shrink-0 border border-red-100">
-                                    <Trash2 size={22} className="text-red-600" />
-                                </div>
-                                <div className="space-y-1">
-                                    <h3 className="text-lg font-bold text-slate-900">Eliminar Produto</h3>
-                                    <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                                        Tem a certeza que deseja eliminar <span className="text-slate-900 font-bold">"{productToDelete.nome}"</span>? Esta ação é irreversível.
-                                    </p>
-                                </div>
-                            </div>
-                            
-                            <div className="flex gap-3">
-                                <button
-                                    onClick={() => setProductToDelete(null)}
-                                    className="flex-1 px-4 py-2.5 bg-slate-50 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all text-sm border border-slate-200"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleDelete}
-                                    className="flex-1 px-4 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-all text-sm shadow-sm"
-                                >
-                                    Eliminar
-                                </button>
-                            </div>
-                        </div>
                     </div>
                 </div>
             )}
@@ -350,6 +313,11 @@ const Catalogo = () => {
                                                         {produto.descricao && (
                                                             <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px] block">{produto.descricao}</span>
                                                         )}
+                                                        {produto.fornecedores && produto.fornecedores.length > 0 && (
+                                                            <span className="text-[10px] text-emerald-600 font-bold block mt-1">
+                                                                Fornecedores: {produto.fornecedores.map(f => f.nome).join(', ')}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -385,11 +353,11 @@ const Catalogo = () => {
                                             <td className="px-6 py-5">
                                                 <div className="flex justify-center">
                                                     <button
-                                                        onClick={() => setProductToDelete(produto)}
-                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Eliminar produto"
+                                                        onClick={() => setProductToEdit(produto)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Editar produto"
                                                     >
-                                                        <Trash2 size={18} />
+                                                        <Pencil size={18} />
                                                     </button>
                                                 </div>
                                             </td>
@@ -435,6 +403,20 @@ const Catalogo = () => {
                     showToast('Produto registado com sucesso!', 'success');
                 }}
             />
+
+            {productToEdit && (
+                <EditarProdutoModal
+                    isOpen={!!productToEdit}
+                    onClose={() => setProductToEdit(null)}
+                    onSuccess={() => {
+                        fetchProdutos();
+                        showToast('Produto atualizado com sucesso!', 'success');
+                        setProductToEdit(null);
+                    }}
+                    onDelete={handleDelete}
+                    produto={productToEdit}
+                />
+            )}
         </div>
     );
 };

@@ -1,17 +1,29 @@
-
 import { useState, useEffect, useRef } from 'react';
 import {
     X, Database, AlertCircle, CheckCircle2,
-    DollarSign, Tag, FileText, Plus, Loader2,
-    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Factory, Check
+    DollarSign, Tag, FileText, Edit2, Loader2,
+    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { fornecedorService } from '../services/fornecedorService';
 
-interface CriarProdutoModalProps {
+interface Produto {
+    id: number;
+    nome: string;
+    stock: number;
+    stockMinimo: number;
+    preco?: number;
+    categoria?: string;
+    descricao?: string;
+    fornecedores?: { id: number; nome: string }[];
+}
+
+interface EditarProdutoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
+    onDelete: (id: number) => void;
+    produto: Produto;
 }
 
 const CATEGORIES = [
@@ -22,7 +34,7 @@ const CATEGORIES = [
     { name: 'Outros', icon: Layers, color: 'text-slate-500' },
 ];
 
-const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProps) => {
+const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: EditarProdutoModalProps) => {
     const [nome, setNome] = useState('');
     const [stock, setStock] = useState('0');
     const [stockMinimo, setStockMinimo] = useState('0');
@@ -40,6 +52,9 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
     const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
     const [isFornecedoresOpen, setIsFornecedoresOpen] = useState(false);
 
+    // Deletion visual state
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const categoryRef = useRef<HTMLDivElement>(null);
     const fornecedoresRef = useRef<HTMLDivElement>(null);
 
@@ -53,12 +68,28 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
     }, [isOpen]);
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && produto) {
+            setNome(produto.nome);
+            setStock(produto.stock.toString());
+            setStockMinimo(produto.stockMinimo.toString());
+            setPreco(produto.preco ? produto.preco.toString() : '0.00');
+            setCategoria(produto.categoria || '');
+            setDescricao(produto.descricao || '');
+            
+            // Map existing fornecedores to their IDs
+            if (produto.fornecedores && Array.isArray(produto.fornecedores)) {
+                setSelectedFornecedores(produto.fornecedores.map(f => f.id));
+            } else {
+                setSelectedFornecedores([]);
+            }
+            
             setIsClosing(false);
             setError(null);
             setIsCategoryOpen(false);
+            setShowDeleteConfirm(false);
+            setIsFornecedoresOpen(false);
         }
-    }, [isOpen]);
+    }, [isOpen, produto]);
 
     // Close dropdowns on click outside
     useEffect(() => {
@@ -79,7 +110,6 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
         setTimeout(() => {
             onClose();
             setIsClosing(false);
-            setSelectedFornecedores([]);
         }, 300);
     };
 
@@ -98,7 +128,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
         const precoNumber = Number(preco);
 
         if (Number.isNaN(stockNumber) || stockNumber < 0) {
-            setError('O stock inicial deve ser um número maior ou igual a 0.');
+            setError('O stock deve ser um número maior ou igual a 0.');
             return;
         }
 
@@ -115,28 +145,20 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
         setError(null);
         setLoading(true);
         try {
-            await produtoService.create({
+            await produtoService.update(produto.id, {
                 nome,
                 stock: stockNumber,
                 stockMinimo: stockMinimoNumber,
                 preco: precoNumber,
                 categoria: categoria || undefined,
                 descricao: descricao || undefined,
-                fornecedorIds: selectedFornecedores.length > 0 ? selectedFornecedores : undefined,
+                fornecedorIds: selectedFornecedores, // Can be empty array if all are removed
             });
             onSuccess();
             handleClose();
-            // Reset form
-            setNome('');
-            setStock('0');
-            setStockMinimo('0');
-            setPreco('0.00');
-            setCategoria('');
-            setDescricao('');
-            setSelectedFornecedores([]);
         } catch (error) {
-            console.error('Erro ao criar produto:', error);
-            setError('Ocorreu um erro ao criar o produto. Verifique a sua ligação.');
+            console.error('Erro ao editar produto:', error);
+            setError('Ocorreu um erro ao editar o produto. Verifique a sua ligação.');
         } finally {
             setLoading(false);
         }
@@ -163,16 +185,46 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                     <div className="flex justify-between items-center">
                         <div>
                             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Plus size={20} className="text-emerald-400" />
-                                Novo Produto
+                                <Edit2 size={20} className="text-blue-400" />
+                                Editar Produto
                             </h2>
                         </div>
-                        <button
-                            onClick={handleClose}
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                        >
-                            <X size={20} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {showDeleteConfirm ? (
+                                <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20 mr-2 animate-in slide-in-from-right-2">
+                                    <span className="text-xs font-bold text-red-400 mr-2">Certeza?</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        className="text-xs px-2 py-1 bg-slate-800 text-slate-300 font-medium rounded hover:bg-slate-700 transition-colors"
+                                    >
+                                        Não
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => onDelete(produto.id)}
+                                        className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm"
+                                    >
+                                        Sim, Apagar
+                                    </button>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDeleteConfirm(true)}
+                                    className="p-1.5 mr-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                    title="Apagar produto"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                            )}
+                            <button
+                                onClick={handleClose}
+                                className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -196,7 +248,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                     required
                                     value={nome}
                                     onChange={(e) => setNome(e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 text-sm"
+                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
                                     placeholder="Ex: Vacina Nobivac L4"
                                 />
                             </div>
@@ -208,10 +260,10 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                 <button
                                     type="button"
                                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all flex items-center justify-between text-sm group"
+                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
                                 >
                                     <div className="flex items-center gap-2">
-                                        <SelectedCategoryIcon size={16} className={categoria ? "text-emerald-500" : "text-slate-400"} />
+                                        <SelectedCategoryIcon size={16} className={categoria ? "text-blue-500" : "text-slate-400"} />
                                         <span className={categoria ? "text-slate-900" : "text-slate-400"}>
                                             {categoria || "Selecionar..."}
                                         </span>
@@ -229,7 +281,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                                     setCategoria(item.name);
                                                     setIsCategoryOpen(false);
                                                 }}
-                                                className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-emerald-50 transition-colors text-sm ${categoria === item.name ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600'}`}
+                                                className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600'}`}
                                             >
                                                 <item.icon size={16} className={item.color} />
                                                 {item.name}
@@ -248,7 +300,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                         min="0"
                                         value={preco}
                                         onChange={(e) => setPreco(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
                                         placeholder="0,00"
                                     />
                                 </div>
@@ -261,7 +313,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                             <button
                                 type="button"
                                 onClick={() => setIsFornecedoresOpen(!isFornecedoresOpen)}
-                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all flex items-center justify-between text-sm group"
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
                             >
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <Factory size={16} className={selectedFornecedores.length > 0 ? "text-emerald-500 shrink-0" : "text-slate-400 shrink-0"} />
@@ -315,7 +367,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Níveis de Inventário</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Stock Inicial</label>
+                                <label className="text-sm font-medium text-slate-700 ml-0.5">Stock Atual</label>
                                 <div className="relative">
                                     <Database className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -324,7 +376,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                         min="0"
                                         value={stock}
                                         onChange={(e) => setStock(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm font-medium"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm font-medium"
                                     />
                                 </div>
                             </div>
@@ -338,7 +390,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                         min="0"
                                         value={stockMinimo}
                                         onChange={(e) => setStockMinimo(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm font-medium"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm font-medium"
                                     />
                                 </div>
                             </div>
@@ -354,7 +406,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                 value={descricao}
                                 onChange={(e) => setDescricao(e.target.value)}
                                 rows={2}
-                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none"
+                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none"
                                 placeholder="Informação adicional opcional..."
                             />
                         </div>
@@ -377,12 +429,12 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                             {loading ? (
                                 <>
                                     <Loader2 className="animate-spin" size={18} />
-                                    A processar...
+                                    A atualizar...
                                 </>
                             ) : (
                                 <>
                                     <CheckCircle2 size={18} />
-                                    Registar Produto
+                                    Guardar Alterações
                                 </>
                             )}
                         </button>
@@ -393,4 +445,4 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
     );
 };
 
-export default CriarProdutoModal;
+export default EditarProdutoModal;

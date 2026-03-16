@@ -16,8 +16,21 @@ export const produtoService = {
         preco?: number;
         categoria?: string;
         descricao?: string;
+        fornecedorIds?: number[];
     }) => {
         const response = await api.post('/produtos', produto);
+        return response.data;
+    },
+    update: async (id: number, produto: {
+        nome: string;
+        stock: number;
+        stockMinimo: number;
+        preco?: number;
+        categoria?: string;
+        descricao?: string;
+        fornecedorIds?: number[];
+    }) => {
+        const response = await api.put(`/produtos/${id}`, produto);
         return response.data;
     },
     delete: async (id: number) => {

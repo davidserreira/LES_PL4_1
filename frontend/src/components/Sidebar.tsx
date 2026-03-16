@@ -54,14 +54,20 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
-                    <button
-                        type="button"
-                        onClick={() => setShowLogout((prev) => !prev)}
-                        data-logout-toggle
-                        className="text-xl font-bold tracking-tight text-emerald-400 hover:text-emerald-300 focus:outline-none rounded-lg px-1 text-left line-clamp-1"
-                    >
-                        {getRoleLabel(user.role)}
-                    </button>
+                    <div className="flex items-center justify-between w-full">
+                        <span className="text-xl font-bold tracking-tight text-emerald-400 px-1 line-clamp-1">
+                            {getRoleLabel(user.role)}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setShowLogout((prev) => !prev)}
+                            data-logout-toggle
+                            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors focus:outline-none"
+                            title="Desconectar"
+                        >
+                            <LogOut size={20} />
+                        </button>
+                    </div>
                 )}
                 {isCollapsed && (
                     <button

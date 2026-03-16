@@ -15,6 +15,12 @@ interface Fornecedor {
     categoria: string;
     observacoes?: string;
     criadoEm: string;
+    produtos?: {
+        id: number;
+        nome: string;
+        categoria: string;
+        stock: number;
+    }[];
 }
 
 type SortField = 'id' | 'nome';
@@ -534,6 +540,31 @@ const Fornecedores = () => {
                                     {new Date(detalhesFornecedor.criadoEm).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
                                 </span>
                             </div>
+                            
+                            {/* Produtos Fornecidos */}
+                            <div className="flex flex-col border-b border-slate-100 pb-3">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos Fornecidos</span>
+                                {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 ? (
+                                    <div className="max-h-32 overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                                        {detalhesFornecedor.produtos.map(prod => (
+                                            <div key={prod.id} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-lg">
+                                                <div>
+                                                    <div className="text-sm font-bold text-slate-800 leading-tight">{prod.nome}</div>
+                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{prod.categoria || 'Sem Categoria'}</div>
+                                                </div>
+                                                <div className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
+                                                    Stock: {prod.stock}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
+                                        Este fornecedor não tem produtos associados.
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="flex flex-col pt-1">
                                 <div className="flex items-center justify-between mb-1.5">
                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Observações</span>

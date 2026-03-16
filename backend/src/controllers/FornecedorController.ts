@@ -4,6 +4,11 @@ import prisma from '../lib/prisma';
 export const getFornecedores = async (req: Request, res: Response) => {
     try {
         const fornecedores = await prisma.fornecedor.findMany({
+            include: {
+                produtos: {
+                    select: { id: true, nome: true, categoria: true, stock: true }
+                }
+            },
             orderBy: { nome: 'asc' }
         });
         res.json(fornecedores);
