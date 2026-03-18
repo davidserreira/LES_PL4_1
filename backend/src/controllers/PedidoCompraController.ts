@@ -3,7 +3,7 @@ import prisma from '../lib/prisma';
 
 export const createPedidoCompra = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { criadoPorId, linhas } = req.body;
+        const { criadoPorId, linhas, prioridade } = req.body;
 
         if (!linhas || !Array.isArray(linhas) || linhas.length === 0) {
             return res.status(400).json({ error: 'O pedido tem de ter pelo menos uma linha.' });
@@ -60,6 +60,7 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
         const pedido = await prisma.pedidoCompra.create({
             data: {
                 criadoPorId: criadoPorId || null,
+                prioridade: prioridade || 'NORMAL',
                 valorTotalEstimado,
                 linhas: {
                     create: linhasPreparadas

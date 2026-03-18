@@ -64,9 +64,16 @@ model Avaliacao {
   dataCriacao  DateTime   @default(now())
 }
 
+enum PrioridadePedido {
+  NORMAL
+  ALTA
+  URGENTE
+}
+
 model PedidoCompra {
   id                  Int                 @id @default(autoincrement())
   estado              String              @default("PENDENTE")
+  prioridade          PrioridadePedido    @default(NORMAL)
   valorTotalEstimado  Float               @default(0)
   
   criadoPorId         Int?

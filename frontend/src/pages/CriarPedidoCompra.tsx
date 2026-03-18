@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Trash2, ShoppingCart, Plus, Search, AlertTriangle, X, Check } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Trash2, ShoppingCart, Plus, Search, AlertTriangle, X, Check, ChevronDown } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 
@@ -26,10 +26,31 @@ const CriarPedidoCompra = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
+    const [prioridade, setPrioridade] = useState('NORMAL');
+    const [isPrioridadeOpen, setIsPrioridadeOpen] = useState(false);
+    
+    const prioridadeRef = useRef<HTMLDivElement>(null);
     
     const [isSelectionOpen, setIsSelectionOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterAbaixoMinimo, setFilterAbaixoMinimo] = useState(false);
+
+    const PRIORIDADES = [
+        { value: 'NORMAL', label: 'Normal', dot: 'bg-slate-400' },
+        { value: 'ALTA', label: 'Alta', dot: 'bg-amber-400' },
+        { value: 'URGENTE', label: 'Urgente', dot: 'bg-red-500' }
+    ];
+
+    // Close priority dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (prioridadeRef.current && !prioridadeRef.current.contains(event.target as Node)) {
+                setIsPrioridadeOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         produtoService.getAll().then(data => setProdutos(data)).catch(console.error);
@@ -63,6 +84,7 @@ const CriarPedidoCompra = () => {
         try {
             await pedidoCompraService.create({
                 criadoPorId: 1, // Mock Temporário de Gestor de Stock
+                prioridade: prioridade,
                 linhas: linhas.map(l => ({
                     produtoId: l.produto.id,
                     quantidade: l.quantidade
@@ -70,6 +92,7 @@ const CriarPedidoCompra = () => {
             });
             alert('Pedido de compra submetido com sucesso!');
             setLinhas([]);
+            setPrioridade('NORMAL');
             setIsSelectionOpen(false);
         } catch(e) {
             console.error(e);
@@ -102,18 +125,18 @@ const CriarPedidoCompra = () => {
                     <p className="mt-1 text-sm text-slate-500">Crie uma nova requisição interna de compra</p>
                 </div>
                 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
+                <div className="flex items-center gap-3">
                     <button 
                         onClick={handleLimpar}
                         disabled={!hasProdutos || isSubmitting}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-sm"
                     >
                         <Trash2 size={16} /> Limpar Pedido
                     </button>
                     <button 
                         onClick={handleSubmit}
                         disabled={!hasProdutos || isSubmitting}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:outline-none"
+                        className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:hover:bg-emerald-400 disabled:cursor-not-allowed transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:outline-none"
                     >
                         <ShoppingCart size={16} /> Submeter Pedido
                     </button>
@@ -121,25 +144,62 @@ const CriarPedidoCompra = () => {
             </div>
 
             {/* DADOS GERAIS */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/30">
-                    <h2 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Dados Gerais</h2>
-                </div>
-                <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-8">
-                    <div>
-                        <p className="text-xs text-slate-500 mb-1.5">ID do Pedido</p>
-                        <p className="text-sm font-semibold text-slate-900 flex items-center gap-2">
-                           PC-YYYY-XXX
-                           <span className="text-[10px] font-medium bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Automático</span>
-                        </p>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col gap-5">
+                <h2 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Dados Gerais</h2>
+                <div className="flex flex-row items-center w-full gap-8">
+                    <div className="flex-1">
+                        <p className="text-xs text-slate-500 mb-1">ID do Pedido</p>
+                        <p className="text-sm font-bold text-slate-900">PC-2026-001</p>
                     </div>
-                    <div>
-                        <p className="text-xs text-slate-500 mb-1.5">Data de Criação</p>
+                    <div className="flex-1">
+                        <p className="text-xs text-slate-500 mb-1">Data de Criação</p>
                         <p className="text-sm font-medium text-slate-900">{hoje}</p>
                     </div>
-                    <div>
-                        <p className="text-xs text-slate-500 mb-1.5">Criado Por</p>
+                    <div className="flex-1">
+                        <p className="text-xs text-slate-500 mb-1">Tipo de Pedido</p>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            <p className="text-sm font-medium text-slate-900">Manual</p>
+                        </div>
+                    </div>
+                    <div className="flex-1">
+                        <p className="text-xs text-slate-500 mb-1">Emitido por</p>
                         <p className="text-sm font-medium text-slate-900">Gestor de Stock</p>
+                    </div>
+                    <div className="flex-1 relative" ref={prioridadeRef}>
+                        <p className="text-xs text-slate-500 mb-1">Prioridade</p>
+                        <button
+                            type="button"
+                            onClick={() => setIsPrioridadeOpen(!isPrioridadeOpen)}
+                            className="w-[120px] px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all flex items-center justify-between text-sm group hover:bg-slate-50 shadow-sm"
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${PRIORIDADES.find(p => p.value === prioridade)?.dot}`}></span>
+                                <span className="font-medium text-slate-700">
+                                    {PRIORIDADES.find(p => p.value === prioridade)?.label}
+                                </span>
+                            </div>
+                            <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isPrioridadeOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {isPrioridadeOpen && (
+                            <div className="absolute top-[calc(100%+4px)] left-0 w-[120px] bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                {PRIORIDADES.map((item) => (
+                                    <button
+                                        key={item.value}
+                                        type="button"
+                                        onClick={() => {
+                                            setPrioridade(item.value);
+                                            setIsPrioridadeOpen(false);
+                                        }}
+                                        className={`w-full px-3 py-2 flex items-center gap-2 transition-colors text-sm ${prioridade === item.value ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
+                                    >
+                                        <span className={`w-2 h-2 rounded-full ${item.dot}`}></span>
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
