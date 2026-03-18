@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, ShoppingCart, Plus, Search, AlertTriangle, X, Check, ChevronDown } from 'lucide-react';
+import { Trash2, ShoppingCart, Plus, Search, AlertTriangle, X, Check, ChevronDown, Filter } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 
@@ -9,6 +9,8 @@ interface Produto {
     preco: number;
     stock: number;
     stockMinimo: number;
+    categoria?: string;
+    descricao?: string;
 }
 
 interface LinhaPedido {
@@ -22,18 +24,21 @@ const formatCurrency = (value: number) => {
 
 const CriarPedidoCompra = () => {
     const hoje = new Date().toLocaleDateString('pt-PT');
-    
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
     const [prioridade, setPrioridade] = useState('NORMAL');
     const [isPrioridadeOpen, setIsPrioridadeOpen] = useState(false);
-    
+
     const prioridadeRef = useRef<HTMLDivElement>(null);
-    
+
     const [isSelectionOpen, setIsSelectionOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterAbaixoMinimo, setFilterAbaixoMinimo] = useState(false);
+    const [filterCategory, setFilterCategory] = useState<string>('');
+    const [filterStatus, setFilterStatus] = useState<'todos' | 'estavel' | 'critico'>('todos');
+    const [isFilterCategoryOpen, setIsFilterCategoryOpen] = useState(false);
+    const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
     const PRIORIDADES = [
         { value: 'NORMAL', label: 'Normal', dot: 'bg-slate-400' },
@@ -57,7 +62,7 @@ const CriarPedidoCompra = () => {
     }, []);
 
     const hasProdutos = linhas.length > 0;
-    
+
     // Calcula totais
     const totalLinhas = linhas.length;
     const quantidadeTotal = linhas.reduce((acc, l) => acc + l.quantidade, 0);
@@ -94,7 +99,7 @@ const CriarPedidoCompra = () => {
             setLinhas([]);
             setPrioridade('NORMAL');
             setIsSelectionOpen(false);
-        } catch(e) {
+        } catch (e) {
             console.error(e);
             alert('Erro ao submeter pedido.');
         } finally {
@@ -103,7 +108,7 @@ const CriarPedidoCompra = () => {
     };
 
     const handleLimpar = () => {
-        if(window.confirm('Tem a certeza que deseja remover todos os produtos deste pedido?')) {
+        if (window.confirm('Tem a certeza que deseja remover todos os produtos deste pedido?')) {
             setLinhas([]);
             setIsSelectionOpen(false);
         }
@@ -111,9 +116,21 @@ const CriarPedidoCompra = () => {
 
     // Filtros de Catálogo
     const filteredProdutos = produtos.filter(p => {
-        const matchesSearch = p.nome.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesMinimo = filterAbaixoMinimo ? p.stock < p.stockMinimo : true;
-        return matchesSearch && matchesMinimo;
+        const query = searchQuery.toLowerCase();
+        const matchesSearch = 
+            p.nome.toLowerCase().includes(query) || 
+            (p.categoria?.toLowerCase().includes(query)) || 
+            (p.descricao?.toLowerCase().includes(query));
+
+        const matchesCategory = filterCategory === '' || p.categoria === filterCategory;
+        
+        const isCritico = p.stock <= p.stockMinimo;
+        const matchesStatus = 
+            filterStatus === 'todos' ? true :
+            filterStatus === 'critico' ? isCritico :
+            !isCritico;
+
+        return matchesSearch && matchesCategory && matchesStatus;
     });
 
     return (
@@ -124,19 +141,27 @@ const CriarPedidoCompra = () => {
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Criar Pedido de Compra</h1>
                     <p className="mt-1 text-sm text-slate-500">Crie uma nova requisição interna de compra</p>
                 </div>
-                
+
                 <div className="flex items-center gap-3">
-                    <button 
+                    <button
                         onClick={handleLimpar}
                         disabled={!hasProdutos || isSubmitting}
-                        className="flex items-center justify-center gap-2 px-4 py-2 border border-slate-200 bg-white rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-sm"
+                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-sm ${(!hasProdutos || isSubmitting)
+                            ? 'bg-slate-50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                            }`}
                     >
                         <Trash2 size={16} /> Limpar Pedido
                     </button>
-                    <button 
+                    <button
                         onClick={handleSubmit}
                         disabled={!hasProdutos || isSubmitting}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:hover:bg-emerald-400 disabled:cursor-not-allowed transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:outline-none"
+                        style={{ opacity: (!hasProdutos || isSubmitting) ? 0.45 : 1 }}
+                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:outline-none ${
+                            (!hasProdutos || isSubmitting)
+                                ? 'bg-emerald-500 text-white cursor-not-allowed'
+                                : 'bg-emerald-500 hover:bg-emerald-600 text-white'
+                        }`}
                     >
                         <ShoppingCart size={16} /> Submeter Pedido
                     </button>
@@ -181,7 +206,7 @@ const CriarPedidoCompra = () => {
                             </div>
                             <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isPrioridadeOpen ? 'rotate-180' : ''}`} />
                         </button>
-                        
+
                         {isPrioridadeOpen && (
                             <div className="absolute top-[calc(100%+4px)] left-0 w-[120px] bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
                                 {PRIORIDADES.map((item) => (
@@ -209,7 +234,7 @@ const CriarPedidoCompra = () => {
                 <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-transparent">
                     <h2 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Produtos</h2>
                     {!isSelectionOpen && (
-                        <button 
+                        <button
                             onClick={() => setIsSelectionOpen(true)}
                             className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
@@ -227,30 +252,97 @@ const CriarPedidoCompra = () => {
                             </button>
                         </div>
                         <div className="p-5 space-y-4 bg-white">
-                            {/* Buscar e Filtros */}
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input 
-                                    type="text" 
-                                    placeholder="Pesquisar produto..." 
-                                    className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all outline-none text-slate-700 hover:border-slate-300"
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <button 
-                                    onClick={() => setFilterAbaixoMinimo(false)}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-colors focus:outline-none ${!filterAbaixoMinimo ? 'bg-emerald-400 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                                >
-                                    Todos os Produtos
-                                </button>
-                                <button 
-                                    onClick={() => setFilterAbaixoMinimo(true)}
-                                    className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-colors focus:outline-none ${filterAbaixoMinimo ? 'bg-red-500 text-white shadow-sm border-transparent' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'}`}
-                                >
-                                    <AlertTriangle size={14} className={filterAbaixoMinimo ? 'text-white' : 'text-red-500'} /> Abaixo do Mínimo
-                                </button>
+                            {/* Filtros e Pesquisa parecidos ao Catálogo */}
+                            <div className="flex flex-col gap-4 mb-4">
+                                {/* Filtros */}
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative z-20">
+                                    <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 pl-1">
+                                        <Filter size={16} />
+                                        Filtros:
+                                    </div>
+
+                                    {/* Status Filter */}
+                                    <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
+                                        <button
+                                            onClick={() => setFilterStatus('todos')}
+                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                        >
+                                            Todos
+                                        </button>
+                                        <button
+                                            onClick={() => setFilterStatus('estavel')}
+                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'estavel' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                        >
+                                            Estável
+                                        </button>
+                                        <button
+                                            onClick={() => setFilterStatus('critico')}
+                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'critico' ? 'bg-white text-amber-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                        >
+                                            Crítico
+                                        </button>
+                                    </div>
+
+                                    <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+
+                                    {/* Category Dropdown */}
+                                    <div className="relative min-w-[200px]">
+                                        <button
+                                            onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
+                                            className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterCategory ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                        >
+                                            {filterCategory || 'Todas as Categorias'}
+                                            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+
+                                        {isFilterCategoryOpen && (
+                                            <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                                <button
+                                                    onClick={() => { setFilterCategory(''); setIsFilterCategoryOpen(false); }}
+                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategory ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                >
+                                                    Todas as Categorias
+                                                </button>
+                                                {CATEGORIES.map(cat => (
+                                                    <button
+                                                        key={cat}
+                                                        onClick={() => { setFilterCategory(cat); setIsFilterCategoryOpen(false); }}
+                                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategory === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                    >
+                                                        {cat}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Clear Filters */}
+                                    {(filterStatus !== 'todos' || filterCategory !== '' || searchQuery !== '') && (
+                                        <button
+                                            onClick={() => { setFilterStatus('todos'); setFilterCategory(''); setSearchQuery(''); }}
+                                            className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2 whitespace-nowrap"
+                                        >
+                                            Limpar filtros
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                {/* Barra de Pesquisa */}
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
+                                    <div className="relative w-full max-w-md">
+                                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder="Pesquisar por nome ou descrição..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400 text-slate-700 focus:ring-0"
+                                        />
+                                    </div>
+                                    <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap">
+                                        A mostrar <span className="font-bold text-slate-700">{filteredProdutos.length}</span> de <span className="font-bold text-slate-700">{produtos.length}</span> produtos
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Tabela de Pesquisa */}
@@ -303,9 +395,9 @@ const CriarPedidoCompra = () => {
                                                                 <Check size={14} strokeWidth={3} /> Adicionado
                                                             </button>
                                                         ) : (
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleAdicionar(p)}
-                                                                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-emerald-400 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-1 lg:opacity-0 lg:group-hover:opacity-100"
+                                                                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 lg:opacity-0 lg:group-hover:opacity-100"
                                                             >
                                                                 Adicionar
                                                             </button>
@@ -325,7 +417,7 @@ const CriarPedidoCompra = () => {
                         </div>
                     </div>
                 )}
-                
+
                 {hasProdutos ? (
                     <div className="border-t border-slate-100 bg-white">
                         {/* Tabela de Carrinho */}
@@ -374,20 +466,20 @@ const CriarPedidoCompra = () => {
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-center">
                                                         <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleQuantidadeChange(p.id, Math.max(1, linha.quantidade - 1))}
                                                                 className="w-10 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors focus:outline-none disabled:opacity-50"
                                                                 disabled={linha.quantidade <= 1}
                                                             >-</button>
-                                                            <input 
-                                                                type="number" 
+                                                            <input
+                                                                type="number"
                                                                 min={1}
                                                                 value={linha.quantidade}
                                                                 onChange={e => handleQuantidadeChange(p.id, parseInt(e.target.value) || 1)}
                                                                 className="w-14 h-9 text-center font-bold text-slate-900 focus:outline-none border-x border-slate-200"
                                                                 style={{ MozAppearance: 'textfield' }}
                                                             />
-                                                            <button 
+                                                            <button
                                                                 onClick={() => handleQuantidadeChange(p.id, linha.quantidade + 1)}
                                                                 className="w-10 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors focus:outline-none"
                                                             >+</button>
@@ -397,7 +489,7 @@ const CriarPedidoCompra = () => {
                                                 <td className="px-6 py-4 text-right text-slate-600 font-medium">{formatCurrency(p.preco)}</td>
                                                 <td className="px-6 py-4 text-right text-slate-900 font-bold text-[15px]">{formatCurrency(lineTotal)}</td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleRemover(p.id)}
                                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
                                                         title="Remover"
@@ -430,8 +522,8 @@ const CriarPedidoCompra = () => {
                             </div>
                         </div>
                     </div>
-                ) : (
-                    // ESTADO VAZIO
+                ) : !isSelectionOpen ? (
+                    // ESTADO VAZIO (só mostrar quando não estamos a selecionar produtos)
                     <div className="p-6 sm:p-12 bg-white">
                         <div className="flex flex-col items-center justify-center text-center py-16">
                             <div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center mb-5 shadow-sm">
@@ -441,18 +533,18 @@ const CriarPedidoCompra = () => {
                             <p className="text-sm text-slate-500 mb-8 max-w-sm">
                                 Comece por adicionar produtos ao seu pedido de compra
                             </p>
-                            <button 
+                            <button
                                 onClick={() => setIsSelectionOpen(true)}
-                                className="flex items-center gap-2 bg-emerald-400 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                                className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                             >
                                 <Plus size={18} strokeWidth={2.5} />
                                 Adicionar Produto
                             </button>
                         </div>
                     </div>
-                )}
+                ) : null}
             </div>
-            
+
             {/* Some CSS for removing arrows in number input */}
             <style>{`
                 input[type='number']::-webkit-inner-spin-button,
