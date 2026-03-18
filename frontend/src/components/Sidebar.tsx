@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList } from 'lucide-react';
 import { Utilizador } from '../services/utilizadorService';
 
 interface SidebarProps {
@@ -44,6 +44,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
         { to: '/catalogo', label: 'Catálogo', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
         { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR'] },
+        { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
         { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },
     ];
 

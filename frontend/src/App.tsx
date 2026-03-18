@@ -5,6 +5,7 @@ import Catalogo from './pages/Catalogo';
 import Fornecedores from './pages/Fornecedores';
 import Utilizadores from './pages/Utilizadores';
 import Login from './pages/Login';
+import CriarPedidoCompra from './pages/CriarPedidoCompra';
 import { Utilizador } from './services/utilizadorService';
 
 function Dashboard() {
@@ -51,7 +52,11 @@ function App() {
                             
                             {/* Role-based Route Protection */}
                             {(user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
-                                <Route path="/catalogo" element={<Catalogo />} />
+                                <>
+                                    <Route path="/catalogo" element={<Catalogo />} />
+                                    <Route path="/pedidos/novo" element={<CriarPedidoCompra />} />
+                                    <Route path="/pedidos" element={<Navigate to="/pedidos/novo" replace />} />
+                                </>
                             )}
                             
                             {user.role === 'ADMINISTRADOR' && (
