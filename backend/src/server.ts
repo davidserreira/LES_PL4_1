@@ -7,6 +7,7 @@ import prisma from './lib/prisma';
 import produtoRoutes from './routes/produtoRoutes';
 import fornecedorRoutes from './routes/fornecedorRoutes';
 import utilizadorRoutes from './routes/utilizadorRoutes';
+import pedidoCompraRoutes from './routes/pedidoCompraRoutes';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use('/api/produtos', produtoRoutes);
 app.use('/api/fornecedores', fornecedorRoutes);
 app.use('/api/utilizadores', utilizadorRoutes);
+app.use('/api/pedidos', pedidoCompraRoutes);
 
 app.get('/', (req, res) => {
     res.send('API REST da Clínica Veterinária a funcionar!');

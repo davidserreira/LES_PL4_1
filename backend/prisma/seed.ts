@@ -1,48 +1,124 @@
+import { Role } from '@prisma/client';
 import prisma from '../src/lib/prisma';
 
 async function main() {
-  console.log('Start seeding...');
-  
-  // Utilizadores
-  const admin = await prisma.utilizador.upsert({
-    where: { username: 'admin' },
-    update: {},
-    create: {
-      username: 'admin',
-      password: '1234', // In a real app this should be hashed
-      role: 'ADMINISTRADOR',
-    },
-  });
+    console.log('🌱 Iniciando o seeding da base de dados...');
 
-  const respStock = await prisma.utilizador.upsert({
-    where: { username: 'stock' },
-    update: {},
-    create: {
-      username: 'stock',
-      password: '1234',
-      role: 'RESPONSAVEL_STOCK',
-    },
-  });
+    // 1. Criar Utilizadores Gestores (Opcional, mas útil para criar pedidos associados a um criador)
+    const gestor = await prisma.utilizador.upsert({
+        where: { username: 'gestor' },
+        update: {},
+        create: {
+            username: 'gestor',
+            password: 'password123',
+            role: Role.RESPONSAVEL_STOCK
+        }
+    });
+    console.log(`✅ Utilizador: Gestor de Stock (${gestor.id})`);
 
-  const respFinanceiro = await prisma.utilizador.upsert({
-    where: { username: 'financeiro' },
-    update: {},
-    create: {
-      username: 'financeiro',
-      password: '1234',
-      role: 'RESPONSAVEL_FINANCEIRO',
-    },
-  });
+    const admin = await prisma.utilizador.upsert({
+        where: { username: 'admin' },
+        update: {},
+        create: {
+            username: 'admin',
+            password: 'admin',
+            role: Role.ADMINISTRADOR
+        }
+    });
+    console.log(`✅ Utilizador: Admin (${admin.id})`);
 
-  console.log({ admin, respStock, respFinanceiro });
-  console.log('Seeding finished.');
+    // 2. Criar Fornecedores de teste (a US1.9 prevê Fornecedor)
+    const fornecedorA = await prisma.fornecedor.upsert({
+        where: { nif: '123456789' },
+        update: {},
+        create: {
+            nome: 'PetFood Elite Lda',
+            nif: '123456789',
+            contacto: '912345678',
+            email: 'encomendas@petfood.pt',
+            estado: true,
+            categoria: 'Alimentação',
+            observacoes: 'Fornecedor principal de rações premium.'
+        }
+    });
+
+    const fornecedorB = await prisma.fornecedor.upsert({
+        where: { nif: '987654321' },
+        update: {},
+        create: {
+            nome: 'VetPharma SA',
+            nif: '987654321',
+            contacto: '210987654',
+            email: 'labs@vetpharma.pt',
+            estado: true,
+            categoria: 'Medicamentos',
+            observacoes: 'Material cirúrgico e vacinação.'
+        }
+    });
+    console.log(`✅ Fornecedores criados.`);
+
+    // 3. Criar Produtos de teste
+    // Como os produtos não têm "unique constraint" no nome, verifico se já existem produtos
+    const produtosExistentes = await prisma.produto.count();
+
+    if (produtosExistentes === 0) {
+        await prisma.produto.createMany({
+            data: [
+                {
+                    nome: 'Ração Cães Adultos 15kg',
+                    stock: 5,
+                    stockMinimo: 10,
+                    preco: 45.99,
+                    categoria: 'Alimentação',
+                    descricao: 'Ração grain-free para porte médio.'
+                },
+                {
+                    nome: 'Vacina Antirrábica',
+                    stock: 20,
+                    stockMinimo: 15,
+                    preco: 12.50,
+                    categoria: 'Medicamentos',
+                    descricao: 'Vacina anual dose individual.'
+                },
+                {
+                    nome: 'Coleira Antiparasitária (Cães Grandes)',
+                    stock: 2,
+                    stockMinimo: 5,
+                    preco: 28.50,
+                    categoria: 'Acessórios',
+                    descricao: 'Proteção eficaz contra carraças e pulgas durante 6 meses.'
+                },
+                {
+                    nome: 'Comprimidos Desparasitantes',
+                    stock: 50,
+                    stockMinimo: 20,
+                    preco: 8.00,
+                    categoria: 'Medicamentos',
+                    descricao: 'Caixa com 10 pastilhas.'
+                },
+                {
+                    nome: 'Biscoitos Dentais',
+                    stock: 8,
+                    stockMinimo: 20,
+                    preco: 4.50,
+                    categoria: 'Snacks',
+                    descricao: 'Limpa o tártaro ao mesmo tempo que recompensa o cão.'
+                }
+            ]
+        });
+        console.log(`✅ Foram inseridos 5 Produtos de teste.`);
+    } else {
+        console.log(`⚠️ Já existem ${produtosExistentes} Produtos na base de dados. Nenhuma ração/produto novo adicionado.`);
+    }
+
+    console.log('🎉 Seeding concluído com sucesso!');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+    .catch((e) => {
+        console.error(e);
+        process.exit(1);
+    })
+    .finally(async () => {
+        await prisma.$disconnect();
+    });

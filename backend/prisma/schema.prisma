@@ -31,7 +31,7 @@ model Produto {
   descricao   String?
   criadoEm    DateTime     @default(now())
 
-  itensPedido  ItemPedido[]
+  linhasPedido LinhaPedidoCompra[]
   fornecedores Fornecedor[] // US1.9 - Associar Fornecedor a Produto
 }
 
@@ -46,7 +46,6 @@ model Fornecedor {
   observacoes String? @db.Text
   criadoEm   DateTime       @default(now())
   
-  pedidos    PedidoCompra[]
   produtos   Produto[]      // US1.9 - Associar a Produto
   avaliacoes Avaliacao[]    // US1.8 - Avaliar Fornecedor
 }
@@ -66,26 +65,28 @@ model Avaliacao {
 }
 
 model PedidoCompra {
-  id             Int        @id @default(autoincrement())
-  dataPedido     DateTime   @default(now())
-  estado         String     @default("PENDENTE")
+  id                  Int                 @id @default(autoincrement())
+  estado              String              @default("PENDENTE")
+  valorTotalEstimado  Float               @default(0)
   
-  responsavelId  Int
-  responsavel    Utilizador @relation(fields: [responsavelId], references: [id])
+  criadoPorId         Int?
+  criadoPor           Utilizador?         @relation(fields: [criadoPorId], references: [id])
   
-  fornecedorId   Int
-  fornecedor     Fornecedor @relation(fields: [fornecedorId], references: [id])
+  criadoEm            DateTime            @default(now())
+  atualizadoEm        DateTime            @updatedAt
 
-  itens          ItemPedido[]
+  linhas              LinhaPedidoCompra[]
 }
 
-model ItemPedido {
+model LinhaPedidoCompra {
   id             Int          @id @default(autoincrement())
-  pedidoId       Int
-  pedido         PedidoCompra @relation(fields: [pedidoId], references: [id])
+  pedidoCompraId Int
+  pedidoCompra   PedidoCompra @relation(fields: [pedidoCompraId], references: [id])
   
   produtoId      Int
   produto        Produto      @relation(fields: [produtoId], references: [id])
   
   quantidade     Float
+  precoUnitario  Float
+  valorTotal     Float
 }
