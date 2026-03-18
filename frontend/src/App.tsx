@@ -6,6 +6,7 @@ import Fornecedores from './pages/Fornecedores';
 import Utilizadores from './pages/Utilizadores';
 import Login from './pages/Login';
 import CriarPedidoCompra from './pages/CriarPedidoCompra';
+import PedidosCompra from './pages/PedidosCompra';
 import { Utilizador } from './services/utilizadorService';
 
 function Dashboard() {
@@ -55,7 +56,7 @@ function App() {
                                 <>
                                     <Route path="/catalogo" element={<Catalogo />} />
                                     <Route path="/pedidos/novo" element={<CriarPedidoCompra />} />
-                                    <Route path="/pedidos" element={<Navigate to="/pedidos/novo" replace />} />
+                                    <Route path="/pedidos" element={<PedidosCompra />} />
                                 </>
                             )}
                             

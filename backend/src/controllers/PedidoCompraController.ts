@@ -59,7 +59,9 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
         // Criação atómica: Cabeçalho + Linhas
         const pedido = await prisma.pedidoCompra.create({
             data: {
-                criadoPorId: criadoPorId || null,
+                // O Prisma (client gerado) pode não expor diretamente o campo FK `criadoPorId`
+                // para o create input. Em vez disso, usamos a relação `criadoPor` com connect.
+                criadoPor: criadoPorId ? { connect: { id: criadoPorId } } : undefined,
                 prioridade: prioridade || 'NORMAL',
                 valorTotalEstimado,
                 linhas: {
@@ -67,7 +69,8 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
                 }
             },
             include: {
-                linhas: true // retornar as linhas na resposta
+                linhas: true, // retornar as linhas na resposta
+                criadoPor: true, // permitir ao frontend mostrar o utilizador real
             }
         });
 
@@ -82,7 +85,11 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
 export const getAllPedidosCompra = async (req: Request, res: Response): Promise<any> => {
     try {
         const pedidos = await prisma.pedidoCompra.findMany({
-            include: { linhas: true }
+            include: {
+                linhas: true,
+                criadoPor: true,
+            },
+            orderBy: { id: 'desc' },
         });
         return res.json(pedidos);
     } catch (error) {

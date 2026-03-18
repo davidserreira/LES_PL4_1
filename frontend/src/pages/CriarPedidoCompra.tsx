@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Trash2, ShoppingCart, Plus, Search, AlertTriangle, X, Check, ChevronDown, Filter } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
+import type { Utilizador } from '../services/utilizadorService';
+import { useNavigate } from 'react-router-dom';
 
 interface Produto {
     id: number;
@@ -23,7 +25,32 @@ const formatCurrency = (value: number) => {
 };
 
 const CriarPedidoCompra = () => {
+    const navigate = useNavigate();
     const hoje = new Date().toLocaleDateString('pt-PT');
+    const formatDate = (value: string | Date) => {
+        try {
+            return new Date(value).toLocaleDateString('pt-PT');
+        } catch {
+            return hoje;
+        }
+    };
+
+    const getRoleLabel = (role: Utilizador['role'] | string | undefined) => {
+        switch (role) {
+            case 'ADMINISTRADOR':
+                return 'Admin';
+            case 'RESPONSAVEL_STOCK':
+                return 'Gestor Stock';
+            case 'RESPONSAVEL_FINANCEIRO':
+                return 'Financeiro';
+            default:
+                return 'Utilizador';
+        }
+    };
+
+    const formatPedidoCode = (id: number) => {
+        return `PC-2026-${String(id).padStart(3, '0')}`;
+    };
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [produtos, setProdutos] = useState<Produto[]>([]);
@@ -39,6 +66,14 @@ const CriarPedidoCompra = () => {
     const [filterStatus, setFilterStatus] = useState<'todos' | 'estavel' | 'critico'>('todos');
     const [isFilterCategoryOpen, setIsFilterCategoryOpen] = useState(false);
     const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
+
+    const [user] = useState<Utilizador | null>(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+
+    const [nextPedidoId, setNextPedidoId] = useState<number>(1);
+    const [createdPedido, setCreatedPedido] = useState<any | null>(null);
 
     const PRIORIDADES = [
         { value: 'NORMAL', label: 'Normal', dot: 'bg-slate-400' },
@@ -61,6 +96,17 @@ const CriarPedidoCompra = () => {
         produtoService.getAll().then(data => setProdutos(data)).catch(console.error);
     }, []);
 
+    useEffect(() => {
+        // Preview do "ID do pedido" (PC-2026-00X) com base no próximo autoincrement.
+        // (Para este projeto académico, assumimos que não há concorrência entre grupos.)
+        pedidoCompraService.getAll()
+            .then((pedidos: any[]) => {
+                const maxId = pedidos.reduce((acc, p) => Math.max(acc, p.id ?? 0), 0);
+                setNextPedidoId(maxId + 1);
+            })
+            .catch(console.error);
+    }, []);
+
     const hasProdutos = linhas.length > 0;
 
     // Calcula totais
@@ -69,6 +115,8 @@ const CriarPedidoCompra = () => {
     const totalEstimado = linhas.reduce((acc, l) => acc + (l.quantidade * l.produto.preco), 0);
 
     const handleAdicionar = (produto: Produto) => {
+        // Se já existe um pedido submetido, ao adicionar novo produto estamos a iniciar um novo "rascunho".
+        if (createdPedido) setCreatedPedido(null);
         const sugestao = Math.max(0, produto.stockMinimo - produto.stock);
         const qtdInicial = sugestao > 0 ? sugestao : 1;
         setLinhas([...linhas, { produto, quantidade: qtdInicial }]);
@@ -87,18 +135,20 @@ const CriarPedidoCompra = () => {
         if (!hasProdutos) return;
         setIsSubmitting(true);
         try {
-            await pedidoCompraService.create({
-                criadoPorId: 1, // Mock Temporário de Gestor de Stock
+            const pedido = await pedidoCompraService.create({
+                criadoPorId: user?.id ?? null,
                 prioridade: prioridade,
                 linhas: linhas.map(l => ({
                     produtoId: l.produto.id,
                     quantidade: l.quantidade
                 }))
             });
-            alert('Pedido de compra submetido com sucesso!');
+            setCreatedPedido(pedido);
+            if (typeof pedido?.id === 'number') setNextPedidoId(pedido.id + 1);
             setLinhas([]);
             setPrioridade('NORMAL');
             setIsSelectionOpen(false);
+            navigate('/pedidos');
         } catch (e) {
             console.error(e);
             alert('Erro ao submeter pedido.');
@@ -110,6 +160,7 @@ const CriarPedidoCompra = () => {
     const handleLimpar = () => {
         if (window.confirm('Tem a certeza que deseja remover todos os produtos deste pedido?')) {
             setLinhas([]);
+            setCreatedPedido(null);
             setIsSelectionOpen(false);
         }
     };
@@ -174,11 +225,15 @@ const CriarPedidoCompra = () => {
                 <div className="flex flex-row items-center w-full gap-8">
                     <div className="flex-1">
                         <p className="text-xs text-slate-500 mb-1">ID do Pedido</p>
-                        <p className="text-sm font-bold text-slate-900">PC-2026-001</p>
+                        <p className="text-sm font-bold text-slate-900">
+                            {formatPedidoCode(createdPedido?.id ?? nextPedidoId)}
+                        </p>
                     </div>
                     <div className="flex-1">
                         <p className="text-xs text-slate-500 mb-1">Data de Criação</p>
-                        <p className="text-sm font-medium text-slate-900">{hoje}</p>
+                        <p className="text-sm font-medium text-slate-900">
+                            {createdPedido?.criadoEm ? formatDate(createdPedido.criadoEm) : hoje}
+                        </p>
                     </div>
                     <div className="flex-1">
                         <p className="text-xs text-slate-500 mb-1">Tipo de Pedido</p>
@@ -189,7 +244,13 @@ const CriarPedidoCompra = () => {
                     </div>
                     <div className="flex-1">
                         <p className="text-xs text-slate-500 mb-1">Emitido por</p>
-                        <p className="text-sm font-medium text-slate-900">Gestor de Stock</p>
+                        <p className="text-sm font-medium text-slate-900">
+                            {createdPedido?.criadoPor?.username
+                                ? `${createdPedido.criadoPor.username} (${getRoleLabel(createdPedido.criadoPor.role)})`
+                                : user
+                                    ? `${user.username} (${getRoleLabel(user.role)})`
+                                    : '—'}
+                        </p>
                     </div>
                     <div className="flex-1 relative" ref={prioridadeRef}>
                         <p className="text-xs text-slate-500 mb-1">Prioridade</p>
