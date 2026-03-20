@@ -108,3 +108,40 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
         return res.status(500).json({ error: 'Erro interno ao listar pedidos de compra.' });
     }
 };
+
+export const cancelarPedido = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const id = Number(req.params.id);
+        const { userId, role } = req.body;
+
+        if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
+
+        if (!role || (role !== 'ADMINISTRADOR' && role !== 'RESPONSAVEL_STOCK')) {
+            return res.status(403).json({ error: 'Sem permissão para cancelar pedidos de compra.' });
+        }
+
+        const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });
+
+        if (!pedido) {
+            return res.status(404).json({ error: 'Pedido de compra não encontrado.' });
+        }
+
+        if (pedido.estado === 'CANCELADO') {
+            return res.status(400).json({ error: 'Pedido já se encontra cancelado.' });
+        }
+
+        const pedidoAtualizado = await prisma.pedidoCompra.update({
+            where: { id },
+            data: { estado: 'CANCELADO' },
+            include: {
+                linhas: true,
+                criadoPor: true,
+            }
+        });
+
+        return res.json(mapPedidoToDTO(pedidoAtualizado));
+    } catch (error) {
+        console.error('Erro ao cancelar Pedido de Compra:', error);
+        return res.status(500).json({ error: 'Erro interno ao cancelar pedido de compra.' });
+    }
+};

@@ -64,6 +64,37 @@ export default function PedidosCompra() {
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
     const [isFilterPrioridadeOpen, setIsFilterPrioridadeOpen] = useState(false);
 
+    const [user] = useState<Utilizador | null>(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+
+    const handleCancelar = async (pedidoId: number) => {
+        if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) {
+            alert('Apenas Administradores ou Gestores de Stock podem cancelar pedidos.');
+            return;
+        }
+
+        if (window.confirm('Tem a certeza que deseja cancelar este pedido?')) {
+            try {
+                await pedidoCompraService.cancelarPedido(pedidoId, {
+                    userId: user.id,
+                    role: user.role
+                });
+                
+                // Update local state without fetching all again
+                setPedidos(pedidos.map(p => 
+                    p.id === pedidoId ? { ...p, estado: 'CANCELADO' } : p
+                ));
+                setOpenDropdownId(null);
+                alert('Pedido cancelado com sucesso.');
+            } catch (err: any) {
+                console.error(err);
+                alert(err.response?.data?.error || 'Erro ao cancelar o pedido.');
+            }
+        }
+    };
+
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
@@ -130,7 +161,7 @@ export default function PedidosCompra() {
         }
 
         if (filterPrioridade !== 'Todas') {
-            result = result.filter(p => (p.prioridade || '').toUpperCase() === filterPrioridade.toUpperCase());
+            result = result.filter(p => (p.prioridade || '').toUpperCase() === filterPrioridade.toUpperCase() && p.estado !== 'CANCELADO');
         }
 
         result = [...result].sort((a, b) => {
@@ -190,8 +221,6 @@ export default function PedidosCompra() {
                 return 'text-amber-700 bg-amber-50 border-amber-100';
             case 'APROVADO':
                 return 'text-emerald-700 bg-emerald-50 border-emerald-100';
-            case 'RECEBIDO':
-                return 'text-blue-700 bg-blue-50 border-blue-100';
             case 'CANCELADO':
             case 'REJEITADO':
             case 'RECUSADO':
@@ -237,7 +266,7 @@ export default function PedidosCompra() {
                 >
                     <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Urgentes</p>
-                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.prioridade === 'URGENTE').length}</h3>
+                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.prioridade === 'URGENTE' && p.estado !== 'CANCELADO').length}</h3>
                     </div>
                     <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
                         <AlertTriangle size={20} />
@@ -250,7 +279,7 @@ export default function PedidosCompra() {
                 >
                     <div>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alta Prioridade</p>
-                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.prioridade === 'ALTA').length}</h3>
+                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.prioridade === 'ALTA' && p.estado !== 'CANCELADO').length}</h3>
                     </div>
                     <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
                         <Clock size={20} />
@@ -310,7 +339,7 @@ export default function PedidosCompra() {
                             >
                                 Todos os estados
                             </button>
-                            {['PENDENTE', 'APROVADO', 'CANCELADO', 'RECEBIDO'].map(est => (
+                            {['PENDENTE', 'APROVADO', 'CANCELADO'].map(est => (
                                 <button
                                     key={est}
                                     onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
@@ -437,9 +466,15 @@ export default function PedidosCompra() {
                                                 : '—'}
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getPriorityStyle(p.prioridade)}`}>
-                                                {p.prioridade}
-                                            </span>
+                                            {p.estado === 'CANCELADO' ? (
+                                                <span className="inline-flex items-center justify-center min-w-[60px] py-1 rounded-full text-[10px] font-black border text-slate-400 bg-slate-100 border-slate-200">
+                                                    —
+                                                </span>
+                                            ) : (
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getPriorityStyle(p.prioridade)}`}>
+                                                    {p.prioridade}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-right font-bold text-slate-900">{formatCurrency(p.valorTotalEstimado || 0)}</td>
                                         <td className="px-6 py-4">
@@ -462,12 +497,21 @@ export default function PedidosCompra() {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     className="absolute right-10 top-1/2 -translate-y-1/2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
                                                 >
-                                                    <button
-                                                        disabled
-                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
-                                                    >
-                                                        Cancelar Pedido
-                                                    </button>
+                                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && p.estado !== 'CANCELADO' ? (
+                                                        <button
+                                                            onClick={() => handleCancelar(p.id)}
+                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            disabled
+                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    )}
                                                 </div>
                                             )}
                                         </td>

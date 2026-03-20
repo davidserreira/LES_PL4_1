@@ -8,5 +8,9 @@ export const pedidoCompraService = {
     getAll: async () => {
         const response = await api.get('/pedidos');
         return response.data;
+    },
+    cancelarPedido: async (id: number, payload: { userId: number, role: string }) => {
+        const response = await api.patch(`/pedidos/${id}/cancelar`, payload);
+        return response.data;
     }
 };
