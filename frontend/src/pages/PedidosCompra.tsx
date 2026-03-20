@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
+import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 
 type PrioridadePedido = 'NORMAL' | 'ALTA' | 'URGENTE';
 
@@ -55,7 +55,6 @@ const getRoleLabel = (role: Utilizador['role']) => {
 };
 
 export default function PedidosCompra() {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
@@ -68,19 +67,19 @@ export default function PedidosCompra() {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
     const [isFilterPrioridadeOpen, setIsFilterPrioridadeOpen] = useState(false);
-
-    const [user] = useState<Utilizador | null>(() => {
-        const savedUser = localStorage.getItem('user');
-        return savedUser ? JSON.parse(savedUser) : null;
-    });
-
-    const [toast, setToast] = useState<Toast | null>(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [pedidoToCancel, setPedidoToCancel] = useState<number | null>(null);
+    const [toast, setToast] = useState<Toast | null>(null);
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 4000);
     };
+
+    const [user] = useState<Utilizador | null>(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
 
     const handleCancelar = (pedidoId: number) => {
         if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) {
@@ -111,6 +110,18 @@ export default function PedidosCompra() {
         } finally {
             setPedidoToCancel(null);
         }
+    };
+
+    const fetchPedidos = () => {
+        setLoading(true);
+        setError(null);
+        pedidoCompraService.getAll()
+            .then((data: PedidoCompra[]) => setPedidos(data))
+            .catch((e) => {
+                console.error(e);
+                setError('Erro ao carregar pedidos de compra.');
+            })
+            .finally(() => setLoading(false));
     };
 
     useEffect(() => {
@@ -250,6 +261,17 @@ export default function PedidosCompra() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 relative">
+            <CriarPedidoCompraModal 
+                isOpen={isCreateModalOpen} 
+                onClose={(shouldRefresh) => {
+                    setIsCreateModalOpen(false);
+                    if (shouldRefresh) {
+                        fetchPedidos();
+                        showToast('Pedido criado com sucesso!', 'success');
+                    }
+                }} 
+            />
+
             {/* Toast Notification */}
             {toast && (
                 <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
@@ -303,7 +325,7 @@ export default function PedidosCompra() {
                     <p className="mt-1 text-sm text-slate-500">Visualização dos pedidos criados.</p>
                 </div>
                 <button
-                    onClick={() => navigate('/pedidos/novo')}
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                 >
                     <Plus size={18} /> Novo pedido
