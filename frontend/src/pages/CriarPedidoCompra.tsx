@@ -48,8 +48,9 @@ const CriarPedidoCompra = () => {
         }
     };
 
-    const formatPedidoCode = (id: number) => {
-        return `PC-2026-${String(id).padStart(3, '0')}`;
+    const previewPedidoCode = (id: number) => {
+        const ano = new Date().getFullYear();
+        return `PM-${ano}-${String(id).padStart(3, '0')}`;
     };
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -192,31 +193,6 @@ const CriarPedidoCompra = () => {
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Criar Pedido de Compra</h1>
                     <p className="mt-1 text-sm text-slate-500">Crie uma nova requisição interna de compra</p>
                 </div>
-
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleLimpar}
-                        disabled={!hasProdutos || isSubmitting}
-                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-sm ${(!hasProdutos || isSubmitting)
-                            ? 'bg-slate-50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
-                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                            }`}
-                    >
-                        <Trash2 size={16} /> Limpar Pedido
-                    </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={!hasProdutos || isSubmitting}
-                        style={{ opacity: (!hasProdutos || isSubmitting) ? 0.45 : 1 }}
-                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:outline-none ${
-                            (!hasProdutos || isSubmitting)
-                                ? 'bg-emerald-500 text-white cursor-not-allowed'
-                                : 'bg-emerald-500 hover:bg-emerald-600 text-white'
-                        }`}
-                    >
-                        <ShoppingCart size={16} /> Submeter Pedido
-                    </button>
-                </div>
             </div>
 
             {/* DADOS GERAIS */}
@@ -226,7 +202,7 @@ const CriarPedidoCompra = () => {
                     <div className="flex-1">
                         <p className="text-xs text-slate-500 mb-1">ID do Pedido</p>
                         <p className="text-sm font-bold text-slate-900">
-                            {formatPedidoCode(createdPedido?.id ?? nextPedidoId)}
+                            {createdPedido?.codigoFormatado ?? previewPedidoCode(nextPedidoId)}
                         </p>
                     </div>
                     <div className="flex-1">
@@ -458,7 +434,7 @@ const CriarPedidoCompra = () => {
                                                         ) : (
                                                             <button
                                                                 onClick={() => handleAdicionar(p)}
-                                                                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 lg:opacity-0 lg:group-hover:opacity-100"
+                                                                className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-lg shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
                                                             >
                                                                 Adicionar
                                                             </button>
@@ -576,9 +552,36 @@ const CriarPedidoCompra = () => {
                                     <span>Quantidade Total:</span>
                                     <span className="text-slate-700 font-bold">{quantidadeTotal}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm mt-3">
+                                <div className="flex justify-between items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm mt-3 mb-6">
                                     <span className="font-bold text-slate-700">Total Estimado:</span>
                                     <span className="text-xl font-black text-slate-900 tracking-tight">{formatCurrency(totalEstimado)}</span>
+                                </div>
+
+                                {/* Botões de Ação */}
+                                <div className="flex items-center justify-end gap-3 pt-2">
+                                    <button
+                                        onClick={handleLimpar}
+                                        disabled={!hasProdutos || isSubmitting}
+                                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-sm ${(!hasProdutos || isSubmitting)
+                                            ? 'bg-slate-50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <Trash2 size={16} /> Limpar Pedido
+                                    </button>
+                                    <button
+                                        onClick={handleSubmit}
+                                        disabled={!hasProdutos || isSubmitting}
+                                        style={{ opacity: (!hasProdutos || isSubmitting) ? 0.45 : 1 }}
+                                        className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 focus:outline-none ${
+                                            (!hasProdutos || isSubmitting)
+                                                ? 'bg-emerald-500 text-white cursor-not-allowed pointer-events-none'
+                                                : 'bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-md'
+                                        }`}
+                                    >
+                                        <Check size={18} strokeWidth={2.5} />
+                                        {isSubmitting ? 'A Submeter...' : 'Submeter Pedido'}
+                                    </button>
                                 </div>
                             </div>
                         </div>

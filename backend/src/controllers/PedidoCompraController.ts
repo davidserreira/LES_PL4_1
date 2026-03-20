@@ -1,6 +1,17 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
+export const formatPedidoCode = (id: number, tipo: string, dataCriacao: Date) => {
+    const prefix = tipo === 'AUTOMATICO' ? 'PA' : 'PM';
+    const ano = dataCriacao.getFullYear();
+    return `${prefix}-${ano}-${String(id).padStart(3, '0')}`;
+};
+
+export const mapPedidoToDTO = (pedido: any) => ({
+    ...pedido,
+    codigoFormatado: formatPedidoCode(pedido.id, pedido.tipo, pedido.criadoEm)
+});
+
 export const createPedidoCompra = async (req: Request, res: Response): Promise<any> => {
     try {
         const { criadoPorId, linhas, prioridade } = req.body;
@@ -74,7 +85,7 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
             }
         });
 
-        return res.status(201).json(pedido);
+        return res.status(201).json(mapPedidoToDTO(pedido));
 
     } catch (error) {
         console.error('Erro ao criar Pedido de Compra:', error);
@@ -91,7 +102,7 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
             },
             orderBy: { id: 'desc' },
         });
-        return res.json(pedidos);
+        return res.json(pedidos.map(mapPedidoToDTO));
     } catch (error) {
         console.error('Erro ao listar Pedidos de Compra:', error);
         return res.status(500).json({ error: 'Erro interno ao listar pedidos de compra.' });

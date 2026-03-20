@@ -18,6 +18,8 @@ interface PedidoCompra {
         role: Utilizador['role'];
     } | null;
     linhas?: any[];
+    tipo: string;
+    codigoFormatado: string;
 }
 
 const formatCurrency = (value: number) => {
@@ -32,7 +34,7 @@ const formatDate = (value: string | Date) => {
     }
 };
 
-const formatPedidoCode = (id: number) => `PC-2026-${String(id).padStart(3, '0')}`;
+// Função formatPedidoCode apagada - o backend envia codigoFormatado
 
 const getRoleLabel = (role: Utilizador['role']) => {
     switch (role) {
@@ -129,7 +131,7 @@ export default function PedidosCompra() {
                             <tbody className="divide-y divide-slate-100">
                                 {pendingPedidos.map((p) => (
                                     <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-900">{formatPedidoCode(p.id)}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-900">{p.codigoFormatado}</td>
                                         <td className="px-6 py-4 text-slate-600 font-medium">{formatDate(p.criadoEm)}</td>
                                         <td className="px-6 py-4 text-slate-600 font-medium">
                                             {p.criadoPor?.username
