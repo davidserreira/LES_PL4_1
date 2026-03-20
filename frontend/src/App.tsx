@@ -5,7 +5,6 @@ import Catalogo from './pages/Catalogo';
 import Fornecedores from './pages/Fornecedores';
 import Utilizadores from './pages/Utilizadores';
 import Login from './pages/Login';
-import CriarPedidoCompra from './pages/CriarPedidoCompra';
 import PedidosCompra from './pages/PedidosCompra';
 import { Utilizador } from './services/utilizadorService';
 
@@ -55,7 +54,6 @@ function App() {
                             {(user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
                                 <>
                                     <Route path="/catalogo" element={<Catalogo />} />
-                                    <Route path="/pedidos/novo" element={<CriarPedidoCompra />} />
                                     <Route path="/pedidos" element={<PedidosCompra />} />
                                 </>
                             )}

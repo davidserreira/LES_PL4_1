@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, ClipboardList, AlertTriangle, Clock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
+import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 
 type PrioridadePedido = 'NORMAL' | 'ALTA' | 'URGENTE';
+
+interface Toast {
+    message: string;
+    type: 'success' | 'error';
+}
 
 interface PedidoCompra {
     id: number;
@@ -50,7 +55,6 @@ const getRoleLabel = (role: Utilizador['role']) => {
 };
 
 export default function PedidosCompra() {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
@@ -63,6 +67,13 @@ export default function PedidosCompra() {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
     const [isFilterPrioridadeOpen, setIsFilterPrioridadeOpen] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [toast, setToast] = useState<Toast | null>(null);
+
+    const showToast = (message: string, type: 'success' | 'error') => {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 4000);
+    };
 
     const [user] = useState<Utilizador | null>(() => {
         const savedUser = localStorage.getItem('user');
@@ -93,6 +104,18 @@ export default function PedidosCompra() {
                 alert(err.response?.data?.error || 'Erro ao cancelar o pedido.');
             }
         }
+    };
+
+    const fetchPedidos = () => {
+        setLoading(true);
+        setError(null);
+        pedidoCompraService.getAll()
+            .then((data: PedidoCompra[]) => setPedidos(data))
+            .catch((e) => {
+                console.error(e);
+                setError('Erro ao carregar pedidos de compra.');
+            })
+            .finally(() => setLoading(false));
     };
 
     useEffect(() => {
@@ -231,14 +254,41 @@ export default function PedidosCompra() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
+        <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 relative">
+            <CriarPedidoCompraModal 
+                isOpen={isCreateModalOpen} 
+                onClose={(shouldRefresh) => {
+                    setIsCreateModalOpen(false);
+                    if (shouldRefresh) {
+                        fetchPedidos();
+                        showToast('Pedido criado com sucesso!', 'success');
+                    }
+                }} 
+            />
+
+            {/* Toast Notification */}
+            {toast && (
+                <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
+                    <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
+                            ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
+                            : 'bg-red-50 border-red-100 text-red-800'
+                        }`}>
+                        {toast.type === 'success' ? <CheckCircle2 size={20} className="text-emerald-500" /> : <AlertCircle size={20} className="text-red-500" />}
+                        <span className="text-sm font-bold">{toast.message}</span>
+                        <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70 transition-opacity">
+                            <X size={16} />
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos de Compra</h1>
                     <p className="mt-1 text-sm text-slate-500">Visualização dos pedidos criados.</p>
                 </div>
                 <button
-                    onClick={() => navigate('/pedidos/novo')}
+                    onClick={() => setIsCreateModalOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
                 >
                     <Plus size={18} /> Novo pedido
