@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, MoreVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
@@ -76,6 +76,23 @@ export default function PedidosCompra() {
         };
     }, []);
 
+    // Dropdown state for operations
+    const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setOpenDropdownId(null);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleActionMouseDown = (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenDropdownId(openDropdownId === id ? null : id);
+    };
+
     const pendingPedidos = useMemo(() => {
         // requisito: todos os pedidos criados são com estado pendente,
         // mas deixamos filtro para robustez visual.
@@ -126,6 +143,7 @@ export default function PedidosCompra() {
                                     <th className="px-6 py-4">Prioridade</th>
                                     <th className="px-6 py-4 text-right">Total</th>
                                     <th className="px-6 py-4">Estado</th>
+                                    <th className="px-6 py-4 text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -148,6 +166,29 @@ export default function PedidosCompra() {
                                             <span className="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-amber-50 text-amber-700 border border-amber-100">
                                                 PENDENTE
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center relative">
+                                            <button
+                                                onMouseDown={(e) => handleActionMouseDown(p.id, e)}
+                                                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
+                                            >
+                                                <MoreVertical size={18} />
+                                            </button>
+
+                                            {/* Dropdown Menu */}
+                                            {openDropdownId === p.id && (
+                                                <div
+                                                    onMouseDown={(e) => e.stopPropagation()}
+                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
+                                                >
+                                                    <button
+                                                        disabled
+                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
+                                                    >
+                                                        Cancelar Pedido
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
