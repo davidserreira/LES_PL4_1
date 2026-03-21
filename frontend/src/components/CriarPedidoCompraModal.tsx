@@ -286,7 +286,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
                                                 <th className="px-5 py-3 font-semibold">Categoria</th>
                                                 <th className="px-5 py-3 font-semibold">Stock Atual</th>
                                                 <th className="px-5 py-3 font-semibold">Stock Mínimo</th>
-                                                <th className="px-5 py-3 font-semibold">Ação</th>
+                                                <th className="px-5 py-3 font-semibold"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100">
