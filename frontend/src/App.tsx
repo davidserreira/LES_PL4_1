@@ -57,6 +57,12 @@ function App() {
                                     <Route path="/pedidos" element={<PedidosCompra />} />
                                 </>
                             )}
+
+                            {user.role === 'RESPONSAVEL_FINANCEIRO' && (
+                                <>
+                                    <Route path="/pedidos" element={<PedidosCompra />} />
+                                </>
+                            )}
                             
                             {user.role === 'ADMINISTRADOR' && (
                                 <>
