@@ -97,7 +97,11 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
     try {
         const pedidos = await prisma.pedidoCompra.findMany({
             include: {
-                linhas: true,
+                linhas: {
+                    include: {
+                        produto: true
+                    }
+                },
                 criadoPor: true,
             },
             orderBy: { id: 'desc' },
@@ -106,5 +110,41 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
     } catch (error) {
         console.error('Erro ao listar Pedidos de Compra:', error);
         return res.status(500).json({ error: 'Erro interno ao listar pedidos de compra.' });
+    }
+};
+
+export const confirmPedidoCompra = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+
+        const pedidoOriginal = await prisma.pedidoCompra.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!pedidoOriginal) {
+            return res.status(404).json({ error: 'Pedido de compra não encontrado.' });
+        }
+
+        if (pedidoOriginal.estado !== 'PENDENTE') {
+            return res.status(400).json({ error: `O pedido não pode ser confirmado pois encontra-se no estado ${pedidoOriginal.estado}.` });
+        }
+
+        const pedidoConfirmado = await prisma.pedidoCompra.update({
+            where: { id: parseInt(id) },
+            data: { estado: 'CONFIRMADO' },
+            include: {
+                linhas: {
+                    include: {
+                        produto: true
+                    }
+                },
+                criadoPor: true,
+            }
+        });
+
+        return res.json(mapPedidoToDTO(pedidoConfirmado));
+    } catch (error) {
+        console.error('Erro ao confirmar Pedido de Compra:', error);
+        return res.status(500).json({ error: 'Erro interno ao confirmar pedido de compra.' });
     }
 };

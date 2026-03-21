@@ -8,5 +8,9 @@ export const pedidoCompraService = {
     getAll: async () => {
         const response = await api.get('/pedidos');
         return response.data;
+    },
+    confirm: async (id: number) => {
+        const response = await api.put(`/pedidos/${id}/confirmar`);
+        return response.data;
     }
 };
