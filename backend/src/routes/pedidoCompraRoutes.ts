@@ -1,10 +1,22 @@
 import { Router } from 'express';
-import { createPedidoCompra, getAllPedidosCompra, cancelarPedido, aprovarPedido, recusarPedido } from '../controllers/PedidoCompraController';
+import { 
+    createPedidoCompra, 
+    getAllPedidosCompra, 
+    cancelarPedido, 
+    aprovarPedido, 
+    recusarPedido,
+    getRascunhos,
+    updateRascunho,
+    deleteRascunho
+} from '../controllers/PedidoCompraController';
 
 const router = Router();
 
 router.post('/', createPedidoCompra);
 router.get('/', getAllPedidosCompra);
+router.get('/rascunhos', getRascunhos);
+router.put('/:id', updateRascunho);
+router.delete('/:id/rascunho', deleteRascunho);
 router.patch('/:id/cancelar', cancelarPedido);
 router.patch('/:id/aprovar', aprovarPedido);
 router.patch('/:id/recusar', recusarPedido);

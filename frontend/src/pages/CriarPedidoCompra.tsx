@@ -75,6 +75,9 @@ const CriarPedidoCompra = () => {
 
     const [nextPedidoId, setNextPedidoId] = useState<number>(1);
     const [createdPedido, setCreatedPedido] = useState<any | null>(null);
+    const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+    const [observacoes, setObservacoes] = useState('');
+    const hasSubmittedRef = useRef(false);
 
     const PRIORIDADES = [
         { value: 'NORMAL', label: 'Normal', dot: 'bg-slate-400' },
@@ -108,6 +111,39 @@ const CriarPedidoCompra = () => {
             .catch(console.error);
     }, []);
 
+    // Effect for auto-saving draft on unmount or beforeunload
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            if (linhas.length > 0 && !hasSubmittedRef.current && user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
+                // To force a quick save on close, use sendBeacon or synchronous fetch if possible.
+                // We will try an async fire-and-forget
+                pedidoCompraService.create({
+                    criadoPorId: user.id,
+                    prioridade,
+                    estado: 'RASCUNHO',
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                }).catch(() => {});
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            // On React unmount navigation:
+            if (linhas.length > 0 && !hasSubmittedRef.current && user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
+                pedidoCompraService.create({
+                    criadoPorId: user.id,
+                    prioridade,
+                    estado: 'RASCUNHO',
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                }).catch(() => {});
+            }
+        };
+    }, [linhas, prioridade, user]);
+
     const hasProdutos = linhas.length > 0;
 
     // Calcula totais
@@ -135,17 +171,31 @@ const CriarPedidoCompra = () => {
     const handleSubmit = async () => {
         if (!hasProdutos) return;
         setIsSubmitting(true);
+        hasSubmittedRef.current = true;
         try {
-            const pedido = await pedidoCompraService.create({
-                criadoPorId: user?.id ?? null,
-                prioridade: prioridade,
-                linhas: linhas.map(l => ({
-                    produtoId: l.produto.id,
-                    quantidade: l.quantidade
-                }))
-            });
-            setCreatedPedido(pedido);
-            if (typeof pedido?.id === 'number') setNextPedidoId(pedido.id + 1);
+            if (currentDraftId) {
+                await pedidoCompraService.updateRascunho(currentDraftId, {
+                    userId: user?.id ?? 0,
+                    role: user?.role ?? '',
+                    prioridade,
+                    estado: 'PENDENTE',
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+            } else {
+                const pedido = await pedidoCompraService.create({
+                    criadoPorId: user?.id ?? null,
+                    prioridade: prioridade,
+                    estado: 'PENDENTE',
+                    observacoes,
+                    linhas: linhas.map(l => ({
+                        produtoId: l.produto.id,
+                        quantidade: l.quantidade
+                    }))
+                });
+                setCreatedPedido(pedido);
+                if (typeof pedido?.id === 'number') setNextPedidoId(pedido.id + 1);
+            }
             setLinhas([]);
             setPrioridade('NORMAL');
             setIsSelectionOpen(false);
@@ -153,6 +203,7 @@ const CriarPedidoCompra = () => {
         } catch (e) {
             console.error(e);
             alert('Erro ao submeter pedido.');
+            hasSubmittedRef.current = false;
         } finally {
             setIsSubmitting(false);
         }
@@ -162,6 +213,7 @@ const CriarPedidoCompra = () => {
         if (window.confirm('Tem a certeza que deseja remover todos os produtos deste pedido?')) {
             setLinhas([]);
             setCreatedPedido(null);
+            setCurrentDraftId(null);
             setIsSelectionOpen(false);
         }
     };
@@ -541,6 +593,17 @@ const CriarPedidoCompra = () => {
                             </table>
                         </div>
 
+                        {/* Observações */}
+                        <div className="p-6 bg-white border-t border-slate-100">
+                            <h3 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mb-3 text-left">Observações</h3>
+                            <textarea
+                                value={observacoes}
+                                onChange={(e) => setObservacoes(e.target.value)}
+                                placeholder="Adicione observações ou instruções relevantes para este pedido (opcional)..."
+                                className="w-full h-20 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none transition-all"
+                            />
+                        </div>
+
                         {/* SUMÁRIO */}
                         <div className="p-6 bg-slate-50/50 flex flex-col items-end border-t border-slate-200">
                             <div className="w-full sm:w-auto min-w-[320px] pt-4 space-y-3">
@@ -562,13 +625,14 @@ const CriarPedidoCompra = () => {
                                     <button
                                         onClick={handleLimpar}
                                         disabled={!hasProdutos || isSubmitting}
-                                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors focus:ring-2 focus:ring-emerald-500 focus:outline-none shadow-sm ${(!hasProdutos || isSubmitting)
-                                            ? 'bg-slate-50 border border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
-                                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                                        className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm ${(!hasProdutos || isSubmitting)
+                                            ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
+                                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
                                             }`}
                                     >
-                                        <Trash2 size={16} /> Limpar Pedido
+                                        <Trash2 size={16} /> Limpar
                                     </button>
+
                                     <button
                                         onClick={handleSubmit}
                                         disabled={!hasProdutos || isSubmitting}
@@ -580,7 +644,7 @@ const CriarPedidoCompra = () => {
                                         }`}
                                     >
                                         <Check size={18} strokeWidth={2.5} />
-                                        {isSubmitting ? 'A Submeter...' : 'Submeter Pedido'}
+                                        {isSubmitting ? 'A Submeter...' : currentDraftId ? 'Finalizar Pedido' : 'Submeter Pedido'}
                                     </button>
                                 </div>
                             </div>

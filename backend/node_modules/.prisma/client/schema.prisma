@@ -81,6 +81,7 @@ model PedidoCompra {
   prioridade         PrioridadePedido @default(NORMAL)
   tipo               TipoPedido       @default(MANUAL)
   valorTotalEstimado Float            @default(0)
+  observacoes        String?          @db.Text
 
   criadoPorId Int?
   criadoPor   Utilizador? @relation(fields: [criadoPorId], references: [id])

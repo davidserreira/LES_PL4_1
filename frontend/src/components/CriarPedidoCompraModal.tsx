@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, Trash2, CheckCircle2, ArrowRight, ArrowLeft, Package, ChevronDown, Check, Filter } from 'lucide-react';
+import { Search, X, Trash2, CheckCircle2, ArrowRight, ArrowLeft, Package, ChevronDown, Check, Filter, AlertTriangle } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
@@ -21,8 +21,9 @@ interface LinhaPedido {
 
 interface CriarPedidoModalProps {
     isOpen: boolean;
-    onClose: (shouldRefresh?: boolean) => void;
+    onClose: (shouldRefresh?: boolean, msg?: string) => void;
     preSelectedProdutos?: Produto[] | null;
+    draftId?: number | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -37,7 +38,7 @@ const PRIORIDADES = [
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
-export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedProdutos }: CriarPedidoModalProps) {
+export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedProdutos, draftId }: CriarPedidoModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
@@ -45,12 +46,16 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
     const [prioridade, setPrioridade] = useState('NORMAL');
     const [isPrioridadeOpen, setIsPrioridadeOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+    const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+    const [observacoes, setObservacoes] = useState('');
+    const [originalDraft, setOriginalDraft] = useState<any>(null);
+    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
+
     // Filtros catalog-style
     const [filterCategory, setFilterCategory] = useState<string>('');
     const [filterStatus, setFilterStatus] = useState<'todos' | 'estavel' | 'critico'>('todos');
     const [isFilterCategoryOpen, setIsFilterCategoryOpen] = useState(false);
-    
+
     const [nextPedidoId, setNextPedidoId] = useState<number>(1);
     const prioridadeRef = useRef<HTMLDivElement>(null);
 
@@ -60,13 +65,17 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
 
     useEffect(() => {
         if (!isOpen) return;
-        
+
         setStep(1);
         setSearchQuery('');
         setPrioridade('NORMAL');
         setFilterCategory('');
         setFilterStatus('todos');
-        
+        setObservacoes(''); // Reset observations when opening
+
+        setCurrentDraftId(draftId || null);
+        setOriginalDraft(null);
+
         let initialLinhas: LinhaPedido[] = [];
         if (preSelectedProdutos && preSelectedProdutos.length > 0) {
             initialLinhas = preSelectedProdutos.map(produto => {
@@ -78,13 +87,33 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
             });
         }
         setLinhas(initialLinhas);
-        
-        produtoService.getAll().then(data => setProdutos(data)).catch(console.error);
+
+        produtoService.getAll().then(data => {
+            setProdutos(data);
+            if (draftId) {
+                pedidoCompraService.getRascunhos().then((drafts: any[]) => {
+                    const draft = drafts.find((d: any) => d.id === draftId);
+                    if (draft) {
+                        setOriginalDraft(draft);
+                        setPrioridade(draft.prioridade);
+                        setObservacoes(draft.observacoes || '');
+                        setStep(1); // open at step 1 for editing
+                        // Map lines to products
+                        const draftLinhas = draft.linhas.map((l: any) => {
+                            const p = data.find((prod: any) => prod.id === l.produtoId);
+                            return { produto: p || l.produto, quantidade: l.quantidade };
+                        });
+                        setLinhas(draftLinhas);
+                    }
+                }).catch(console.error);
+            }
+        }).catch(console.error);
+
         pedidoCompraService.getAll().then((pedidos: any[]) => {
             const maxId = pedidos.reduce((acc, p) => Math.max(acc, p.id ?? 0), 0);
             setNextPedidoId(maxId + 1);
         }).catch(console.error);
-    }, [isOpen]);
+    }, [isOpen, draftId, preSelectedProdutos]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -99,18 +128,18 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
     const filteredProdutos = useMemo(() => {
         return produtos.filter(p => {
             const query = searchQuery.toLowerCase();
-            const matchesSearch = 
-                p.nome.toLowerCase().includes(query) || 
+            const matchesSearch =
+                p.nome.toLowerCase().includes(query) ||
                 (p.categoria?.toLowerCase() || '').includes(query);
-            
+
             const matchesCategory = filterCategory === '' || p.categoria === filterCategory;
-            
+
             const isCritico = p.stock <= p.stockMinimo;
-            const matchesStatus = 
+            const matchesStatus =
                 filterStatus === 'todos' ? true :
-                filterStatus === 'critico' ? isCritico :
-                !isCritico;
-                
+                    filterStatus === 'critico' ? isCritico :
+                        !isCritico;
+
             return matchesSearch && matchesCategory && matchesStatus;
         });
     }, [produtos, searchQuery, filterCategory, filterStatus]);
@@ -118,12 +147,12 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
     const handleAdicionar = (produto: Produto) => {
         const isAdded = linhas.find(l => l.produto.id === produto.id);
         if (isAdded) return;
-        
+
         let qtdInicial = 1;
         if (produto.stock < produto.stockMinimo) {
             qtdInicial = (produto.stockMinimo + 1) - produto.stock;
         }
-        
+
         setLinhas([...linhas, { produto, quantidade: qtdInicial }]);
     };
 
@@ -140,15 +169,30 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
         if (linhas.length === 0) return;
         setIsSubmitting(true);
         try {
-            await pedidoCompraService.create({
-                criadoPorId: user?.id ?? null,
-                prioridade: prioridade,
-                linhas: linhas.map(l => ({
-                    produtoId: l.produto.id,
-                    quantidade: l.quantidade
-                }))
-            });
-            onClose(true); // close and refresh
+            if (currentDraftId) {
+                await pedidoCompraService.updateRascunho(currentDraftId, {
+                    userId: user?.id ?? 0,
+                    role: user?.role ?? '',
+                    prioridade,
+                    estado: 'PENDENTE',
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+            } else {
+                await pedidoCompraService.create({
+                    criadoPorId: user?.id ?? null,
+                    prioridade: prioridade,
+                    estado: 'PENDENTE',
+                    observacoes,
+                    linhas: linhas.map(l => ({
+                        produtoId: l.produto.id,
+                        quantidade: l.quantidade
+                    }))
+                });
+            }
+            setCurrentDraftId(null);
+            setLinhas([]);
+            onClose(true, 'Pedido processado com sucesso!');
         } catch (e) {
             console.error(e);
             alert('Erro ao submeter pedido.');
@@ -157,27 +201,98 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
         }
     };
 
+    const handleSaveDraft = async () => {
+        if (linhas.length === 0) return; // don't save empty draft
+        if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) return;
+        setIsSubmitting(true);
+        try {
+            if (currentDraftId) {
+                await pedidoCompraService.updateRascunho(currentDraftId, {
+                    userId: user?.id ?? 0,
+                    role: user?.role ?? '',
+                    prioridade,
+                    estado: 'RASCUNHO',
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+                onClose(true, 'Rascunho atualizado');
+            } else {
+                await pedidoCompraService.create({
+                    criadoPorId: user?.id ?? null,
+                    prioridade: prioridade,
+                    estado: 'RASCUNHO',
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+                onClose(true, 'Pedido guardado como rascunho');
+            }
+            setCurrentDraftId(null);
+            setLinhas([]);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteDraft = async () => {
+        if (!currentDraftId) return;
+        setIsConfirmDeleteOpen(true);
+    };
+
+    const confirmDeleteDraft = async () => {
+        if (!currentDraftId) return;
+        setIsSubmitting(true);
+        try {
+            await pedidoCompraService.deleteRascunho(currentDraftId, { userId: user?.id ?? 0, role: user?.role ?? '' });
+            setCurrentDraftId(null);
+            setLinhas([]);
+            setIsConfirmDeleteOpen(false);
+            onClose(true, 'Rascunho eliminado com sucesso');
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCloseX = () => {
+        // Auto-save logic on X
+        if (linhas.length > 0 && user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
+            handleSaveDraft();
+        } else {
+            onClose(false);
+        }
+    };
+
+    const handleCancelClick = () => {
+        // Explicit cancel does NOT save as draft, it just closes (and optionally deletes if it was a draft? let's keep it as is or delete)
+        onClose(false);
+    };
+
     if (!isOpen) return null;
 
     const totalProdutos = linhas.reduce((acc, l) => acc + l.quantidade, 0);
     const totalEstimado = linhas.reduce((acc, l) => acc + (l.quantidade * l.produto.preco), 0);
     const ano = new Date().getFullYear();
-    const mockIdStr = `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`;
+    const mockIdStr = originalDraft ? originalDraft.codigoFormatado : `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`;
 
     const modalContent = (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-                
+
                 {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50/10">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Criar Pedido de Compra</h2>
+                        <h2 className="text-xl font-bold text-slate-900">
+                            {currentDraftId ? 'Editar Rascunho' : 'Criar Pedido de Compra'}
+                        </h2>
                         <p className="text-sm text-slate-500">
                             {step === 1 ? 'Passo 1: Selecione os produtos para o pedido' : 'Passo 2: Reveja e submeta o pedido'}
                         </p>
                     </div>
-                    <button 
-                        onClick={() => onClose(false)}
+                    <button
+                        onClick={handleCloseX}
                         className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                         <X size={20} />
@@ -212,7 +327,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                             <Filter size={14} />
                                             Filtros:
                                         </div>
-                                        
+
                                         {/* Status Filter */}
                                         <div className="flex p-0.5 bg-slate-100/80 rounded-lg border border-slate-200/60">
                                             <button
@@ -287,7 +402,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                             className="w-full pl-9 pr-24 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-xs placeholder:text-slate-400"
                                         />
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-medium">
-                                             A mostrar {filteredProdutos.length} de {produtos.length}
+                                            A mostrar {filteredProdutos.length} de {produtos.length}
                                         </div>
                                     </div>
                                 </div>
@@ -325,7 +440,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                                                         Adicionado
                                                                     </button>
                                                                 ) : (
-                                                                    <button 
+                                                                    <button
                                                                         onClick={() => handleAdicionar(p)}
                                                                         className="w-full px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm"
                                                                     >
@@ -373,8 +488,8 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-xs font-medium text-slate-500">Qtd:</span>
-                                                        <input 
-                                                            type="number" 
+                                                        <input
+                                                            type="number"
                                                             min="1"
                                                             value={linha.quantidade}
                                                             onChange={(e) => handleQuantidadeChange(linha.produto.id, parseInt(e.target.value) || 1)}
@@ -382,7 +497,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                                         />
                                                         <span className="text-xs text-slate-500 w-6">un</span>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleRemover(linha.produto.id)}
                                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                     >
@@ -496,15 +611,28 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                     <span className="text-xl font-bold text-emerald-700">{formatCurrency(totalEstimado)}</span>
                                 </div>
                             </div>
+
+                            {/* Observações */}
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-800 p-5 border-b border-slate-100">Observações</h3>
+                                <div className="p-5">
+                                    <textarea
+                                        value={observacoes}
+                                        onChange={(e) => setObservacoes(e.target.value)}
+                                        placeholder="Adicione observações relevantes para o pedido (opcional)..."
+                                        className="w-full text-sm placeholder-slate-400 text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none h-24 transition-colors"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {/* Footer Actions */}
                 <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
-                    <div>
-                        {step === 1 && linhas.length > 0 && (
-                            <button 
+                    <div className="flex gap-2">
+                        {step === 1 && !currentDraftId && linhas.length > 0 && (
+                            <button
                                 onClick={() => setLinhas([])}
                                 className="text-sm font-semibold text-slate-400 hover:text-red-500 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5"
                             >
@@ -512,7 +640,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                             </button>
                         )}
                         {step === 2 && (
-                            <button 
+                            <button
                                 onClick={() => setStep(1)}
                                 className="text-sm font-semibold text-slate-500 hover:text-slate-800 px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
                             >
@@ -521,14 +649,26 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <button 
-                            onClick={() => onClose(false)}
-                            className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
-                        >
-                            Cancelar
-                        </button>
+                        {!currentDraftId && (
+                            <button
+                                onClick={handleCancelClick}
+                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                        )}
+                        {currentDraftId && (
+                            <button
+                                onClick={handleDeleteDraft}
+                                disabled={isSubmitting}
+                                className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                            >
+                                Eliminar Rascunho
+                            </button>
+                        )}
+
                         {step === 1 ? (
-                            <button 
+                            <button
                                 onClick={() => setStep(2)}
                                 disabled={linhas.length === 0}
                                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -536,7 +676,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                 Rever Lista <ArrowRight size={16} />
                             </button>
                         ) : (
-                            <button 
+                            <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || linhas.length === 0}
                                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -544,13 +684,46 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedPro
                                 {isSubmitting ? (
                                     <>A Submeter...</>
                                 ) : (
-                                    <>Submeter Pedido <CheckCircle2 size={18} /></>
+                                    <>Finalizar Pedido <CheckCircle2 size={18} /></>
                                 )}
                             </button>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Confirm Delete Draft Modal */}
+            {isConfirmDeleteOpen && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                                <AlertTriangle size={24} className="text-red-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Eliminar Rascunho</h3>
+                            <p className="text-sm text-slate-500">
+                                Tem a certeza que deseja eliminar este rascunho? Esta ação não pode ser desfeita.
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setIsConfirmDeleteOpen(false)}
+                                disabled={isSubmitting}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={confirmDeleteDraft}
+                                disabled={isSubmitting}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-red-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'A eliminar...' : 'Sim, Eliminar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 
