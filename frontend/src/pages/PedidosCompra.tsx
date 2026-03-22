@@ -580,8 +580,8 @@ export default function PedidosCompra() {
                     <p className="text-sm text-slate-500 mb-6">Tente ajustar os seus filtros de pesquisa ou limpe a pesquisa.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible relative z-0">
+                    <div className="overflow-visible">
                         <table className="w-full text-left">
                             <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-widest font-bold border-b border-slate-200">
                                 <tr>
