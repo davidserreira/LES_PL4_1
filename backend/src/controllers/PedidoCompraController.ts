@@ -239,3 +239,40 @@ export const recusarPedido = async (req: Request, res: Response): Promise<any> =
         return res.status(500).json({ error: 'Erro interno ao recusar pedido de compra.' });
     }
 };
+
+export const atualizarEstadoPedido = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const id = Number(req.params.id);
+        const { estado, userId, role } = req.body;
+
+        if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
+        if (!estado) return res.status(400).json({ error: 'Estado não fornecido.' });
+
+        if (!role || role !== 'ADMINISTRADOR') {
+            return res.status(403).json({ error: 'Apenas Administradores podem forçar o estado do pedido.' });
+        }
+
+        const pedidoOriginal = await prisma.pedidoCompra.findUnique({ where: { id } });
+        if (!pedidoOriginal) {
+            return res.status(404).json({ error: 'Pedido de compra não encontrado.' });
+        }
+
+        const pedidoAtualizado = await prisma.pedidoCompra.update({
+            where: { id },
+            data: { estado },
+            include: {
+                linhas: {
+                    include: {
+                        produto: true,
+                    }
+                },
+                criadoPor: true,
+            }
+        });
+
+        return res.json(mapPedidoToDTO(pedidoAtualizado));
+    } catch (error) {
+        console.error('Erro ao atualizar estado do Pedido de Compra:', error);
+        return res.status(500).json({ error: 'Erro interno ao atualizar estado.' });
+    }
+};
