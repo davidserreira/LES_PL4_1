@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X, Eye, XCircle } from 'lucide-react';
+import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
@@ -157,28 +157,6 @@ export default function PedidosCompra() {
         }
     };
 
-    const handleAtualizarEstado = async (pedidoId: number, novoEstado: string) => {
-        if (!user || user.role !== 'ADMINISTRADOR') return;
-        
-        try {
-            await pedidoCompraService.atualizarEstado(pedidoId, {
-                estado: novoEstado,
-                userId: user.id,
-                role: user.role
-            });
-            
-            setPedidos(pedidos.map(p => 
-                p.id === pedidoId ? { ...p, estado: novoEstado } : p
-            ));
-            showToast('Estado atualizado com sucesso!', 'success');
-        } catch (err: any) {
-            console.error(err);
-            showToast(err.response?.data?.error || 'Não foi possível atualizar o estado do pedido.', 'error');
-        } finally {
-            setOpenStatusDropdownId(null);
-        }
-    };
-
     const fetchPedidos = () => {
         setLoading(true);
         setError(null);
@@ -214,13 +192,11 @@ export default function PedidosCompra() {
 
     // Dropdown state for operations
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-    const [openStatusDropdownId, setOpenStatusDropdownId] = useState<number | null>(null);
 
     // Close dropdown on click outside
     useEffect(() => {
         const handleClickOutside = () => {
             setOpenDropdownId(null);
-            setOpenStatusDropdownId(null);
             setIsFilterEstadoOpen(false);
             setIsFilterPrioridadeOpen(false);
         };
@@ -654,47 +630,10 @@ export default function PedidosCompra() {
                                         </td>
                                         <td className="px-6 py-4 text-right font-bold text-slate-900">{formatCurrency(p.valorTotalEstimado || 0)}</td>
                                         <td className="px-6 py-4">
-                                            {user && user.role === 'ADMINISTRADOR' ? (
-                                                <div className="relative inline-block w-full min-w-[120px]" onClick={(e) => e.stopPropagation()}>
-                                                    <button
-                                                        onMouseDown={(e) => {
-                                                            e.stopPropagation();
-                                                            setOpenStatusDropdownId(openStatusDropdownId === p.id ? null : p.id);
-                                                        }}
-                                                        className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border shadow-sm hover:shadow active:scale-95 ${getStatusStyle(p.estado || '')}`}
-                                                    >
-                                                        <span className="flex items-center gap-1.5">
-                                                            <span className="w-1.5 h-1.5 rounded-full currentColor bg-current opacity-70"></span>
-                                                            {p.estado || 'PENDENTE'}
-                                                        </span>
-                                                        <ChevronDown size={14} className={`transition-transform duration-200 opacity-60 ${openStatusDropdownId === p.id ? 'rotate-180' : ''}`} />
-                                                    </button>
-                                                    
-                                                    {openStatusDropdownId === p.id && (
-                                                        <div 
-                                                            className="absolute left-0 top-[110%] w-[160px] bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
-                                                        >
-                                                            {['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map(st => (
-                                                                <button
-                                                                    key={st}
-                                                                    onMouseDown={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleAtualizarEstado(p.id, st);
-                                                                    }}
-                                                                    className={`w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors ${p.estado === st ? 'bg-slate-100 text-slate-800' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
-                                                                >
-                                                                    {st}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusStyle(p.estado || '')}`}>
-                                                    <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
-                                                    {p.estado || 'PENDENTE'}
-                                                </span>
-                                            )}
+                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
+                                                <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
+                                                {p.estado || 'PENDENTE'}
+                                            </span>
                                         </td>
                                         <td className="px-6 py-4 relative">
                                             <div className="flex items-center justify-end gap-2 pr-2">
@@ -729,7 +668,7 @@ export default function PedidosCompra() {
                                             {openDropdownId === p.id && (
                                                 <div
                                                     onMouseDown={(e) => e.stopPropagation()}
-                                                    className="absolute right-8 top-[75%] w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-200"
+                                                    className="absolute right-8 top-[75%] w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-100"
                                                 >
                                                     <button
                                                         onClick={() => {
@@ -737,34 +676,28 @@ export default function PedidosCompra() {
                                                             setIsDetailsModalOpen(true);
                                                             setOpenDropdownId(null);
                                                         }}
-                                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                                                     >
-                                                        <Eye size={16} />
                                                         Ver Detalhes
                                                     </button>
-                                                    
                                                     {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
-                                                        <>
-                                                            <div className="h-px bg-slate-100 mx-2 my-1" />
-                                                            {p.estado !== 'CANCELADO' ? (
-                                                                <button
-                                                                    onClick={() => handleCancelar(p.id)}
-                                                                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                                                >
-                                                                    <XCircle size={16} />
-                                                                    Cancelar Pedido
-                                                                </button>
-                                                            ) : (
-                                                                <button
-                                                                    disabled
-                                                                    className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-400 cursor-not-allowed transition-colors"
-                                                                >
-                                                                    <XCircle size={16} />
-                                                                    Cancelar Pedido
-                                                                </button>
-                                                            )}
-                                                        </>
+                                                        p.estado !== 'CANCELADO' ? (
+                                                            <button
+                                                                onClick={() => handleCancelar(p.id)}
+                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                disabled
+                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                        )
                                                     )}
+
                                                 </div>
                                             )}
                                         </td>
