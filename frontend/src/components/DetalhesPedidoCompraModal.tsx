@@ -1,4 +1,5 @@
 import { X, Calendar, User, Tag, Hash, Package } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
 
 interface Produto {
@@ -38,6 +39,9 @@ interface DetalhesPedidoModalProps {
     isOpen: boolean;
     onClose: () => void;
     pedido: PedidoCompra | null;
+    userRole?: string;
+    onAprovar?: (pedidoId: number) => void;
+    onRecusar?: (pedidoId: number) => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -88,13 +92,13 @@ const getStatusStyle = (status: string) => {
     }
 };
 
-export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido }: DetalhesPedidoModalProps) {
+export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, userRole, onAprovar, onRecusar }: DetalhesPedidoModalProps) {
     if (!isOpen || !pedido) return null;
 
     const totalProdutos = pedido.linhas?.reduce((acc, l) => acc + l.quantidade, 0) || 0;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+    const modalContent = (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
@@ -215,7 +219,25 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido }: D
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-end">
+                <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                    <div className="flex gap-3">
+                        {pedido.estado === 'PENDENTE' && userRole && (userRole === 'RESPONSAVEL_FINANCEIRO' || userRole === 'ADMINISTRADOR') && (
+                            <>
+                                <button
+                                    onClick={() => onAprovar && onAprovar(pedido.id)}
+                                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    Aprovar
+                                </button>
+                                <button
+                                    onClick={() => onRecusar && onRecusar(pedido.id)}
+                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2"
+                                >
+                                    Recusar
+                                </button>
+                            </>
+                        )}
+                    </div>
                     <button 
                         onClick={onClose}
                         className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors shadow-sm"
@@ -226,4 +248,6 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido }: D
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }

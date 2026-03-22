@@ -116,7 +116,7 @@ export default function PedidosCompra() {
     };
 
     const handleAprovar = async (pedidoId: number) => {
-        if (!user || user.role !== 'RESPONSAVEL_FINANCEIRO') return;
+        if (!user || (user.role !== 'RESPONSAVEL_FINANCEIRO' && user.role !== 'ADMINISTRADOR')) return;
         
         try {
             await pedidoCompraService.aprovarPedido(pedidoId, {
@@ -137,7 +137,7 @@ export default function PedidosCompra() {
     };
 
     const handleRecusar = async (pedidoId: number) => {
-        if (!user || user.role !== 'RESPONSAVEL_FINANCEIRO') return;
+        if (!user || (user.role !== 'RESPONSAVEL_FINANCEIRO' && user.role !== 'ADMINISTRADOR')) return;
         
         try {
             await pedidoCompraService.recusarPedido(pedidoId, {
@@ -320,6 +320,15 @@ export default function PedidosCompra() {
             <DetalhesPedidoCompraModal
                 isOpen={isDetailsModalOpen}
                 pedido={selectedPedido}
+                userRole={user?.role}
+                onAprovar={(id) => {
+                    handleAprovar(id);
+                    setIsDetailsModalOpen(false);
+                }}
+                onRecusar={(id) => {
+                    handleRecusar(id);
+                    setIsDetailsModalOpen(false);
+                }}
                 onClose={() => {
                     setIsDetailsModalOpen(false);
                     setSelectedPedido(null);
@@ -626,19 +635,40 @@ export default function PedidosCompra() {
                                                 {p.estado || 'PENDENTE'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-center relative">
-                                            <button
-                                                onMouseDown={(e) => handleActionMouseDown(p.id, e)}
-                                                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
+                                        <td className="px-6 py-4 relative">
+                                            <div className="flex items-center justify-end gap-2 pr-2">
+                                                {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'PENDENTE' && (
+                                                    <div className="flex items-center gap-1.5 mr-2">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleAprovar(p.id); }}
+                                                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-lg transition-all"
+                                                            title="Aprovar Pedido"
+                                                        >
+                                                            <CheckCircle2 size={16} strokeWidth={2.5}/>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleRecusar(p.id); }}
+                                                            className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 hover:border-red-200 rounded-lg transition-all"
+                                                            title="Recusar Pedido"
+                                                        >
+                                                            <X size={16} strokeWidth={2.5}/>
+                                                        </button>
+                                                    </div>
+                                                )}
+
+                                                <button
+                                                    onMouseDown={(e) => handleActionMouseDown(p.id, e)}
+                                                    className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
+                                                >
+                                                    <MoreVertical size={18} />
+                                                </button>
+                                            </div>
 
                                             {/* Dropdown Menu */}
                                             {openDropdownId === p.id && (
                                                 <div
                                                     onMouseDown={(e) => e.stopPropagation()}
-                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
+                                                    className="absolute right-8 top-[75%] w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-100"
                                                 >
                                                     <button
                                                         onClick={() => {
@@ -650,22 +680,6 @@ export default function PedidosCompra() {
                                                     >
                                                         Ver Detalhes
                                                     </button>
-                                                    {user && user.role === 'RESPONSAVEL_FINANCEIRO' && p.estado === 'PENDENTE' && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleAprovar(p.id)}
-                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
-                                                            >
-                                                                Aprovar
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleRecusar(p.id)}
-                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                                                            >
-                                                                Recusar
-                                                            </button>
-                                                        </>
-                                                    )}
                                                     {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
                                                         p.estado !== 'CANCELADO' ? (
                                                             <button
@@ -683,12 +697,7 @@ export default function PedidosCompra() {
                                                             </button>
                                                         )
                                                     )}
-                                                    {!user || (!['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'].includes(user.role)) ? (
-                                                         <div className="px-4 py-2.5 text-sm text-slate-400 italic">Sem ações</div>
-                                                    ) : null}
-                                                    {user && user.role === 'RESPONSAVEL_FINANCEIRO' && p.estado !== 'PENDENTE' && (
-                                                         <div className="px-4 py-2.5 text-sm text-slate-400 italic">Sem ações</div>
-                                                    )}
+
                                                 </div>
                                             )}
                                         </td>

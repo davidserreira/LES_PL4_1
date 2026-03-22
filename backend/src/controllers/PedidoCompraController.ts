@@ -165,8 +165,8 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
 
-        if (!role || role !== 'RESPONSAVEL_FINANCEIRO') {
-            return res.status(403).json({ error: 'Apenas Responsáveis Financeiros podem aprovar pedidos.' });
+        if (!role || (role !== 'RESPONSAVEL_FINANCEIRO' && role !== 'ADMINISTRADOR')) {
+            return res.status(403).json({ error: 'Apenas Administradores ou Responsáveis Financeiros podem aprovar pedidos.' });
         }
 
         const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });
@@ -206,8 +206,8 @@ export const recusarPedido = async (req: Request, res: Response): Promise<any> =
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
 
-        if (!role || role !== 'RESPONSAVEL_FINANCEIRO') {
-            return res.status(403).json({ error: 'Apenas Responsáveis Financeiros podem recusar pedidos.' });
+        if (!role || (role !== 'RESPONSAVEL_FINANCEIRO' && role !== 'ADMINISTRADOR')) {
+            return res.status(403).json({ error: 'Apenas Administradores ou Responsáveis Financeiros podem recusar pedidos.' });
         }
 
         const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });

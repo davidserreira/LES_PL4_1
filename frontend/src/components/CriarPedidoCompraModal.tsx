@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, X, Trash2, CheckCircle2, ArrowRight, ArrowLeft, Package, ChevronDown, Check, Filter } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
@@ -151,8 +152,8 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
     const ano = new Date().getFullYear();
     const mockIdStr = `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`;
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+    const modalContent = (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
@@ -540,4 +541,6 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.body);
 }
