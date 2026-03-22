@@ -42,7 +42,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
 
     const menuItems = [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-        { to: '/catalogo', label: 'Catálogo', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
+        { to: '/catalogo', label: 'Stock', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
         { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR'] },
         { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
         { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },

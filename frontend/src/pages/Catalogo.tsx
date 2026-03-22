@@ -151,9 +151,9 @@ const Catalogo = () => {
 
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Catálogo</h1>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Stock</h1>
                     <p className="mt-2 text-sm text-slate-500">
-                        Gerencie os produtos do catálogo nesta secção.
+                        Gerencie o stock de produtos nesta secção.
                     </p>
                 </div>
                 <button
@@ -381,9 +381,9 @@ const Catalogo = () => {
                     <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
                         <Package size={48} />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Catálogo Vazio</h3>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Stock Vazio</h3>
                     <p className="text-slate-500 max-w-sm font-medium mb-8">
-                        O catálogo está atualmente sem produtos. Comece por adicionar os itens essenciais para a sua clínica.
+                        O stock está atualmente sem produtos. Comece por adicionar os itens essenciais para a sua clínica.
                     </p>
                     <button
                         onClick={() => setIsModalOpen(true)}

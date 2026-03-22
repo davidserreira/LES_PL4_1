@@ -3,6 +3,7 @@ import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, 
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
+import DetalhesPedidoCompraModal from '../components/DetalhesPedidoCompraModal';
 
 type PrioridadePedido = 'NORMAL' | 'ALTA' | 'URGENTE';
 
@@ -68,6 +69,8 @@ export default function PedidosCompra() {
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
     const [isFilterPrioridadeOpen, setIsFilterPrioridadeOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedPedido, setSelectedPedido] = useState<PedidoCompra | null>(null);
     const [pedidoToCancel, setPedidoToCancel] = useState<number | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
 
@@ -109,6 +112,48 @@ export default function PedidosCompra() {
             showToast(err.response?.data?.error || 'Não foi possível cancelar o pedido.', 'error');
         } finally {
             setPedidoToCancel(null);
+        }
+    };
+
+    const handleAprovar = async (pedidoId: number) => {
+        if (!user || user.role !== 'RESPONSAVEL_FINANCEIRO') return;
+        
+        try {
+            await pedidoCompraService.aprovarPedido(pedidoId, {
+                userId: user.id,
+                role: user.role
+            });
+            
+            setPedidos(pedidos.map(p => 
+                p.id === pedidoId ? { ...p, estado: 'APROVADO' } : p
+            ));
+            showToast('Pedido aprovado com sucesso!', 'success');
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Não foi possível aprovar o pedido.', 'error');
+        } finally {
+            setOpenDropdownId(null);
+        }
+    };
+
+    const handleRecusar = async (pedidoId: number) => {
+        if (!user || user.role !== 'RESPONSAVEL_FINANCEIRO') return;
+        
+        try {
+            await pedidoCompraService.recusarPedido(pedidoId, {
+                userId: user.id,
+                role: user.role
+            });
+            
+            setPedidos(pedidos.map(p => 
+                p.id === pedidoId ? { ...p, estado: 'RECUSADO' } : p
+            ));
+            showToast('Pedido recusado.', 'success');
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Não foi possível recusar o pedido.', 'error');
+        } finally {
+            setOpenDropdownId(null);
         }
     };
 
@@ -272,6 +317,15 @@ export default function PedidosCompra() {
                 }} 
             />
 
+            <DetalhesPedidoCompraModal
+                isOpen={isDetailsModalOpen}
+                pedido={selectedPedido}
+                onClose={() => {
+                    setIsDetailsModalOpen(false);
+                    setSelectedPedido(null);
+                }}
+            />
+
             {/* Toast Notification */}
             {toast && (
                 <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
@@ -324,12 +378,14 @@ export default function PedidosCompra() {
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos de Compra</h1>
                     <p className="mt-1 text-sm text-slate-500">Visualização dos pedidos criados.</p>
                 </div>
-                <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                    <Plus size={18} /> Novo pedido
-                </button>
+                {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                    >
+                        <Plus size={18} /> Novo pedido
+                    </button>
+                )}
             </div>
 
             {/* Dashboard Cards */}
@@ -584,20 +640,54 @@ export default function PedidosCompra() {
                                                     onMouseDown={(e) => e.stopPropagation()}
                                                     className="absolute right-10 top-1/2 -translate-y-1/2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
                                                 >
-                                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && p.estado !== 'CANCELADO' ? (
-                                                        <button
-                                                            onClick={() => handleCancelar(p.id)}
-                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
-                                                        >
-                                                            Cancelar
-                                                        </button>
-                                                    ) : (
-                                                        <button
-                                                            disabled
-                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
-                                                        >
-                                                            Cancelar
-                                                        </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setSelectedPedido(p);
+                                                            setIsDetailsModalOpen(true);
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                    >
+                                                        Ver Detalhes
+                                                    </button>
+                                                    {user && user.role === 'RESPONSAVEL_FINANCEIRO' && p.estado === 'PENDENTE' && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleAprovar(p.id)}
+                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 transition-colors"
+                                                            >
+                                                                Aprovar
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleRecusar(p.id)}
+                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                                            >
+                                                                Recusar
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
+                                                        p.estado !== 'CANCELADO' ? (
+                                                            <button
+                                                                onClick={() => handleCancelar(p.id)}
+                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                disabled
+                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
+                                                            >
+                                                                Cancelar
+                                                            </button>
+                                                        )
+                                                    )}
+                                                    {!user || (!['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'].includes(user.role)) ? (
+                                                         <div className="px-4 py-2.5 text-sm text-slate-400 italic">Sem ações</div>
+                                                    ) : null}
+                                                    {user && user.role === 'RESPONSAVEL_FINANCEIRO' && p.estado !== 'PENDENTE' && (
+                                                         <div className="px-4 py-2.5 text-sm text-slate-400 italic">Sem ações</div>
                                                     )}
                                                 </div>
                                             )}
