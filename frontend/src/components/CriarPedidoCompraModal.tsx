@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X, Trash2, CheckCircle2, ArrowRight, ArrowLeft, Package, ChevronDown, Check, Filter } from 'lucide-react';
+import { Search, X, Trash2, CheckCircle2, ArrowRight, ArrowLeft, Package, ChevronDown, Check, Filter, AlertTriangle } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
@@ -21,7 +21,8 @@ interface LinhaPedido {
 
 interface CriarPedidoModalProps {
     isOpen: boolean;
-    onClose: (shouldRefresh?: boolean) => void;
+    onClose: (shouldRefresh?: boolean, msg?: string) => void;
+    draftId?: number | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -36,7 +37,7 @@ const PRIORIDADES = [
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
-export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoModalProps) {
+export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: CriarPedidoModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
@@ -44,6 +45,9 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
     const [prioridade, setPrioridade] = useState('NORMAL');
     const [isPrioridadeOpen, setIsPrioridadeOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+    const [originalDraft, setOriginalDraft] = useState<any>(null);
+    const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     
     // Filtros catalog-style
     const [filterCategory, setFilterCategory] = useState<string>('');
@@ -66,13 +70,34 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
         setPrioridade('NORMAL');
         setFilterCategory('');
         setFilterStatus('todos');
-        
-        produtoService.getAll().then(data => setProdutos(data)).catch(console.error);
+        setCurrentDraftId(draftId || null);
+        setOriginalDraft(null);
+
+        produtoService.getAll().then(data => {
+            setProdutos(data);
+            if (draftId) {
+                pedidoCompraService.getRascunhos().then((drafts: any[]) => {
+                    const draft = drafts.find((d: any) => d.id === draftId);
+                    if (draft) {
+                        setOriginalDraft(draft);
+                        setPrioridade(draft.prioridade);
+                        setStep(1); // open at step 1 for editing
+                        // Map lines to products
+                        const draftLinhas = draft.linhas.map((l: any) => {
+                            const p = data.find((prod: any) => prod.id === l.produtoId);
+                            return { produto: p || l.produto, quantidade: l.quantidade };
+                        });
+                        setLinhas(draftLinhas);
+                    }
+                }).catch(console.error);
+            }
+        }).catch(console.error);
+
         pedidoCompraService.getAll().then((pedidos: any[]) => {
             const maxId = pedidos.reduce((acc, p) => Math.max(acc, p.id ?? 0), 0);
             setNextPedidoId(maxId + 1);
         }).catch(console.error);
-    }, [isOpen]);
+    }, [isOpen, draftId]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -128,15 +153,28 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
         if (linhas.length === 0) return;
         setIsSubmitting(true);
         try {
-            await pedidoCompraService.create({
-                criadoPorId: user?.id ?? null,
-                prioridade: prioridade,
-                linhas: linhas.map(l => ({
-                    produtoId: l.produto.id,
-                    quantidade: l.quantidade
-                }))
-            });
-            onClose(true); // close and refresh
+            if (currentDraftId) {
+                await pedidoCompraService.updateRascunho(currentDraftId, {
+                    userId: user?.id ?? 0,
+                    role: user?.role ?? '',
+                    prioridade,
+                    estado: 'PENDENTE',
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+            } else {
+                await pedidoCompraService.create({
+                    criadoPorId: user?.id ?? null,
+                    prioridade: prioridade,
+                    estado: 'PENDENTE',
+                    linhas: linhas.map(l => ({
+                        produtoId: l.produto.id,
+                        quantidade: l.quantidade
+                    }))
+                });
+            }
+            setCurrentDraftId(null);
+            setLinhas([]);
+            onClose(true, 'Pedido processado com sucesso!');
         } catch (e) {
             console.error(e);
             alert('Erro ao submeter pedido.');
@@ -145,27 +183,96 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
         }
     };
 
+    const handleSaveDraft = async () => {
+        if (linhas.length === 0) return; // don't save empty draft
+        if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) return;
+        setIsSubmitting(true);
+        try {
+            if (currentDraftId) {
+                await pedidoCompraService.updateRascunho(currentDraftId, {
+                    userId: user?.id ?? 0,
+                    role: user?.role ?? '',
+                    prioridade,
+                    estado: 'RASCUNHO',
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+                onClose(true, 'Rascunho atualizado');
+            } else {
+                await pedidoCompraService.create({
+                    criadoPorId: user?.id ?? null,
+                    prioridade: prioridade,
+                    estado: 'RASCUNHO',
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+                onClose(true, 'Pedido guardado como rascunho');
+            }
+            setCurrentDraftId(null);
+            setLinhas([]);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDeleteDraft = async () => {
+        if (!currentDraftId) return;
+        setIsConfirmDeleteOpen(true);
+    };
+
+    const confirmDeleteDraft = async () => {
+        if (!currentDraftId) return;
+        setIsSubmitting(true);
+        try {
+            await pedidoCompraService.deleteRascunho(currentDraftId, { userId: user?.id ?? 0, role: user?.role ?? '' });
+            setCurrentDraftId(null);
+            setLinhas([]);
+            setIsConfirmDeleteOpen(false);
+            onClose(true, 'Rascunho eliminado com sucesso');
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleCloseX = () => {
+        // Auto-save logic on X
+        if (linhas.length > 0 && user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
+            handleSaveDraft();
+        } else {
+            onClose(false);
+        }
+    };
+
+    const handleCancelClick = () => {
+        // Explicit cancel does NOT save as draft, it just closes (and optionally deletes if it was a draft? let's keep it as is or delete)
+        onClose(false);
+    };
+
     if (!isOpen) return null;
 
     const totalProdutos = linhas.reduce((acc, l) => acc + l.quantidade, 0);
     const totalEstimado = linhas.reduce((acc, l) => acc + (l.quantidade * l.produto.preco), 0);
     const ano = new Date().getFullYear();
-    const mockIdStr = `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`;
+    const mockIdStr = originalDraft ? originalDraft.codigoFormatado : `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`;
 
     const modalContent = (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50/10">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">Criar Pedido de Compra</h2>
+                        <h2 className="text-xl font-bold text-slate-900">
+                            {currentDraftId ? 'Editar Rascunho' : 'Criar Pedido de Compra'}
+                        </h2>
                         <p className="text-sm text-slate-500">
                             {step === 1 ? 'Passo 1: Selecione os produtos para o pedido' : 'Passo 2: Reveja e submeta o pedido'}
                         </p>
                     </div>
                     <button 
-                        onClick={() => onClose(false)}
+                        onClick={handleCloseX}
                         className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                     >
                         <X size={20} />
@@ -490,8 +597,8 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
 
                 {/* Footer Actions */}
                 <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
-                    <div>
-                        {step === 1 && linhas.length > 0 && (
+                    <div className="flex gap-2">
+                        {step === 1 && !currentDraftId && linhas.length > 0 && (
                             <button 
                                 onClick={() => setLinhas([])}
                                 className="text-sm font-semibold text-slate-400 hover:text-red-500 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5"
@@ -509,12 +616,24 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
                         )}
                     </div>
                     <div className="flex items-center gap-3">
-                        <button 
-                            onClick={() => onClose(false)}
-                            className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
-                        >
-                            Cancelar
-                        </button>
+                        {!currentDraftId && (
+                            <button 
+                                onClick={handleCancelClick}
+                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                        )}
+                        {currentDraftId && (
+                            <button 
+                                onClick={handleDeleteDraft}
+                                disabled={isSubmitting}
+                                className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                            >
+                                Eliminar Rascunho
+                            </button>
+                        )}
+                        
                         {step === 1 ? (
                             <button 
                                 onClick={() => setStep(2)}
@@ -532,13 +651,46 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
                                 {isSubmitting ? (
                                     <>A Submeter...</>
                                 ) : (
-                                    <>Submeter Pedido <CheckCircle2 size={18} /></>
+                                    <>Finalizar Pedido <CheckCircle2 size={18} /></>
                                 )}
                             </button>
                         )}
                     </div>
                 </div>
             </div>
+
+            {/* Confirm Delete Draft Modal */}
+            {isConfirmDeleteOpen && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                                <AlertTriangle size={24} className="text-red-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Eliminar Rascunho</h3>
+                            <p className="text-sm text-slate-500">
+                                Tem a certeza que deseja eliminar este rascunho? Esta ação não pode ser desfeita.
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setIsConfirmDeleteOpen(false)}
+                                disabled={isSubmitting}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={confirmDeleteDraft}
+                                disabled={isSubmitting}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-red-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {isSubmitting ? 'A eliminar...' : 'Sim, Eliminar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 

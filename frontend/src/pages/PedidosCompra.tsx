@@ -4,6 +4,7 @@ import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 import DetalhesPedidoCompraModal from '../components/DetalhesPedidoCompraModal';
+import RascunhosModal from '../components/RascunhosModal';
 
 type PrioridadePedido = 'NORMAL' | 'ALTA' | 'URGENTE';
 
@@ -70,7 +71,10 @@ export default function PedidosCompra() {
     const [isFilterPrioridadeOpen, setIsFilterPrioridadeOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isRascunhosModalOpen, setIsRascunhosModalOpen] = useState(false);
+    const [draftsCount, setDraftsCount] = useState(0);
     const [selectedPedido, setSelectedPedido] = useState<PedidoCompra | null>(null);
+    const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
     const [pedidoToCancel, setPedidoToCancel] = useState<number | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
 
@@ -161,12 +165,20 @@ export default function PedidosCompra() {
         setLoading(true);
         setError(null);
         pedidoCompraService.getAll()
-            .then((data: PedidoCompra[]) => setPedidos(data))
+            .then((data: PedidoCompra[]) => setPedidos(data.filter(p => p.estado !== 'RASCUNHO')))
             .catch((e) => {
                 console.error(e);
                 setError('Erro ao carregar pedidos de compra.');
             })
             .finally(() => setLoading(false));
+            
+        if (user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
+            pedidoCompraService.getRascunhos()
+                .then((drafts: any[]) => {
+                    const myDrafts = drafts.filter(d => d.criadoPorId === user.id);
+                    setDraftsCount(myDrafts.length);
+                }).catch(console.error);
+        }
     };
 
     useEffect(() => {
@@ -175,7 +187,7 @@ export default function PedidosCompra() {
         setError(null);
         pedidoCompraService.getAll()
             .then((data: PedidoCompra[]) => {
-                if (!cancelled) setPedidos(data);
+                if (!cancelled) setPedidos(data.filter(p => p.estado !== 'RASCUNHO'));
             })
             .catch((e) => {
                 console.error(e);
@@ -184,6 +196,16 @@ export default function PedidosCompra() {
             .finally(() => {
                 if (!cancelled) setLoading(false);
             });
+
+        if (user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
+            pedidoCompraService.getRascunhos()
+                .then((drafts: any[]) => {
+                    if (!cancelled) {
+                        const myDrafts = drafts.filter(d => d.criadoPorId === user.id);
+                        setDraftsCount(myDrafts.length);
+                    }
+                }).catch(console.error);
+        }
 
         return () => {
             cancelled = true;
@@ -308,13 +330,31 @@ export default function PedidosCompra() {
         <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 relative">
             <CriarPedidoCompraModal 
                 isOpen={isCreateModalOpen} 
-                onClose={(shouldRefresh) => {
+                draftId={editingDraftId}
+                onClose={(shouldRefresh, msg) => {
                     setIsCreateModalOpen(false);
+                    setEditingDraftId(null);
                     if (shouldRefresh) {
                         fetchPedidos();
-                        showToast('Pedido criado com sucesso!', 'success');
+                        showToast(msg || 'Pedido processado com sucesso!', 'success');
                     }
                 }} 
+            />
+
+            <RascunhosModal
+                isOpen={isRascunhosModalOpen}
+                user={user}
+                onClose={(shouldRefresh) => {
+                    setIsRascunhosModalOpen(false);
+                    if (shouldRefresh) {
+                        fetchPedidos();
+                    }
+                }}
+                onEditDraft={(id) => {
+                    setEditingDraftId(id);
+                    setIsRascunhosModalOpen(false);
+                    setIsCreateModalOpen(true);
+                }}
             />
 
             <DetalhesPedidoCompraModal
@@ -337,7 +377,7 @@ export default function PedidosCompra() {
 
             {/* Toast Notification */}
             {toast && (
-                <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
+                <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
                             ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                             : 'bg-red-50 border-red-100 text-red-800'
@@ -387,14 +427,32 @@ export default function PedidosCompra() {
                     <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos de Compra</h1>
                     <p className="mt-1 text-sm text-slate-500">Visualização dos pedidos criados.</p>
                 </div>
-                {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
-                    <button
-                        onClick={() => setIsCreateModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                    >
-                        <Plus size={18} /> Novo pedido
-                    </button>
-                )}
+                <div className="flex items-center gap-2">
+                    {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                        <button
+                            onClick={() => setIsRascunhosModalOpen(true)}
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors border max-h-[38px]"
+                        >
+                            <span>Rascunhos</span>
+                            {draftsCount >= 0 && (
+                                <span className="bg-slate-300 text-slate-800 text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">
+                                    {draftsCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
+                    {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                        <button
+                            onClick={() => {
+                                setEditingDraftId(null);
+                                setIsCreateModalOpen(true);
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm max-h-[38px]"
+                        >
+                            <Plus size={18} /> Novo pedido
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Dashboard Cards */}
