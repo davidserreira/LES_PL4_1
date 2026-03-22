@@ -14,7 +14,7 @@ export const mapPedidoToDTO = (pedido: any) => ({
 
 export const createPedidoCompra = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { criadoPorId, linhas, prioridade, estado } = req.body;
+        const { criadoPorId, linhas, prioridade, estado, observacoes } = req.body;
         const isDraft = estado === 'RASCUNHO';
 
         if (!isDraft) {
@@ -74,6 +74,7 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
                 // para o create input. Em vez disso, usamos a relação `criadoPor` com connect.
                 criadoPor: criadoPorId ? { connect: { id: criadoPorId } } : undefined,
                 prioridade: prioridade || 'NORMAL',
+                observacoes: observacoes ?? null,
                 valorTotalEstimado,
                 linhas: {
                     create: linhasPreparadas
@@ -91,9 +92,9 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
 
         return res.status(201).json(mapPedidoToDTO(pedido));
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Erro ao criar Pedido de Compra:', error);
-        return res.status(500).json({ error: 'Erro interno ao criar pedido de compra.' });
+        return res.status(500).json({ error: 'Erro interno ao criar pedido de compra.', detail: error.message });
     }
 };
 
@@ -260,7 +261,7 @@ export const getRascunhos = async (req: Request, res: Response): Promise<any> =>
 export const updateRascunho = async (req: Request, res: Response): Promise<any> => {
     try {
         const id = Number(req.params.id);
-        const { userId, role, linhas, prioridade, estado } = req.body;
+        const { userId, role, linhas, prioridade, estado, observacoes } = req.body;
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
 
@@ -319,6 +320,7 @@ export const updateRascunho = async (req: Request, res: Response): Promise<any> 
             data: {
                 estado: isDraft ? 'RASCUNHO' : 'PENDENTE',
                 prioridade: prioridade || pedido.prioridade,
+                observacoes: observacoes ?? null,
                 valorTotalEstimado,
                 linhas: { create: linhasPreparadas }
             },
@@ -326,9 +328,9 @@ export const updateRascunho = async (req: Request, res: Response): Promise<any> 
         });
 
         return res.json(mapPedidoToDTO(pedidoAtualizado));
-    } catch (error) {
-        console.error('Erro ao atualizar Rascunho:', error);
-        return res.status(500).json({ error: 'Erro interno ao atualizar rascunho.' });
+    } catch (error: any) {
+        console.error('Erro ao atualizar rascunho:', error);
+        return res.status(500).json({ error: 'Erro interno ao atualizar rascunho.', detail: error.message });
     }
 };
 

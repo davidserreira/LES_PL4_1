@@ -76,6 +76,7 @@ const CriarPedidoCompra = () => {
     const [nextPedidoId, setNextPedidoId] = useState<number>(1);
     const [createdPedido, setCreatedPedido] = useState<any | null>(null);
     const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+    const [observacoes, setObservacoes] = useState('');
     const hasSubmittedRef = useRef(false);
 
     const PRIORIDADES = [
@@ -120,6 +121,7 @@ const CriarPedidoCompra = () => {
                     criadoPorId: user.id,
                     prioridade,
                     estado: 'RASCUNHO',
+                    observacoes,
                     linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
                 }).catch(() => {});
             }
@@ -135,6 +137,7 @@ const CriarPedidoCompra = () => {
                     criadoPorId: user.id,
                     prioridade,
                     estado: 'RASCUNHO',
+                    observacoes,
                     linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
                 }).catch(() => {});
             }
@@ -176,6 +179,7 @@ const CriarPedidoCompra = () => {
                     role: user?.role ?? '',
                     prioridade,
                     estado: 'PENDENTE',
+                    observacoes,
                     linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
                 });
             } else {
@@ -183,6 +187,7 @@ const CriarPedidoCompra = () => {
                     criadoPorId: user?.id ?? null,
                     prioridade: prioridade,
                     estado: 'PENDENTE',
+                    observacoes,
                     linhas: linhas.map(l => ({
                         produtoId: l.produto.id,
                         quantidade: l.quantidade
@@ -586,6 +591,17 @@ const CriarPedidoCompra = () => {
                                     })}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Observações */}
+                        <div className="p-6 bg-white border-t border-slate-100">
+                            <h3 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mb-3 text-left">Observações</h3>
+                            <textarea
+                                value={observacoes}
+                                onChange={(e) => setObservacoes(e.target.value)}
+                                placeholder="Adicione observações ou instruções relevantes para este pedido (opcional)..."
+                                className="w-full h-20 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none transition-all"
+                            />
                         </div>
 
                         {/* SUMÁRIO */}

@@ -33,6 +33,7 @@ interface PedidoCompra {
     linhas?: LinhaPedido[];
     tipo: string;
     codigoFormatado: string;
+    observacoes?: string;
 }
 
 interface DetalhesPedidoModalProps {
@@ -216,6 +217,18 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                             <span className="text-xl font-bold text-emerald-700">{formatCurrency(pedido.valorTotalEstimado)}</span>
                         </div>
                     </div>
+                    
+                    {/* Observações Display */}
+                    {pedido.observacoes && (
+                        <div className="bg-white rounded-xl border border-amber-200/60 p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] bg-gradient-to-br from-white to-amber-50/10">
+                            <h3 className="text-xs font-bold text-amber-700 uppercase tracking-widest flex items-center gap-2 mb-3">
+                                📝 Observações
+                            </h3>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                {pedido.observacoes}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer */}

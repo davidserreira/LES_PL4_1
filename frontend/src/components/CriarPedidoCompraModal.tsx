@@ -46,6 +46,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
     const [isPrioridadeOpen, setIsPrioridadeOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [currentDraftId, setCurrentDraftId] = useState<number | null>(null);
+    const [observacoes, setObservacoes] = useState('');
     const [originalDraft, setOriginalDraft] = useState<any>(null);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
     
@@ -81,6 +82,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                     if (draft) {
                         setOriginalDraft(draft);
                         setPrioridade(draft.prioridade);
+                        setObservacoes(draft.observacoes || '');
                         setStep(1); // open at step 1 for editing
                         // Map lines to products
                         const draftLinhas = draft.linhas.map((l: any) => {
@@ -159,6 +161,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                     role: user?.role ?? '',
                     prioridade,
                     estado: 'PENDENTE',
+                    observacoes,
                     linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
                 });
             } else {
@@ -166,6 +169,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                     criadoPorId: user?.id ?? null,
                     prioridade: prioridade,
                     estado: 'PENDENTE',
+                    observacoes,
                     linhas: linhas.map(l => ({
                         produtoId: l.produto.id,
                         quantidade: l.quantidade
@@ -194,6 +198,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                     role: user?.role ?? '',
                     prioridade,
                     estado: 'RASCUNHO',
+                    observacoes,
                     linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
                 });
                 onClose(true, 'Rascunho atualizado');
@@ -202,6 +207,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                     criadoPorId: user?.id ?? null,
                     prioridade: prioridade,
                     estado: 'RASCUNHO',
+                    observacoes,
                     linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
                 });
                 onClose(true, 'Pedido guardado como rascunho');
@@ -589,6 +595,19 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                                 <div className="bg-emerald-50/50 px-6 py-4 flex items-center justify-end gap-6 border-t border-slate-200/60">
                                     <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">Total Estimado:</span>
                                     <span className="text-xl font-bold text-emerald-700">{formatCurrency(totalEstimado)}</span>
+                                </div>
+                            </div>
+                            
+                            {/* Observações */}
+                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-800 p-5 border-b border-slate-100">Observações</h3>
+                                <div className="p-5">
+                                    <textarea
+                                        value={observacoes}
+                                        onChange={(e) => setObservacoes(e.target.value)}
+                                        placeholder="Adicione observações relevantes para o pedido (opcional)..."
+                                        className="w-full text-sm placeholder-slate-400 text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none h-24 transition-colors"
+                                    />
                                 </div>
                             </div>
                         </div>

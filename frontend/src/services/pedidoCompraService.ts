@@ -1,7 +1,7 @@
 import api from './produtoService';
 
 export const pedidoCompraService = {
-    create: async (payload: { criadoPorId: number | null, prioridade: string, linhas: { produtoId: number, quantidade: number }[], estado?: string }) => {
+    create: async (payload: { criadoPorId: number | null, prioridade: string, linhas: { produtoId: number, quantidade: number }[], estado?: string, observacoes?: string }) => {
         const response = await api.post('/pedidos', payload);
         return response.data;
     },
@@ -13,7 +13,7 @@ export const pedidoCompraService = {
         const response = await api.get('/pedidos/rascunhos');
         return response.data;
     },
-    updateRascunho: async (id: number, payload: { userId: number, role: string, prioridade: string, linhas: { produtoId: number, quantidade: number }[], estado: string }) => {
+    updateRascunho: async (id: number, payload: { userId: number, role: string, prioridade: string, linhas: { produtoId: number, quantidade: number }[], estado: string, observacoes?: string }) => {
         const response = await api.put(`/pedidos/${id}`, payload);
         return response.data;
     },
