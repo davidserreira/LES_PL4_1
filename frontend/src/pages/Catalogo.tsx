@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
-    Plus, Package, AlertTriangle, CheckCircle2, Pencil, X, AlertCircle, 
-    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown 
+    Plus, Package, AlertTriangle, CheckCircle2, X, AlertCircle, 
+    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, MoreVertical, Check
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
 import EditarProdutoModal from '../components/EditarProdutoModal';
+import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 
 interface Produto {
     id: number;
@@ -47,6 +48,36 @@ const Catalogo = () => {
 
     // Edit Modal State
     const [productToEdit, setProductToEdit] = useState<Produto | null>(null);
+
+    // Context Menu State
+    const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const [isCriarPedidoModalOpen, setIsCriarPedidoModalOpen] = useState(false);
+    
+    // Multi-Select State
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedProdutos, setSelectedProdutos] = useState<Produto[]>([]);
+    const [singleProductToOrder, setSingleProductToOrder] = useState<Produto | null>(null);
+
+    const toggleSelection = (produto: Produto) => {
+        setSelectedProdutos(prev => {
+            if (prev.some(p => p.id === produto.id)) {
+                return prev.filter(p => p.id !== produto.id);
+            }
+            return [...prev, produto];
+        });
+        setOpenDropdownId(null);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = () => setOpenDropdownId(null);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleActionMouseDown = (id: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setOpenDropdownId(openDropdownId === id ? null : id);
+    };
 
     const fetchProdutos = async () => {
         try {
@@ -156,13 +187,54 @@ const Catalogo = () => {
                         Gerencie o stock de produtos nesta secção.
                     </p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Adicionar Produto
-                </button>
+                <div className="flex items-center gap-3">
+                    {isSelectionMode ? (
+                        <div className="flex items-center gap-3 animate-in fade-in zoom-in-95 duration-200">
+                            <span className="text-sm font-medium text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                                <span className="font-bold text-slate-900">{selectedProdutos.length}</span> selecionados
+                            </span>
+                            <button
+                                onClick={() => {
+                                    setIsSelectionMode(false);
+                                    setSelectedProdutos([]);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-white text-slate-600 border border-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-colors shadow-sm"
+                            >
+                                <X size={18} />
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (selectedProdutos.length > 0) {
+                                        setSingleProductToOrder(null);
+                                        setIsCriarPedidoModalOpen(true);
+                                    }
+                                }}
+                                disabled={selectedProdutos.length === 0}
+                                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors shadow-sm ${selectedProdutos.length > 0 ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                            >
+                                <Package size={18} />
+                                Criar Pedido
+                            </button>
+                            <div className="w-px h-6 bg-slate-200 mx-1"></div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => setIsSelectionMode(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-white text-slate-900 border border-slate-200 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm"
+                        >
+                            <Package size={18} />
+                            Criar Pedido
+                        </button>
+                    )}
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                    >
+                        <Plus size={18} />
+                        Adicionar Produto
+                    </button>
+                </div>
             </div>
 
             {/* Filtros */}
@@ -265,7 +337,7 @@ const Catalogo = () => {
                     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative z-0">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50/50 border-b border-slate-200">
+                                <thead className={`border-b transition-colors duration-300 ${isSelectionMode ? 'bg-blue-50 border-blue-200' : 'bg-slate-50/50 border-slate-200'}`}>
                                     <tr>
                                         <th className="px-6 py-4">
                                             <button 
@@ -297,13 +369,20 @@ const Catalogo = () => {
                                             </button>
                                         </th>
                                         <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Ações</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                            {isSelectionMode ? 'Selecionar' : 'Ações'}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {sortedProdutos.map((produto) => (
-                                        <tr key={produto.id} className="group hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-5">
+                                    {sortedProdutos.map((produto) => {
+                                        const isSelected = selectedProdutos.some(p => p.id === produto.id);
+                                        return (
+                                        <tr key={produto.id} className={`group transition-all duration-200 ${isSelected ? 'bg-blue-50/80' : 'hover:bg-slate-50/50'}`}>
+                                            <td className="px-6 py-5 relative">
+                                                {isSelected && (
+                                                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-md"></div>
+                                                )}
                                                 <div className="flex items-center gap-4">
                                                     <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-emerald-600 transition-colors">
                                                         <Package size={20} />
@@ -350,19 +429,71 @@ const Catalogo = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex justify-center">
-                                                    <button
-                                                        onClick={() => setProductToEdit(produto)}
-                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="Editar produto"
-                                                    >
-                                                        <Pencil size={18} />
-                                                    </button>
-                                                </div>
+                                            <td className="px-6 py-5 text-center relative">
+                                                {isSelectionMode ? (
+                                                    <div className="flex justify-center animate-in zoom-in-75 duration-200">
+                                                        <button
+                                                            onClick={() => toggleSelection(produto)}
+                                                            className={`w-6 h-6 rounded-md flex items-center justify-center transition-all duration-200 border-2 ${
+                                                                isSelected 
+                                                                ? 'bg-blue-600 border-blue-600 text-white shadow-md scale-110 ring-2 ring-blue-600/20' 
+                                                                : 'bg-white border-slate-300 text-transparent hover:border-blue-400'
+                                                            }`}
+                                                        >
+                                                            <Check size={14} strokeWidth={3} />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <button
+                                                            onMouseDown={(e) => handleActionMouseDown(produto.id, e)}
+                                                            className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                                                        >
+                                                            <MoreVertical size={18} />
+                                                        </button>
+
+                                                        {/* Dropdown Menu */}
+                                                        {openDropdownId === produto.id && (
+                                                            <div
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                className="absolute right-10 top-1/2 -translate-y-1/2 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
+                                                            >
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setIsSelectionMode(true);
+                                                                        toggleSelection(produto);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                                >
+                                                                    Selecionar
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setProductToEdit(produto);
+                                                                        setOpenDropdownId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                                >
+                                                                    Editar Produto
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSingleProductToOrder(produto);
+                                                                        setIsCriarPedidoModalOpen(true);
+                                                                        setOpenDropdownId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors"
+                                                                >
+                                                                    Criar Pedido
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -417,6 +548,25 @@ const Catalogo = () => {
                     produto={productToEdit}
                 />
             )}
+
+            <CriarPedidoCompraModal 
+                isOpen={isCriarPedidoModalOpen} 
+                onClose={(shouldRefresh) => {
+                    setIsCriarPedidoModalOpen(false);
+                    setSingleProductToOrder(null);
+                    if (shouldRefresh) {
+                        showToast('Pedido submetido com sucesso a partir do catálogo.', 'success');
+                        setSelectedProdutos([]);
+                        setIsSelectionMode(false);
+                    }
+                }} 
+                preSelectedProdutos={
+                    (singleProductToOrder ? [singleProductToOrder] : selectedProdutos).map(p => ({
+                        ...p,
+                        preco: p.preco || 0
+                    }))
+                }
+            />
         </div>
     );
 };

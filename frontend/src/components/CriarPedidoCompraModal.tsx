@@ -22,6 +22,7 @@ interface LinhaPedido {
 interface CriarPedidoModalProps {
     isOpen: boolean;
     onClose: (shouldRefresh?: boolean) => void;
+    preSelectedProdutos?: Produto[] | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -36,7 +37,7 @@ const PRIORIDADES = [
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
-export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoModalProps) {
+export default function CriarPedidoCompraModal({ isOpen, onClose, preSelectedProdutos }: CriarPedidoModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
@@ -61,11 +62,22 @@ export default function CriarPedidoCompraModal({ isOpen, onClose }: CriarPedidoM
         if (!isOpen) return;
         
         setStep(1);
-        setLinhas([]);
         setSearchQuery('');
         setPrioridade('NORMAL');
         setFilterCategory('');
         setFilterStatus('todos');
+        
+        let initialLinhas: LinhaPedido[] = [];
+        if (preSelectedProdutos && preSelectedProdutos.length > 0) {
+            initialLinhas = preSelectedProdutos.map(produto => {
+                let qtdInicial = 1;
+                if (produto.stock < produto.stockMinimo) {
+                    qtdInicial = (produto.stockMinimo + 1) - produto.stock;
+                }
+                return { produto, quantidade: qtdInicial };
+            });
+        }
+        setLinhas(initialLinhas);
         
         produtoService.getAll().then(data => setProdutos(data)).catch(console.error);
         pedidoCompraService.getAll().then((pedidos: any[]) => {
