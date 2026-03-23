@@ -75,6 +75,7 @@ export default function PedidosCompra() {
     const [draftsCount, setDraftsCount] = useState(0);
     const [selectedPedido, setSelectedPedido] = useState<PedidoCompra | null>(null);
     const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
+    const [pedidoToEdit, setPedidoToEdit] = useState<PedidoCompra | null>(null);
     const [pedidoToCancel, setPedidoToCancel] = useState<number | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
 
@@ -331,9 +332,11 @@ export default function PedidosCompra() {
             <CriarPedidoCompraModal 
                 isOpen={isCreateModalOpen} 
                 draftId={editingDraftId}
+                pedidoToEdit={pedidoToEdit}
                 onClose={(shouldRefresh, msg) => {
                     setIsCreateModalOpen(false);
                     setEditingDraftId(null);
+                    setPedidoToEdit(null);
                     if (shouldRefresh) {
                         fetchPedidos();
                         showToast(msg || 'Pedido processado com sucesso!', 'success');
@@ -445,6 +448,7 @@ export default function PedidosCompra() {
                         <button
                             onClick={() => {
                                 setEditingDraftId(null);
+                                setPedidoToEdit(null);
                                 setIsCreateModalOpen(true);
                             }}
                             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm max-h-[38px]"
@@ -738,6 +742,18 @@ export default function PedidosCompra() {
                                                     >
                                                         Ver Detalhes
                                                     </button>
+                                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && p.estado === 'PENDENTE' && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setPedidoToEdit(p);
+                                                                setIsCreateModalOpen(true);
+                                                                setOpenDropdownId(null);
+                                                            }}
+                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                        >
+                                                            Editar
+                                                        </button>
+                                                    )}
                                                     {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
                                                         p.estado !== 'CANCELADO' ? (
                                                             <button

@@ -17,6 +17,10 @@ export const pedidoCompraService = {
         const response = await api.put(`/pedidos/${id}`, payload);
         return response.data;
     },
+    editarPedido: async (id: number, payload: { userId: number, role: string, prioridade: string, linhas: { produtoId: number, quantidade: number }[], observacoes?: string }) => {
+        const response = await api.put(`/pedidos/${id}/editar`, payload);
+        return response.data;
+    },
     deleteRascunho: async (id: number, payload: { userId: number, role: string }) => {
         const response = await api.delete(`/pedidos/${id}/rascunho`, { data: payload });
         return response.data;

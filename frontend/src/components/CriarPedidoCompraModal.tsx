@@ -23,6 +23,7 @@ interface CriarPedidoModalProps {
     isOpen: boolean;
     onClose: (shouldRefresh?: boolean, msg?: string) => void;
     draftId?: number | null;
+    pedidoToEdit?: any | null;
 }
 
 const formatCurrency = (value: number) => {
@@ -37,7 +38,7 @@ const PRIORIDADES = [
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
-export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: CriarPedidoModalProps) {
+export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedidoToEdit }: CriarPedidoModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
@@ -76,7 +77,18 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
 
         produtoService.getAll().then(data => {
             setProdutos(data);
-            if (draftId) {
+            
+            if (pedidoToEdit) {
+                setPrioridade(pedidoToEdit.prioridade);
+                setObservacoes(pedidoToEdit.observacoes || '');
+                setStep(1);
+                // Map lines to products
+                const editLinhas = pedidoToEdit.linhas.map((l: any) => {
+                    const p = data.find((prod: any) => prod.id === l.produtoId);
+                    return { produto: p || l.produto, quantidade: l.quantidade };
+                });
+                setLinhas(editLinhas);
+            } else if (draftId) {
                 pedidoCompraService.getRascunhos().then((drafts: any[]) => {
                     const draft = drafts.find((d: any) => d.id === draftId);
                     if (draft) {
@@ -99,7 +111,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
             const maxId = pedidos.reduce((acc, p) => Math.max(acc, p.id ?? 0), 0);
             setNextPedidoId(maxId + 1);
         }).catch(console.error);
-    }, [isOpen, draftId]);
+    }, [isOpen, draftId, pedidoToEdit]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -155,7 +167,15 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
         if (linhas.length === 0) return;
         setIsSubmitting(true);
         try {
-            if (currentDraftId) {
+            if (pedidoToEdit) {
+                await pedidoCompraService.editarPedido(pedidoToEdit.id, {
+                    userId: user?.id ?? 0,
+                    role: user?.role ?? '',
+                    prioridade,
+                    observacoes,
+                    linhas: linhas.map(l => ({ produtoId: l.produto.id, quantidade: l.quantidade }))
+                });
+            } else if (currentDraftId) {
                 await pedidoCompraService.updateRascunho(currentDraftId, {
                     userId: user?.id ?? 0,
                     role: user?.role ?? '',
@@ -261,7 +281,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
     const totalProdutos = linhas.reduce((acc, l) => acc + l.quantidade, 0);
     const totalEstimado = linhas.reduce((acc, l) => acc + (l.quantidade * l.produto.preco), 0);
     const ano = new Date().getFullYear();
-    const mockIdStr = originalDraft ? originalDraft.codigoFormatado : `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`;
+    const mockIdStr = pedidoToEdit ? pedidoToEdit.codigoFormatado : (originalDraft ? originalDraft.codigoFormatado : `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`);
 
     const modalContent = (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -271,7 +291,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50/10">
                     <div>
                         <h2 className="text-xl font-bold text-slate-900">
-                            {currentDraftId ? 'Editar Rascunho' : 'Criar Pedido de Compra'}
+                            {pedidoToEdit ? 'Editar Pedido de Compra' : (currentDraftId ? 'Editar Rascunho' : 'Criar Pedido de Compra')}
                         </h2>
                         <p className="text-sm text-slate-500">
                             {step === 1 ? 'Passo 1: Selecione os produtos para o pedido' : 'Passo 2: Reveja e submeta o pedido'}
@@ -617,7 +637,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                 {/* Footer Actions */}
                 <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
                     <div className="flex gap-2">
-                        {step === 1 && !currentDraftId && linhas.length > 0 && (
+                        {step === 1 && !currentDraftId && !pedidoToEdit && linhas.length > 0 && (
                             <button 
                                 onClick={() => setLinhas([])}
                                 className="text-sm font-semibold text-slate-400 hover:text-red-500 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5"
@@ -643,7 +663,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId }: Cri
                                 Cancelar
                             </button>
                         )}
-                        {currentDraftId && (
+                        {currentDraftId && !pedidoToEdit && (
                             <button 
                                 onClick={handleDeleteDraft}
                                 disabled={isSubmitting}

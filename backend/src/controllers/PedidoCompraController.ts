@@ -241,6 +241,77 @@ export const recusarPedido = async (req: Request, res: Response): Promise<any> =
     }
 };
 
+export const editarPedido = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const id = Number(req.params.id);
+        const { userId, role, linhas, prioridade, observacoes } = req.body;
+
+        if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
+
+        if (!role || (role !== 'RESPONSAVEL_STOCK' && role !== 'ADMINISTRADOR')) {
+            return res.status(403).json({ error: 'Apenas Administradores ou Gestores de Stock podem editar pedidos.' });
+        }
+
+        const pedido = await prisma.pedidoCompra.findUnique({ where: { id }, include: { linhas: true } });
+        if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
+        if (pedido.estado !== 'PENDENTE') return res.status(400).json({ error: 'Apenas pedidos PENDENTES podem ser editados.' });
+
+        if (!linhas || !Array.isArray(linhas) || linhas.length === 0) {
+            return res.status(400).json({ error: 'Para atualizar o pedido, é necessário ter pelo menos uma linha.' });
+        }
+
+        const validLinhas = (linhas || []).filter((l: any) => l.produtoId && l.quantidade > 0);
+
+        if (validLinhas.length !== (linhas || []).length) {
+            return res.status(400).json({ error: 'Todas as linhas devem ter produtoId e quantidade maior que zero para o pedido.' });
+        }
+
+        const produtoIds = validLinhas.map((l: any) => l.produtoId);
+        const produtos = produtoIds.length > 0 ? await prisma.produto.findMany({ where: { id: { in: produtoIds } } }) : [];
+
+        const produtosEncontradosIds = produtos.map((p: any) => p.id);
+        const produtosEmFalta = produtoIds.filter((pid: number) => !produtosEncontradosIds.includes(pid));
+        if (produtosEmFalta.length > 0) {
+            return res.status(400).json({ error: `Os seguintes produtos não existem: ${produtosEmFalta.join(', ')}.` });
+        }
+
+        const produtoPrecoMap = new Map<number, number>();
+        produtos.forEach((p: any) => produtoPrecoMap.set(p.id, p.preco));
+
+        let valorTotalEstimado = 0;
+        const linhasPreparadas = validLinhas.map((linha: any) => {
+            const precoUnitario = produtoPrecoMap.get(linha.produtoId) || 0;
+            const valorTotal = precoUnitario * linha.quantidade;
+            valorTotalEstimado += valorTotal;
+            return {
+                produtoId: linha.produtoId,
+                quantidade: linha.quantidade,
+                precoUnitario,
+                valorTotal
+            };
+        });
+
+        // Delete old lines
+        await prisma.linhaPedidoCompra.deleteMany({ where: { pedidoCompraId: id } });
+
+        const pedidoAtualizado = await prisma.pedidoCompra.update({
+            where: { id },
+            data: {
+                prioridade: prioridade || pedido.prioridade,
+                observacoes: observacoes ?? null,
+                valorTotalEstimado,
+                linhas: { create: linhasPreparadas }
+            },
+            include: { linhas: { include: { produto: true } }, criadoPor: true }
+        });
+
+        return res.json(mapPedidoToDTO(pedidoAtualizado));
+    } catch (error: any) {
+        console.error('Erro ao editar pedido:', error);
+        return res.status(500).json({ error: 'Erro interno ao editar pedido.', detail: error.message });
+    }
+};
+
 export const getRascunhos = async (req: Request, res: Response): Promise<any> => {
     try {
         const pedidos = await prisma.pedidoCompra.findMany({
