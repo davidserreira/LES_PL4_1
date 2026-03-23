@@ -1,4 +1,4 @@
-import { X, Calendar, User, Tag, Hash, Package } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
 
@@ -220,13 +220,14 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                     
                     {/* Observações Display */}
                     {pedido.observacoes && (
-                        <div className="bg-white rounded-xl border border-amber-200/60 p-6 shadow-[0_2px_10px_-4px_rgba(0,0,0,0.05)] bg-gradient-to-br from-white to-amber-50/10">
-                            <h3 className="text-xs font-bold text-amber-700 uppercase tracking-widest flex items-center gap-2 mb-3">
-                                📝 Observações
-                            </h3>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                                <FileText size={16} className="text-slate-400" />
+                                <h3 className="text-sm font-bold text-slate-800">Observações</h3>
+                            </div>
+                            <div className="p-6 text-sm text-slate-600 whitespace-pre-wrap leading-relaxed">
                                 {pedido.observacoes}
-                            </p>
+                            </div>
                         </div>
                     )}
                 </div>
