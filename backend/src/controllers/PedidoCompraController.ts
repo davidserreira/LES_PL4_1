@@ -14,7 +14,7 @@ export const mapPedidoToDTO = (pedido: any) => ({
 
 export const createPedidoCompra = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { criadoPorId, linhas, prioridade, estado, observacoes } = req.body;
+        const { criadoPorId, linhas, prioridade, estado, observacoes, tipo } = req.body;
         const isDraft = estado === 'RASCUNHO';
 
         if (!isDraft) {
@@ -74,6 +74,7 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
                 // para o create input. Em vez disso, usamos a relação `criadoPor` com connect.
                 criadoPor: criadoPorId ? { connect: { id: criadoPorId } } : undefined,
                 prioridade: prioridade || 'NORMAL',
+                tipo: tipo || 'MANUAL',
                 observacoes: observacoes ?? null,
                 valorTotalEstimado,
                 linhas: {

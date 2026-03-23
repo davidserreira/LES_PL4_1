@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { 
     Plus, Package, AlertTriangle, CheckCircle2, Pencil, X, AlertCircle, 
-    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown 
+    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart 
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
 import EditarProdutoModal from '../components/EditarProdutoModal';
+import PedidoAutomaticoModal from '../components/PedidoAutomaticoModal';
 
 interface Produto {
     id: number;
@@ -32,6 +33,7 @@ const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros
 const Catalogo = () => {
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAutoOrderModalOpen, setIsAutoOrderModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<Toast | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -156,13 +158,22 @@ const Catalogo = () => {
                         Gerencie o stock de produtos nesta secção.
                     </p>
                 </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Adicionar Produto
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsAutoOrderModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 text-sm font-black rounded-lg hover:bg-blue-50 transition-all border-2 border-blue-100 hover:border-blue-200 shadow-sm active:scale-95"
+                    >
+                        <ShoppingCart size={18} />
+                        Pedido Automático
+                    </button>
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                    >
+                        <Plus size={18} />
+                        Adicionar Produto
+                    </button>
+                </div>
             </div>
 
             {/* Filtros */}
@@ -401,6 +412,17 @@ const Catalogo = () => {
                 onSuccess={() => {
                     fetchProdutos();
                     showToast('Produto registado com sucesso!', 'success');
+                }}
+            />
+
+            <PedidoAutomaticoModal
+                isOpen={isAutoOrderModalOpen}
+                onClose={(shouldRefresh, msg) => {
+                    setIsAutoOrderModalOpen(false);
+                    if (shouldRefresh) {
+                        fetchProdutos();
+                        if (msg) showToast(msg, 'success');
+                    }
                 }}
             />
 
