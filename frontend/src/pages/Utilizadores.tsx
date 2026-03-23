@@ -137,7 +137,7 @@ const Utilizadores = () => {
     return (
         <div className="space-y-6 relative text-slate-900">
             {toast && (
-                <div className="fixed top-6 right-6 z-[110] animate-in slide-in-from-right-full duration-300">
+                <div className="fixed bottom-6 right-6 z-[110] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success' 
                         ? 'bg-emerald-50 border-emerald-100 text-emerald-800' 
                         : 'bg-red-50 border-red-100 text-red-800'

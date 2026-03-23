@@ -51,7 +51,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
 
     return (
-        <aside className={`bg-slate-900 text-white flex flex-col min-h-screen transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative`}>
+        <aside className={`bg-slate-900 text-white flex flex-col h-screen sticky top-0 z-50 overflow-hidden transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative`}>
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (

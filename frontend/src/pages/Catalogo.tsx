@@ -166,7 +166,7 @@ const Catalogo = () => {
         <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 relative">
             {/* Toast Notification */}
             {toast && (
-                <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
+                <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
                             ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                             : 'bg-red-50 border-red-100 text-red-800'
@@ -551,11 +551,11 @@ const Catalogo = () => {
 
             <CriarPedidoCompraModal 
                 isOpen={isCriarPedidoModalOpen} 
-                onClose={(shouldRefresh) => {
+                onClose={(shouldRefresh, message) => {
                     setIsCriarPedidoModalOpen(false);
                     setSingleProductToOrder(null);
                     if (shouldRefresh) {
-                        showToast('Pedido submetido com sucesso a partir do catálogo.', 'success');
+                        showToast(message || 'Pedido submetido com sucesso a partir do catálogo.', 'success');
                         setSelectedProdutos([]);
                         setIsSelectionMode(false);
                     }

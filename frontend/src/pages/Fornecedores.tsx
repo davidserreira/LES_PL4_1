@@ -199,7 +199,7 @@ const Fornecedores = () => {
         <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 relative">
             {/* Toast Notification */}
             {toast && (
-                <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
+                <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
                         ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                         : 'bg-red-50 border-red-100 text-red-800'
@@ -236,6 +236,25 @@ const Fornecedores = () => {
 
                 {/* 2. Unified Controls Array (Filters + Search) */}
                 <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
+                    {/* Search Bar Container */}
+                    {fornecedores.length > 0 && (
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 p-2 rounded-xl border border-slate-200/60 shadow-sm relative z-10 flex-grow">
+                            <div className="relative w-full max-w-md">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <input
+                                    type="text"
+                                    placeholder="Pesquisar por nome, NIF ou contacto..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
+                                />
+                            </div>
+                            <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap hidden sm:block">
+                                <span className="font-bold text-slate-700">{filteredFornecedores.length}</span> / <span className="font-bold text-slate-700">{fornecedores.length}</span> fornecedores
+                            </div>
+                        </div>
+                    )}
+
                     {/* Filtros Container */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/80 p-3 rounded-xl border border-slate-200/60 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
                         <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
@@ -308,25 +327,6 @@ const Fornecedores = () => {
                             </button>
                         )}
                     </div>
-
-                    {/* Search Bar Container */}
-                    {fornecedores.length > 0 && (
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 p-2 rounded-xl border border-slate-200/60 shadow-sm relative z-10 flex-grow">
-                            <div className="relative w-full max-w-md">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Pesquisar por nome, NIF ou contacto..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
-                                />
-                            </div>
-                            <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap hidden sm:block">
-                                <span className="font-bold text-slate-700">{filteredFornecedores.length}</span> / <span className="font-bold text-slate-700">{fornecedores.length}</span> fornecedores
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
