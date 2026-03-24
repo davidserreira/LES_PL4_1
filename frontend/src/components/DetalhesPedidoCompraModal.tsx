@@ -87,9 +87,11 @@ const getStatusStyle = (status: string) => {
         case 'PENDENTE': return 'text-amber-700 bg-amber-50 border-amber-100';
         case 'APROVADO': return 'text-emerald-700 bg-emerald-50 border-emerald-100';
         case 'CANCELADO':
-        case 'REJEITADO':
         case 'RECUSADO': return 'text-red-700 bg-red-50 border-red-100';
+
+        case 'ENTREGUE': return 'text-blue-700 bg-blue-50 border-blue-100';
         default: return 'text-slate-700 bg-slate-50 border-slate-200';
+
     }
 };
 

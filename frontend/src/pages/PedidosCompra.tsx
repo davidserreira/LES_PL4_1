@@ -162,6 +162,25 @@ export default function PedidosCompra() {
         }
     };
 
+    const handleUpdateStatusAdmin = async (pedidoId: number, novoEstado: string) => {
+        if (!user || user.role !== 'ADMINISTRADOR') return;
+
+        try {
+            await pedidoCompraService.updateStatusAdmin(pedidoId, user.role, novoEstado);
+            
+            setPedidos(pedidos.map(p => 
+                p.id === pedidoId ? { ...p, estado: novoEstado } : p
+            ));
+            showToast('Estado do pedido atualizado com sucesso!', 'success');
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Não foi possível atualizar o estado do pedido.', 'error');
+        } finally {
+            setOpenStatusAdminId(null);
+        }
+    };
+
+
     const fetchPedidos = () => {
         setLoading(true);
         setError(null);
@@ -215,14 +234,18 @@ export default function PedidosCompra() {
 
     // Dropdown state for operations
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const [openStatusAdminId, setOpenStatusAdminId] = useState<number | null>(null);
+
 
     // Close dropdown on click outside
     useEffect(() => {
         const handleClickOutside = () => {
             setOpenDropdownId(null);
+            setOpenStatusAdminId(null);
             setIsFilterEstadoOpen(false);
             setIsFilterPrioridadeOpen(false);
         };
+
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
@@ -319,9 +342,12 @@ export default function PedidosCompra() {
             case 'APROVADO':
                 return 'text-emerald-700 bg-emerald-50 border-emerald-100';
             case 'CANCELADO':
-            case 'REJEITADO':
             case 'RECUSADO':
                 return 'text-red-700 bg-red-50 border-red-100';
+
+            case 'ENTREGUE':
+                return 'text-blue-700 bg-blue-50 border-blue-100';
+
             default:
                 return 'text-slate-700 bg-slate-50 border-slate-200';
         }
@@ -553,7 +579,7 @@ export default function PedidosCompra() {
                             >
                                 Todos os estados
                             </button>
-                            {['PENDENTE', 'APROVADO', 'CANCELADO'].map(est => (
+                            {['PENDENTE', 'APROVADO', 'CANCELADO', 'ENTREGUE'].map(est => (
                                 <button
                                     key={est}
                                     onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
@@ -691,12 +717,49 @@ export default function PedidosCompra() {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-right font-bold text-slate-900">{formatCurrency(p.valorTotalEstimado || 0)}</td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
-                                                <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
-                                                {p.estado || 'PENDENTE'}
-                                            </span>
+                                        <td className="px-6 py-4 relative">
+                                            {user?.role === 'ADMINISTRADOR' ? (
+                                                <div className="relative inline-block">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenStatusAdminId(openStatusAdminId === p.id ? null : p.id);
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${getStatusStyle(p.estado || '')}`}
+                                                    >
+                                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
+                                                        {p.estado || 'PENDENTE'}
+                                                        <ChevronDown size={12} className="ml-1.5 opacity-50" />
+                                                    </button>
+
+                                                    {openStatusAdminId === p.id && (
+                                                        <div
+                                                            onMouseDown={(e) => e.stopPropagation()}
+                                                            className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
+                                                        >
+                                                            {['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map((status) => (
+                                                                <button
+                                                                    key={status}
+                                                                    onClick={() => handleUpdateStatusAdmin(p.id, status)}
+                                                                    className={`w-full text-left px-4 py-2 text-[10px] font-black tracking-wider transition-colors flex items-center gap-2 ${p.estado === status ? 'bg-slate-50 text-slate-400 cursor-default' : 'text-slate-700 hover:bg-slate-50 hover:text-blue-600'}`}
+                                                                    disabled={p.estado === status}
+                                                                >
+                                                                    <span className={`w-2 h-2 rounded-full ${getStatusStyle(status).split(' ')[0].replace('text-', 'bg-')}`}></span>
+                                                                    {status}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
+                                                    <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
+                                                    {p.estado || 'PENDENTE'}
+                                                </span>
+                                            )}
                                         </td>
+
                                         <td className="px-6 py-4 relative">
                                             <div className="flex items-center justify-end gap-2 pr-2">
                                                 {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'PENDENTE' && (

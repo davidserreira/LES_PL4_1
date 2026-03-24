@@ -36,5 +36,10 @@ export const pedidoCompraService = {
     recusarPedido: async (id: number, payload: { userId: number, role: string }) => {
         const response = await api.patch(`/pedidos/${id}/recusar`, payload);
         return response.data;
+    },
+    updateStatusAdmin: async (id: number, role: string, novoEstado: string) => {
+        const response = await api.patch(`/pedidos/${id}/status-admin`, { role, novoEstado });
+        return response.data;
     }
 };
+

@@ -8,8 +8,10 @@ import {
     getRascunhos,
     updateRascunho,
     deleteRascunho,
-    editarPedido
+    editarPedido,
+    updateStatusAdmin
 } from '../controllers/PedidoCompraController';
+
 
 const router = Router();
 
@@ -22,5 +24,7 @@ router.delete('/:id/rascunho', deleteRascunho);
 router.patch('/:id/cancelar', cancelarPedido);
 router.patch('/:id/aprovar', aprovarPedido);
 router.patch('/:id/recusar', recusarPedido);
+router.patch('/:id/status-admin', updateStatusAdmin);
 
 export default router;
+
