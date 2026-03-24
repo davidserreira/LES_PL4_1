@@ -61,6 +61,7 @@ export default function PedidosCompra() {
     const [error, setError] = useState<string | null>(null);
     const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
 
+    const [viewMode, setViewMode] = useState<'LISTA' | 'HISTORICO'>('LISTA');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterTipo, setFilterTipo] = useState('Todos');
     const [filterEstado, setFilterEstado] = useState('Todos');
@@ -88,6 +89,9 @@ export default function PedidosCompra() {
         const savedUser = localStorage.getItem('user');
         return savedUser ? JSON.parse(savedUser) : null;
     });
+
+    const canViewHistorico = user?.role === 'RESPONSAVEL_STOCK' || user?.role === 'RESPONSAVEL_FINANCEIRO';
+    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO']), []);
 
     const handleCancelar = (pedidoId: number) => {
         if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) {
@@ -258,6 +262,10 @@ export default function PedidosCompra() {
     const filteredPedidos = useMemo(() => {
         let result = pedidos;
 
+        if (canViewHistorico && viewMode === 'HISTORICO') {
+            result = result.filter(p => historicoStatuses.has((p.estado || '').toUpperCase()));
+        }
+
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
             result = result.filter(p => {
@@ -300,7 +308,7 @@ export default function PedidosCompra() {
         });
 
         return result;
-    }, [pedidos, searchQuery, filterEstado, filterTipo, filterPrioridade, sortField, sortOrder]);
+    }, [pedidos, canViewHistorico, viewMode, historicoStatuses, searchQuery, filterEstado, filterTipo, filterPrioridade, sortField, sortOrder]);
 
     const handleSort = (field: 'criadoEm' | 'valorTotalEstimado') => {
         if (sortField === field) {
@@ -533,6 +541,32 @@ export default function PedidosCompra() {
                     <Filter size={16} />
                     Filtros:
                 </div>
+
+                {/* Vista: Lista / Histórico */}
+                {canViewHistorico && (
+                    <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
+                        <button
+                            onClick={() => {
+                                setViewMode('LISTA');
+                                setFilterEstado('Todos');
+                            }}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                        >
+                            Lista
+                        </button>
+                        <button
+                            onClick={() => {
+                                setViewMode('HISTORICO');
+                                setFilterEstado('Todos');
+                            }}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                        >
+                            Histórico
+                        </button>
+                    </div>
+                )}
+
+                {canViewHistorico && <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>}
 
                 {/* Tipo de Pedido Segmented Tabs */}
                 <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
