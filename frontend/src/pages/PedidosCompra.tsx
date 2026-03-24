@@ -262,8 +262,13 @@ export default function PedidosCompra() {
     const filteredPedidos = useMemo(() => {
         let result = pedidos;
 
-        if (canViewHistorico && viewMode === 'HISTORICO') {
-            result = result.filter(p => historicoStatuses.has((p.estado || '').toUpperCase()));
+        if (canViewHistorico) {
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(p => historicoStatuses.has((p.estado || '').toUpperCase()));
+            } else {
+                // Para Gestor de Stock/Financeiro, a lista principal mostra apenas pendentes.
+                result = result.filter(p => (p.estado || '').toUpperCase() === 'PENDENTE');
+            }
         }
 
         if (searchQuery) {
