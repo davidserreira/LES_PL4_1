@@ -92,6 +92,14 @@ export default function PedidosCompra() {
 
     const canViewHistorico = user?.role === 'RESPONSAVEL_STOCK' || user?.role === 'RESPONSAVEL_FINANCEIRO';
     const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO']), []);
+    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
+    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'RECUSADO', 'CANCELADO'], []);
+
+    useEffect(() => {
+        if (canViewHistorico && viewMode === 'HISTORICO' && (filterEstado || '').toUpperCase() === 'PENDENTE') {
+            setFilterEstado('Todos');
+        }
+    }, [canViewHistorico, viewMode, filterEstado]);
 
     const handleCancelar = (pedidoId: number) => {
         if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) {
@@ -598,38 +606,40 @@ export default function PedidosCompra() {
                 <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
 
                 {/* Dropdown Estado */}
-                <div className="relative min-w-[170px]">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsFilterPrioridadeOpen(false); setIsFilterEstadoOpen(!isFilterEstadoOpen); }}
-                        className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                    >
-                        {filterEstado === 'Todos' ? 'Todos os estados' : filterEstado}
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isFilterEstadoOpen && (
-                        <div 
-                            onMouseDown={(e) => e.stopPropagation()} 
-                            className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                {(!canViewHistorico || viewMode === 'HISTORICO') && (
+                    <div className="relative min-w-[170px]">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsFilterPrioridadeOpen(false); setIsFilterEstadoOpen(!isFilterEstadoOpen); }}
+                            className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
                         >
-                            <button
-                                onClick={() => { setFilterEstado('Todos'); setIsFilterEstadoOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                            {filterEstado === 'Todos' ? 'Todos os estados' : filterEstado}
+                            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isFilterEstadoOpen && (
+                            <div 
+                                onMouseDown={(e) => e.stopPropagation()} 
+                                className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
                             >
-                                Todos os estados
-                            </button>
-                            {['PENDENTE', 'APROVADO', 'CANCELADO', 'ENTREGUE'].map(est => (
                                 <button
-                                    key={est}
-                                    onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
-                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                    onClick={() => { setFilterEstado('Todos'); setIsFilterEstadoOpen(false); }}
+                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
                                 >
-                                    {est}
+                                    Todos os estados
                                 </button>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                {(canViewHistorico && viewMode === 'HISTORICO' ? historicoEstadoOptions : estadoOptions).map(est => (
+                                    <button
+                                        key={est}
+                                        onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
+                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                    >
+                                        {est}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Dropdown Prioridade */}
                 <div className="relative min-w-[170px]">
