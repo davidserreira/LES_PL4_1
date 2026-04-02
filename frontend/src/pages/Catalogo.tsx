@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
     Plus, Package, AlertTriangle, CheckCircle2, Pencil, X, AlertCircle, 
-    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal
+    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal, Check
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
@@ -260,18 +260,18 @@ const Catalogo = () => {
 
                 {/* Selection mode header */}
                 {isSelectionMode && (
-                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-200">
-                        {/* Counter */}
-                        <span className="px-4 py-2 rounded-lg bg-slate-100 border border-slate-200 text-sm font-bold text-slate-700">
+                    <div className="flex items-center gap-2.5 animate-in fade-in slide-in-from-right-4 duration-200">
+                        {/* Counter badge */}
+                        <span className="inline-flex items-center px-3.5 py-2 rounded-lg bg-slate-100 border border-slate-200 text-sm font-semibold text-slate-600 tabular-nums whitespace-nowrap">
                             {selectedIds.length} selecionados
                         </span>
 
                         {/* Cancelar */}
                         <button
                             onClick={exitSelectionMode}
-                            className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-slate-600 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shadow-sm active:scale-95"
                         >
-                            <X size={16} />
+                            <X size={15} strokeWidth={2.5} />
                             Cancelar
                         </button>
 
@@ -279,13 +279,13 @@ const Catalogo = () => {
                         <button
                             onClick={handleConfirmarPedido}
                             disabled={selectedIds.length === 0}
-                            className={`flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg transition-all shadow-md active:scale-95 ${
+                            className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all shadow-sm active:scale-95 ${
                                 selectedIds.length > 0
-                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
-                                    : 'bg-emerald-200 text-white cursor-not-allowed opacity-60'
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/25'
+                                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                             }`}
                         >
-                            <ShoppingCart size={18} />
+                            <ShoppingCart size={16} strokeWidth={2} />
                             Criar Pedido
                         </button>
                     </div>
@@ -438,13 +438,14 @@ const Catalogo = () => {
                                             <tr
                                                 key={produto.id}
                                                 onClick={isSelectionMode ? () => toggleSelect(produto.id) : undefined}
-                                                className={`group transition-colors ${
+                                                className={`group transition-all ${
                                                     isSelectionMode
                                                         ? isSelected
-                                                            ? 'bg-blue-50/60 border-l-4 border-l-blue-500 cursor-pointer hover:bg-blue-50'
-                                                            : 'hover:bg-slate-50/50 cursor-pointer border-l-4 border-l-transparent'
+                                                            ? 'bg-blue-50/50 cursor-pointer'
+                                                            : 'hover:bg-slate-50/60 cursor-pointer'
                                                         : 'hover:bg-slate-50/50'
                                                 }`}
+                                                style={isSelectionMode && isSelected ? { boxShadow: 'inset 3px 0 0 #3b82f6' } : isSelectionMode ? { boxShadow: 'inset 3px 0 0 transparent' } : {}}
                                             >
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-4">
@@ -500,14 +501,19 @@ const Catalogo = () => {
                                                 <td className="px-6 py-5">
                                                     <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
                                                         {isSelectionMode ? (
-                                                            /* Checkbox */
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={isSelected}
-                                                                onChange={() => toggleSelect(produto.id)}
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                className="w-5 h-5 rounded border-2 border-slate-300 text-blue-600 accent-blue-600 cursor-pointer transition-all"
-                                                            />
+                                                            /* Custom styled checkbox */
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); toggleSelect(produto.id); }}
+                                                                className={`w-[22px] h-[22px] rounded-[5px] border-2 flex items-center justify-center flex-shrink-0 transition-all duration-150 ${
+                                                                    isSelected
+                                                                        ? 'bg-blue-500 border-blue-500 shadow-sm shadow-blue-200'
+                                                                        : 'bg-white border-slate-300 hover:border-blue-400 hover:bg-blue-50/30'
+                                                                }`}
+                                                            >
+                                                                {isSelected && (
+                                                                    <Check size={13} strokeWidth={3} className="text-white" />
+                                                                )}
+                                                            </button>
                                                         ) : (
                                                             /* Edit button */
                                                             <button
