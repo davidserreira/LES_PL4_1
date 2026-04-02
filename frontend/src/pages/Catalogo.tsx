@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { 
-    Plus, Package, AlertTriangle, CheckCircle2, Pencil, X, AlertCircle, 
-    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal, Check
+    Plus, Package, AlertTriangle, CheckCircle2, X, AlertCircle, 
+    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal, Check,
+    MoreVertical, Pencil, MousePointer2
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
@@ -43,11 +44,15 @@ const Catalogo = () => {
     // Selection mode state
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    const [produtosParaPedido, setProdutosParaPedido] = useState<Produto[]>([]);
+    const [produtosParaPedido, setProdutosParaPedido] = useState<(Omit<Produto, 'preco'> & { preco: number })[]>([]);
 
-    // 3-dot actions menu
+    // Header 3-dot actions menu (Adicionar Produto)
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
     const actionsMenuRef = useRef<HTMLDivElement>(null);
+
+    // Per-row 3-dot menu
+    const [openRowMenuId, setOpenRowMenuId] = useState<number | null>(null);
+    const rowMenuRef = useRef<HTMLDivElement | null>(null);
 
     // Sorting state
     const [sortField, setSortField] = useState<SortField>('nome');
@@ -61,11 +66,22 @@ const Catalogo = () => {
     // Edit Modal State
     const [productToEdit, setProductToEdit] = useState<Produto | null>(null);
 
-    // Close actions menu on click outside
+    // Close header actions menu on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
                 setIsActionsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Close row menu on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (rowMenuRef.current && !rowMenuRef.current.contains(event.target as Node)) {
+                setOpenRowMenuId(null);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -171,10 +187,26 @@ const Catalogo = () => {
     };
 
     const handleConfirmarPedido = () => {
-        const selecionados = produtos.filter(p => selectedIds.includes(p.id));
+        const selecionados = produtos
+            .filter(p => selectedIds.includes(p.id))
+            .map(p => ({ ...p, preco: p.preco ?? 0 }));
         setProdutosParaPedido(selecionados);
         setIsCriarPedidoModalOpen(true);
         exitSelectionMode();
+    };
+
+    // Row menu: Selecionar — enter selection mode + pre-select this product
+    const handleRowSelecionar = (produto: Produto) => {
+        setOpenRowMenuId(null);
+        setIsSelectionMode(true);
+        setSelectedIds([produto.id]);
+    };
+
+    // Row menu: Criar Pedido — open modal directly with this single product
+    const handleRowCriarPedido = (produto: Produto) => {
+        setOpenRowMenuId(null);
+        setProdutosParaPedido([{ ...produto, preco: produto.preco ?? 0 }]);
+        setIsCriarPedidoModalOpen(true);
     };
 
     return (
@@ -515,14 +547,55 @@ const Catalogo = () => {
                                                                 )}
                                                             </button>
                                                         ) : (
-                                                            /* Edit button */
-                                                            <button
-                                                                onClick={() => setProductToEdit(produto)}
-                                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                                title="Editar produto"
+                                                            /* Row 3-dot actions menu */
+                                                            <div
+                                                                className="relative"
+                                                                ref={openRowMenuId === produto.id ? rowMenuRef : null}
                                                             >
-                                                                <Pencil size={18} />
-                                                            </button>
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setOpenRowMenuId(prev => prev === produto.id ? null : produto.id);
+                                                                    }}
+                                                                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                                                    title="Ações"
+                                                                >
+                                                                    <MoreVertical size={18} />
+                                                                </button>
+
+                                                                {openRowMenuId === produto.id && (
+                                                                    <div className="absolute right-0 top-[calc(100%+4px)] w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-40 py-1 animate-in fade-in zoom-in-95 duration-150">
+                                                                        {/* Selecionar */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleRowSelecionar(produto); }}
+                                                                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                                                        >
+                                                                            <MousePointer2 size={15} className="text-slate-400 flex-shrink-0" />
+                                                                            Selecionar
+                                                                        </button>
+
+                                                                        <div className="my-1 border-t border-slate-100" />
+
+                                                                        {/* Editar Produto */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); setOpenRowMenuId(null); setProductToEdit(produto); }}
+                                                                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                                                        >
+                                                                            <Pencil size={15} className="text-slate-400 flex-shrink-0" />
+                                                                            Editar Produto
+                                                                        </button>
+
+                                                                        {/* Criar Pedido */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleRowCriarPedido(produto); }}
+                                                                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                                                        >
+                                                                            <ShoppingCart size={15} className="text-slate-400 flex-shrink-0" />
+                                                                            Criar Pedido
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
                                                     </div>
                                                 </td>
