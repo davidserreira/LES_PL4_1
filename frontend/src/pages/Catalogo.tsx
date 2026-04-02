@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
     Plus, Package, AlertTriangle, CheckCircle2, Pencil, X, AlertCircle, 
-    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart 
+    Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
 import EditarProdutoModal from '../components/EditarProdutoModal';
 import PedidoAutomaticoModal from '../components/PedidoAutomaticoModal';
+import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 
 interface Produto {
     id: number;
@@ -34,9 +35,19 @@ const Catalogo = () => {
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isAutoOrderModalOpen, setIsAutoOrderModalOpen] = useState(false);
+    const [isCriarPedidoModalOpen, setIsCriarPedidoModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<Toast | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Selection mode state
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [produtosParaPedido, setProdutosParaPedido] = useState<Produto[]>([]);
+
+    // 3-dot actions menu
+    const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const actionsMenuRef = useRef<HTMLDivElement>(null);
 
     // Sorting state
     const [sortField, setSortField] = useState<SortField>('nome');
@@ -49,6 +60,17 @@ const Catalogo = () => {
 
     // Edit Modal State
     const [productToEdit, setProductToEdit] = useState<Produto | null>(null);
+
+    // Close actions menu on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (actionsMenuRef.current && !actionsMenuRef.current.contains(event.target as Node)) {
+                setIsActionsMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const fetchProdutos = async () => {
         try {
@@ -67,8 +89,6 @@ const Catalogo = () => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 4000);
     };
-
-
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -133,6 +153,30 @@ const Catalogo = () => {
         }
     };
 
+    // Selection mode helpers
+    const enterSelectionMode = () => {
+        setIsSelectionMode(true);
+        setSelectedIds([]);
+    };
+
+    const exitSelectionMode = () => {
+        setIsSelectionMode(false);
+        setSelectedIds([]);
+    };
+
+    const toggleSelect = (id: number) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const handleConfirmarPedido = () => {
+        const selecionados = produtos.filter(p => selectedIds.includes(p.id));
+        setProdutosParaPedido(selecionados);
+        setIsCriarPedidoModalOpen(true);
+        exitSelectionMode();
+    };
+
     return (
         <div className="space-y-6 relative">
             {/* Toast Notification */}
@@ -151,6 +195,7 @@ const Catalogo = () => {
                 </div>
             )}
 
+            {/* Header */}
             <div className="flex justify-between items-center">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-slate-900">Stock</h1>
@@ -158,22 +203,93 @@ const Catalogo = () => {
                         Gerencie o stock de produtos nesta secção.
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => setIsAutoOrderModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 text-sm font-black rounded-lg hover:bg-blue-50 transition-all border-2 border-blue-100 hover:border-blue-200 shadow-sm active:scale-95"
-                    >
-                        <ShoppingCart size={18} />
-                        Pedido Automático
-                    </button>
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-                    >
-                        <Plus size={18} />
-                        Adicionar Produto
-                    </button>
-                </div>
+
+                {/* Normal header buttons */}
+                {!isSelectionMode && (
+                    <div className="flex items-center gap-3">
+                        {/* Criar Pedido */}
+                        <button
+                            onClick={enterSelectionMode}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                        >
+                            <ShoppingCart size={18} />
+                            Criar Pedido
+                        </button>
+
+                        {/* Pedidos Automáticos — estilo original mantido */}
+                        <button
+                            onClick={() => setIsAutoOrderModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 text-sm font-black rounded-lg hover:bg-blue-50 transition-all border-2 border-blue-100 hover:border-blue-200 shadow-sm active:scale-95"
+                        >
+                            <ShoppingCart size={18} />
+                            Pedidos Automáticos
+                        </button>
+
+                        {/* 3-dot actions menu */}
+                        <div className="relative" ref={actionsMenuRef}>
+                            <button
+                                onClick={() => setIsActionsMenuOpen(prev => !prev)}
+                                className="flex items-center justify-center w-10 h-10 rounded-lg border-2 border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95"
+                                title="Mais ações"
+                            >
+                                <MoreHorizontal size={20} />
+                            </button>
+
+                            {isActionsMenuOpen && (
+                                <div className="absolute top-[calc(100%+8px)] right-0 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                    <button
+                                        onClick={() => {
+                                            setIsActionsMenuOpen(false);
+                                            setIsModalOpen(true);
+                                        }}
+                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                    >
+                                        <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                                            <Package size={16} />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold text-slate-800">Adicionar Produto</p>
+                                            <p className="text-[11px] text-slate-400 font-medium">Novo item no stock</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Selection mode header */}
+                {isSelectionMode && (
+                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-200">
+                        {/* Counter */}
+                        <span className="px-4 py-2 rounded-lg bg-slate-100 border border-slate-200 text-sm font-bold text-slate-700">
+                            {selectedIds.length} selecionados
+                        </span>
+
+                        {/* Cancelar */}
+                        <button
+                            onClick={exitSelectionMode}
+                            className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 text-sm font-semibold rounded-lg border border-slate-200 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
+                        >
+                            <X size={16} />
+                            Cancelar
+                        </button>
+
+                        {/* Criar Pedido (confirm) */}
+                        <button
+                            onClick={handleConfirmarPedido}
+                            disabled={selectedIds.length === 0}
+                            className={`flex items-center gap-2 px-4 py-2 text-sm font-black rounded-lg transition-all shadow-md active:scale-95 ${
+                                selectedIds.length > 0
+                                    ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20'
+                                    : 'bg-emerald-200 text-white cursor-not-allowed opacity-60'
+                            }`}
+                        >
+                            <ShoppingCart size={18} />
+                            Criar Pedido
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Filtros */}
@@ -199,7 +315,7 @@ const Catalogo = () => {
                     </button>
                     <button
                         onClick={() => setFilterStatus('critico')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'critico' ? 'bg-white text-amber-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                        className={`px-4 py-1.5 text-sm font-medium rounded-all transition-all ${filterStatus === 'critico' ? 'bg-white text-amber-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
                     >
                         Crítico
                     </button>
@@ -308,72 +424,105 @@ const Catalogo = () => {
                                             </button>
                                         </th>
                                         <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Ações</th>
+                                        {/* Ações OR Selecionar column */}
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                            {isSelectionMode ? 'Selecionar' : 'Ações'}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                    {sortedProdutos.map((produto) => (
-                                        <tr key={produto.id} className="group hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-emerald-600 transition-colors">
-                                                        <Package size={20} />
+                                    {sortedProdutos.map((produto) => {
+                                        const isSelected = selectedIds.includes(produto.id);
+
+                                        return (
+                                            <tr
+                                                key={produto.id}
+                                                onClick={isSelectionMode ? () => toggleSelect(produto.id) : undefined}
+                                                className={`group transition-colors ${
+                                                    isSelectionMode
+                                                        ? isSelected
+                                                            ? 'bg-blue-50/60 border-l-4 border-l-blue-500 cursor-pointer hover:bg-blue-50'
+                                                            : 'hover:bg-slate-50/50 cursor-pointer border-l-4 border-l-transparent'
+                                                        : 'hover:bg-slate-50/50'
+                                                }`}
+                                            >
+                                                <td className="px-6 py-5">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`p-2.5 border shadow-sm rounded-xl transition-colors ${
+                                                            isSelected
+                                                                ? 'bg-blue-50 border-blue-200 text-blue-500'
+                                                                : 'bg-white border-slate-100 text-slate-600 group-hover:text-emerald-600'
+                                                        }`}>
+                                                            <Package size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <span className="block font-bold text-slate-900">{produto.nome}</span>
+                                                            {produto.descricao && (
+                                                                <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px] block">{produto.descricao}</span>
+                                                            )}
+                                                            {produto.fornecedores && produto.fornecedores.length > 0 && (
+                                                                <span className="text-[10px] text-emerald-600 font-bold block mt-1">
+                                                                    Fornecedores: {produto.fornecedores.map(f => f.nome).join(', ')}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <span className="block font-bold text-slate-900">{produto.nome}</span>
-                                                        {produto.descricao && (
-                                                            <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px] block">{produto.descricao}</span>
-                                                        )}
-                                                        {produto.fornecedores && produto.fornecedores.length > 0 && (
-                                                            <span className="text-[10px] text-emerald-600 font-bold block mt-1">
-                                                                Fornecedores: {produto.fornecedores.map(f => f.nome).join(', ')}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                                                        {produto.categoria || 'Sem categoria'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <span className="font-mono font-bold text-slate-700">{produto.stock}</span>
+                                                </td>
+                                                <td className="px-6 py-5 text-center">
+                                                    <span className="font-mono font-medium text-slate-400">{produto.stockMinimo}</span>
+                                                </td>
+                                                <td className="px-6 py-5 text-right font-bold text-slate-900">
+                                                    {produto.preco ? `${produto.preco.toFixed(2)} €` : '0.00 €'}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <div className="flex justify-center">
+                                                        {produto.stock <= produto.stockMinimo ? (
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100">
+                                                                <AlertTriangle size={12} className="animate-pulse" />
+                                                                CRÍTICO
+                                                            </span>
+                                                        ) : (
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                                <CheckCircle2 size={12} />
+                                                                ESTÁVEL
                                                             </span>
                                                         )}
                                                     </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                                                    {produto.categoria || 'Sem categoria'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <span className="font-mono font-bold text-slate-700">{produto.stock}</span>
-                                            </td>
-                                            <td className="px-6 py-5 text-center">
-                                                <span className="font-mono font-medium text-slate-400">{produto.stockMinimo}</span>
-                                            </td>
-                                            <td className="px-6 py-5 text-right font-bold text-slate-900">
-                                                {produto.preco ? `${produto.preco.toFixed(2)} €` : '0.00 €'}
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex justify-center">
-                                                    {produto.stock <= produto.stockMinimo ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100">
-                                                            <AlertTriangle size={12} className="animate-pulse" />
-                                                            CRÍTICO
-                                                        </span>
-                                                    ) : (
-                                                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
-                                                            <CheckCircle2 size={12} />
-                                                            ESTÁVEL
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex justify-center">
-                                                    <button
-                                                        onClick={() => setProductToEdit(produto)}
-                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                        title="Editar produto"
-                                                    >
-                                                        <Pencil size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td className="px-6 py-5">
+                                                    <div className="flex justify-center" onClick={(e) => e.stopPropagation()}>
+                                                        {isSelectionMode ? (
+                                                            /* Checkbox */
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isSelected}
+                                                                onChange={() => toggleSelect(produto.id)}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="w-5 h-5 rounded border-2 border-slate-300 text-blue-600 accent-blue-600 cursor-pointer transition-all"
+                                                            />
+                                                        ) : (
+                                                            /* Edit button */
+                                                            <button
+                                                                onClick={() => setProductToEdit(produto)}
+                                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                                title="Editar produto"
+                                                            >
+                                                                <Pencil size={18} />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -406,6 +555,7 @@ const Catalogo = () => {
                 </div>
             )}
 
+            {/* Modals */}
             <CriarProdutoModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -424,6 +574,16 @@ const Catalogo = () => {
                         if (msg) showToast(msg, 'success');
                     }
                 }}
+            />
+
+            <CriarPedidoCompraModal
+                isOpen={isCriarPedidoModalOpen}
+                onClose={(shouldRefresh, msg) => {
+                    setIsCriarPedidoModalOpen(false);
+                    setProdutosParaPedido([]);
+                    if (shouldRefresh && msg) showToast(msg, 'success');
+                }}
+                initialProdutos={produtosParaPedido}
             />
 
             {productToEdit && (

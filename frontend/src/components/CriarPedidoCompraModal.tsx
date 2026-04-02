@@ -24,6 +24,7 @@ interface CriarPedidoModalProps {
     onClose: (shouldRefresh?: boolean, msg?: string) => void;
     draftId?: number | null;
     pedidoToEdit?: any | null;
+    initialProdutos?: Produto[];
 }
 
 const formatCurrency = (value: number) => {
@@ -38,7 +39,7 @@ const PRIORIDADES = [
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
-export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedidoToEdit }: CriarPedidoModalProps) {
+export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedidoToEdit, initialProdutos }: CriarPedidoModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
@@ -82,7 +83,6 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                 setPrioridade(pedidoToEdit.prioridade);
                 setObservacoes(pedidoToEdit.observacoes || '');
                 setStep(1);
-                // Map lines to products
                 const editLinhas = pedidoToEdit.linhas.map((l: any) => {
                     const p = data.find((prod: any) => prod.id === l.produtoId);
                     return { produto: p || l.produto, quantidade: l.quantidade };
@@ -95,8 +95,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                         setOriginalDraft(draft);
                         setPrioridade(draft.prioridade);
                         setObservacoes(draft.observacoes || '');
-                        setStep(1); // open at step 1 for editing
-                        // Map lines to products
+                        setStep(1);
                         const draftLinhas = draft.linhas.map((l: any) => {
                             const p = data.find((prod: any) => prod.id === l.produtoId);
                             return { produto: p || l.produto, quantidade: l.quantidade };
@@ -104,6 +103,16 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                         setLinhas(draftLinhas);
                     }
                 }).catch(console.error);
+            } else if (initialProdutos && initialProdutos.length > 0) {
+                // Pre-seed from Stock page selection
+                const preSeeded = initialProdutos.map(p => {
+                    let qtdInicial = 1;
+                    if (p.stock < p.stockMinimo) {
+                        qtdInicial = (p.stockMinimo + 1) - p.stock;
+                    }
+                    return { produto: p, quantidade: qtdInicial };
+                });
+                setLinhas(preSeeded);
             }
         }).catch(console.error);
 
