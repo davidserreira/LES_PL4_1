@@ -717,10 +717,10 @@ export default function PedidosCompra() {
                     <p className="text-sm text-slate-500 mb-6">Tente ajustar os seus filtros de pesquisa ou limpe a pesquisa.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible relative z-0">
-                    <div className="overflow-visible">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-widest font-bold border-b border-slate-200">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative z-0">
+                    <div className="w-full overflow-auto max-h-[calc(100vh-280px)] custom-scrollbar">
+                        <table className="w-full text-left relative">
+                            <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md text-slate-500 text-[10px] uppercase tracking-widest font-bold border-b border-slate-200 shadow-sm">
                                 <tr>
                                     <th className="px-6 py-4">ID</th>
                                     <th 

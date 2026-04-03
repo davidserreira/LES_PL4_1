@@ -213,112 +213,123 @@ const Fornecedores = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Fornecedores</h1>
-                    <p className="mt-2 text-sm text-slate-500">
-                        Gerencie as entidades fornecedoras da clínica nesta secção.
-                    </p>
-                </div>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Adicionar Fornecedor
-                </button>
-            </div>
-
-            {/* Filtros */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative z-20">
-                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2">
-                    <Filter size={16} />
-                    Filtros:
-                </div>
-
-                {/* Status Segmented Control */}
-                <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
-                    <button
-                        onClick={() => setFilterStatus('todos')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                    >
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('ativos')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'ativos' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                    >
-                        Ativos
-                    </button>
-                    <button
-                        onClick={() => setFilterStatus('inativos')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'inativos' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                    >
-                        Inativos
-                    </button>
-                </div>
-
-                <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
-
-                {/* Category Dropdown */}
-                <div className="relative min-w-[180px]">
-                    <button
-                        onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
-                        className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterCategoria ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                    >
-                        {filterCategoria || 'Todas as Categorias'}
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isFilterCategoryOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
-                            <button
-                                onClick={() => { setFilterCategoria(''); setIsFilterCategoryOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategoria ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                            >
-                                Todas as Categorias
-                            </button>
-                            {CATEGORIES.map(cat => (
-                                <button
-                                    key={cat}
-                                    onClick={() => { setFilterCategoria(cat); setIsFilterCategoryOpen(false); }}
-                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategoria === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                >
-                                    {cat}
-                                </button>
-                            ))}
+            {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
+            <div className="sticky top-0 z-40 bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
+                <div className="space-y-5">
+                    {/* Linha 1: Título e Botões de ação lado a lado */}
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Fornecedores</h1>
+                            <p className="mt-2 text-sm text-slate-500">
+                                Gerencie as entidades fornecedoras da clínica nesta secção.
+                            </p>
                         </div>
-                    )}
-                </div>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                        >
+                            <Plus size={18} />
+                            Adicionar Fornecedor
+                        </button>
+                    </div>
 
-                {/* Clear Filters */}
-                {(filterStatus !== 'todos' || filterCategoria !== '') && (
-                    <button
-                        onClick={() => { setFilterStatus('todos'); setFilterCategoria(''); setSearchQuery(''); }}
-                        className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
-                    >
-                        Limpar filtros
-                    </button>
-                )}
+                    {/* ── Linha 2: 2 Blocks Separados (Pesquisa + Filtros) ── */}
+                    <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
+                        
+                        {/* Search Bar Container */}
+                        {fornecedores.length > 0 && (
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 p-2 rounded-xl border border-slate-200/60 shadow-sm relative z-10 flex-grow">
+                                <div className="relative w-full max-w-md">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Pesquisar por nome, NIF ou contacto..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap hidden sm:block">
+                                    <span className="font-bold text-slate-700">{filteredFornecedores.length}</span> / <span className="font-bold text-slate-700">{fornecedores.length}</span> fornecedores
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Filtros Container */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/80 p-3 rounded-xl border border-slate-200/60 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                            <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
+                                <Filter size={16} />
+                                Filtros
+                            </div>
+
+                            {/* Status Segmented Control */}
+                            <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto">
+                                <button
+                                    onClick={() => setFilterStatus('todos')}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                >
+                                    Todos
+                                </button>
+                                <button
+                                    onClick={() => setFilterStatus('ativos')}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'ativos' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                >
+                                    Ativos
+                                </button>
+                                <button
+                                    onClick={() => setFilterStatus('inativos')}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'inativos' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                >
+                                    Inativos
+                                </button>
+                            </div>
+
+                            <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+
+                            {/* Category Dropdown */}
+                            <div className="relative min-w-[150px] w-full sm:w-auto">
+                                <button
+                                    onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
+                                    className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterCategoria ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                >
+                                    {filterCategoria || 'Todas as Categorias'}
+                                    <ChevronDown size={14} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {isFilterCategoryOpen && (
+                                    <div className="absolute top-full right-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                        <button
+                                            onClick={() => { setFilterCategoria(''); setIsFilterCategoryOpen(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategoria ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                        >
+                                            Todas as Categorias
+                                        </button>
+                                        {CATEGORIES.map(cat => (
+                                            <button
+                                                key={cat}
+                                                onClick={() => { setFilterCategoria(cat); setIsFilterCategoryOpen(false); }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategoria === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                            >
+                                                {cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Clear Filters */}
+                            {(filterStatus !== 'todos' || filterCategoria !== '' || searchQuery !== '') && (
+                                <button
+                                    onClick={() => { setFilterStatus('todos'); setFilterCategoria(''); setSearchQuery(''); }}
+                                    className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
+                                >
+                                    Limpar
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            {fornecedores.length > 0 && (
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
-                    <div className="relative w-full max-w-md">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Pesquisar por nome, NIF ou contacto..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
-                        />
-                    </div>
-                    <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap">
-                        A mostrar <span className="font-bold text-slate-700">{filteredFornecedores.length}</span> de <span className="font-bold text-slate-700">{fornecedores.length}</span> fornecedores
-                    </div>
-                </div>
-            )}
 
             {loading ? (
                 <div className="flex justify-center items-center h-64">
@@ -326,10 +337,11 @@ const Fornecedores = () => {
                 </div>
             ) : fornecedores.length > 0 ? (
                 filteredFornecedores.length > 0 ? (
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-visible">
-                        <table className="w-full text-left">
-                            <thead className="bg-slate-50 border-b border-slate-200">
-                                <tr>
+                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative z-0">
+                        <div className="w-full overflow-auto max-h-[calc(100vh-280px)] custom-scrollbar">
+                            <table className="w-full text-left border-collapse relative">
+                                <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+                                    <tr>
                                     <th
                                         onClick={() => handleSort('nome')}
                                         className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
@@ -428,6 +440,7 @@ const Fornecedores = () => {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 ) : (
                     <div className="bg-white p-16 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
