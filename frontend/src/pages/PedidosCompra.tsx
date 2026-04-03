@@ -375,7 +375,7 @@ export default function PedidosCompra() {
     };
 
     return (
-        <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300 relative">
+        <div className="space-y-6 animate-in fade-in duration-300 relative">
             <CriarPedidoCompraModal 
                 isOpen={isCreateModalOpen} 
                 draftId={editingDraftId}
