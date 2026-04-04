@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList } from 'lucide-react';
 import { Utilizador } from '../services/utilizadorService';
@@ -13,6 +13,7 @@ interface SidebarProps {
 
 const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     const [showLogout, setShowLogout] = useState(false);
+    const sidebarRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
@@ -25,11 +26,16 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             if (!isToggle && !isPanel) {
                 setShowLogout(false);
             }
+
+            // Close sidebar if clicked outside and not collapsed
+            if (sidebarRef.current && !sidebarRef.current.contains(target) && !isCollapsed) {
+                onToggle();
+            }
         };
 
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
-    }, []);
+    }, [isCollapsed, onToggle]);
 
     const getRoleLabel = (role: string) => {
         switch (role) {
@@ -41,17 +47,15 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     };
 
     const menuItems = [
-        { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-        { to: '/catalogo', label: 'Stock', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
-        { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR'] },
-        { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-        { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },
+        { to: '/', label: 'Dashboard', icon: LayoutDashboard },
+        { to: '/catalogo', label: 'Stock', icon: BookOpen },
+        { to: '/fornecedores', label: 'Fornecedores', icon: Factory },
+        { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList },
+        { to: '/utilizadores', label: 'Utilizadores', icon: Users },
     ];
 
-    const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
-
     return (
-        <aside className={`bg-slate-900 text-white flex flex-col min-h-screen transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative`}>
+        <aside ref={sidebarRef} className={`bg-slate-900 text-white flex flex-col min-h-screen transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative z-50`}>
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
@@ -131,10 +135,15 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto py-4">
                 <ul className="space-y-1 px-3">
-                    {filteredItems.map((item) => (
+                    {menuItems.map((item) => (
                         <li key={item.to}>
                             <NavLink
                                 to={item.to}
+                                onClick={() => {
+                                    if (isCollapsed) {
+                                        onToggle();
+                                    }
+                                }}
                                 className={({ isActive }) =>
                                     `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
                                         ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'

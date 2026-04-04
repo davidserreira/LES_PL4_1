@@ -50,27 +50,10 @@ function App() {
                         <Routes>
                             <Route path="/" element={<Dashboard />} />
                             
-                            {/* Role-based Route Protection */}
-                            {(user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
-                                <>
-                                    <Route path="/catalogo" element={<Catalogo />} />
-                                    <Route path="/pedidos" element={<PedidosCompra />} />
-                                </>
-                            )}
-
-                            {user.role === 'RESPONSAVEL_FINANCEIRO' && (
-                                <>
-                                    <Route path="/pedidos" element={<PedidosCompra />} />
-                                </>
-                            )}
-                            
-                            {user.role === 'ADMINISTRADOR' && (
-                                <>
-                                    <Route path="/fornecedores" element={<Fornecedores />} />
-                                    <Route path="/utilizadores" element={<Utilizadores />} />
-                                </>
-                            )}
-
+                            <Route path="/catalogo" element={<Catalogo />} />
+                            <Route path="/pedidos" element={<PedidosCompra />} />
+                            <Route path="/fornecedores" element={<Fornecedores />} />
+                            <Route path="/utilizadores" element={<Utilizadores />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                     </main>
