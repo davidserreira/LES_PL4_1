@@ -55,7 +55,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     ];
 
     return (
-        <aside ref={sidebarRef} className={`bg-slate-900 text-white flex flex-col min-h-screen transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative z-50`}>
+        <aside ref={sidebarRef} className={`bg-slate-900 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50`}>
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
