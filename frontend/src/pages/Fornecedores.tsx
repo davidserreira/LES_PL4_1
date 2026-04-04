@@ -199,7 +199,7 @@ const Fornecedores = () => {
         <div className="space-y-6 relative">
             {/* Toast Notification */}
             {toast && (
-                <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
+                <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
                         ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                         : 'bg-red-50 border-red-100 text-red-800'
@@ -226,7 +226,7 @@ const Fornecedores = () => {
                         </div>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
                         >
                             <Plus size={18} />
                             Adicionar Fornecedor
@@ -382,14 +382,14 @@ const Fornecedores = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-left">
-                                            <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-bold border ${fornecedor.estado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${fornecedor.estado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
                                                 {fornecedor.estado ? 'Ativo' : 'Inativo'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-center relative">
                                             <button
                                                 onMouseDown={(e) => handleActionMouseDown(fornecedor.id, e)}
-                                                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                                                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                                             >
                                                 <MoreVertical size={18} />
                                             </button>

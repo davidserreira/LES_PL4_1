@@ -375,7 +375,7 @@ export default function PedidosCompra() {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-300 relative">
+        <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in duration-300 relative">
             <CriarPedidoCompraModal 
                 isOpen={isCreateModalOpen} 
                 draftId={editingDraftId}
@@ -472,238 +472,250 @@ export default function PedidosCompra() {
                 </div>
             )}
 
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos de Compra</h1>
-                    <p className="mt-1 text-sm text-slate-500">Visualização dos pedidos criados.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                    {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
-                        <button
-                            onClick={() => setIsRascunhosModalOpen(true)}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-lg transition-colors border max-h-[38px]"
-                        >
-                            <span>Rascunhos</span>
-                            {draftsCount >= 0 && (
-                                <span className="bg-slate-300 text-slate-800 text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">
-                                    {draftsCount}
-                                </span>
-                            )}
-                        </button>
-                    )}
-                    {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
-                        <button
-                            onClick={() => {
-                                setEditingDraftId(null);
-                                setPedidoToEdit(null);
-                                setIsCreateModalOpen(true);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm max-h-[38px]"
-                        >
-                            <Plus size={18} /> Novo pedido
-                        </button>
-                    )}
-                </div>
-            </div>
-
-            {/* Dashboard Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button 
-                    onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
-                    className={`p-5 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterTipo === 'Todos' && filterEstado === 'Todos' && filterPrioridade === 'Todas' && !searchQuery ? 'bg-blue-50/50 border-blue-200 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-blue-100 hover:shadow-md'}`}
-                >
-                    <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total de Pedidos</p>
-                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.estado === 'PENDENTE').length}</h3>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <ClipboardList size={20} />
-                    </div>
-                </button>
+            {/* ── Bloco sticky integrado (Command Center) ── */}
+            <div className="shrink-0 bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all flex flex-col gap-4 mb-4 z-40">
                 
-                <button 
-                    onClick={() => { setFilterPrioridade('URGENTE'); setSearchQuery(''); }}
-                    className={`p-5 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'URGENTE' ? 'bg-red-50/50 border-red-200 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-red-100 hover:shadow-md'}`}
-                >
+                {/* Linha 1: Título e Botões */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Urgentes</p>
-                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.prioridade === 'URGENTE' && p.estado !== 'CANCELADO').length}</h3>
+                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos de Compra</h1>
+                        <p className="mt-0.5 text-xs text-slate-500 hidden sm:block">Visualização dos pedidos criados.</p>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
-                        <AlertTriangle size={20} />
-                    </div>
-                </button>
-
-                <button 
-                    onClick={() => { setFilterPrioridade('ALTA'); setSearchQuery(''); }}
-                    className={`p-5 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'ALTA' ? 'bg-amber-50/50 border-amber-200 ring-2 ring-amber-500/20' : 'bg-white border-slate-200 hover:border-amber-100 hover:shadow-md'}`}
-                >
-                    <div>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alta Prioridade</p>
-                        <h3 className="text-2xl font-bold text-slate-800">{pedidos.filter(p => p.prioridade === 'ALTA' && p.estado !== 'CANCELADO').length}</h3>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                        <Clock size={20} />
-                    </div>
-                </button>
-            </div>
-
-            {/* Filtros */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative z-20">
-                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2">
-                    <Filter size={16} />
-                    Filtros:
-                </div>
-
-                {/* Vista: Lista / Histórico */}
-                {canViewHistorico && (
-                    <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
-                        <button
-                            onClick={() => {
-                                setViewMode('LISTA');
-                                setFilterEstado('Todos');
-                            }}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                        >
-                            Lista
-                        </button>
-                        <button
-                            onClick={() => {
-                                setViewMode('HISTORICO');
-                                setFilterEstado('Todos');
-                            }}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                        >
-                            Histórico
-                        </button>
-                    </div>
-                )}
-
-                {canViewHistorico && <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>}
-
-                {/* Tipo de Pedido Segmented Tabs */}
-                <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
-                    <button
-                        onClick={() => setFilterTipo('Todos')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterTipo === 'Todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                    >
-                        Todos
-                    </button>
-                    <button
-                        onClick={() => setFilterTipo('MANUAL')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterTipo === 'MANUAL' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                    >
-                        Manuais
-                    </button>
-                    <button
-                        onClick={() => setFilterTipo('AUTOMATICO')}
-                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterTipo === 'AUTOMATICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                    >
-                        Automáticos
-                    </button>
-                </div>
-
-                <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
-
-                {/* Dropdown Estado */}
-                {(!canViewHistorico || viewMode === 'HISTORICO') && (
-                    <div className="relative min-w-[170px]">
-                        <button
-                            onClick={(e) => { e.stopPropagation(); setIsFilterPrioridadeOpen(false); setIsFilterEstadoOpen(!isFilterEstadoOpen); }}
-                            className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                        >
-                            {filterEstado === 'Todos' ? 'Todos os estados' : filterEstado}
-                            <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {isFilterEstadoOpen && (
-                            <div 
-                                onMouseDown={(e) => e.stopPropagation()} 
-                                className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                    <div className="flex items-center gap-2">
+                        {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                            <button
+                                onClick={() => setIsRascunhosModalOpen(true)}
+                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-blue-600 text-sm font-black rounded-lg hover:bg-blue-50 transition-all border-2 border-blue-100 hover:border-blue-200 shadow-sm active:scale-95"
                             >
-                                <button
-                                    onClick={() => { setFilterEstado('Todos'); setIsFilterEstadoOpen(false); }}
-                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                >
-                                    Todos os estados
-                                </button>
-                                {(canViewHistorico && viewMode === 'HISTORICO' ? historicoEstadoOptions : estadoOptions).map(est => (
-                                    <button
-                                        key={est}
-                                        onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                    >
-                                        {est}
-                                    </button>
-                                ))}
-                            </div>
+                                <span>Rascunhos</span>
+                                {draftsCount >= 0 && (
+                                    <span className="bg-blue-50 border border-blue-200 text-blue-700 text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">
+                                        {draftsCount}
+                                    </span>
+                                )}
+                            </button>
+                        )}
+                        {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                            <button
+                                onClick={() => {
+                                    setEditingDraftId(null);
+                                    setPedidoToEdit(null);
+                                    setIsCreateModalOpen(true);
+                                }}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                            >
+                                <Plus size={18} /> Novo pedido
+                            </button>
                         )}
                     </div>
-                )}
+                </div>
 
-                {/* Dropdown Prioridade */}
-                <div className="relative min-w-[170px]">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsFilterEstadoOpen(false); setIsFilterPrioridadeOpen(!isFilterPrioridadeOpen); }}
-                        className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterPrioridade !== 'Todas' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                {/* Linha 2: Dashboard Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button 
+                        onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
+                        className={`p-4 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterTipo === 'Todos' && filterEstado === 'Todos' && filterPrioridade === 'Todas' && !searchQuery ? 'bg-blue-50/70 border-blue-200 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-blue-100 hover:shadow-md'}`}
                     >
-                        {filterPrioridade === 'Todas' ? 'Todas as prioridades' : filterPrioridade}
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterPrioridadeOpen ? 'rotate-180' : ''}`} />
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
+                            <h3 className="text-2xl font-black text-slate-800 leading-none">{pedidos.length}</h3>
+                        </div>
+                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <ClipboardList size={20} />
+                        </div>
+                    </button>
+                    
+                    <button 
+                        onClick={() => { setFilterPrioridade('URGENTE'); setSearchQuery(''); }}
+                        className={`p-4 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'URGENTE' ? 'bg-red-50/70 border-red-200 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-red-100 hover:shadow-md'}`}
+                    >
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Urgentes</p>
+                            <h3 className="text-2xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'URGENTE' && p.estado !== 'CANCELADO').length}</h3>
+                        </div>
+                        <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                            <AlertTriangle size={20} />
+                        </div>
                     </button>
 
-                    {isFilterPrioridadeOpen && (
-                        <div 
-                            onMouseDown={(e) => e.stopPropagation()}
-                            className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
-                        >
-                            <button
-                                onClick={() => { setFilterPrioridade('Todas'); setIsFilterPrioridadeOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === 'Todas' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                            >
-                                Todas as prioridades
-                            </button>
-                            {['NORMAL', 'ALTA', 'URGENTE'].map(prio => (
-                                <button
-                                    key={prio}
-                                    onClick={() => { setFilterPrioridade(prio); setIsFilterPrioridadeOpen(false); }}
-                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === prio ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                >
-                                    {prio}
-                                </button>
-                            ))}
+                    <button 
+                        onClick={() => { setFilterPrioridade('ALTA'); setSearchQuery(''); }}
+                        className={`p-4 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'ALTA' ? 'bg-amber-50/70 border-amber-200 ring-2 ring-amber-500/20' : 'bg-white border-slate-200 hover:border-amber-100 hover:shadow-md'}`}
+                    >
+                        <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alta Prioridade</p>
+                            <h3 className="text-2xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'ALTA' && p.estado !== 'CANCELADO').length}</h3>
+                        </div>
+                        <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <Clock size={20} />
+                        </div>
+                    </button>
+                </div>
+
+                {/* Linha 3: 2 Blocks Separados (Pesquisa + Filtros) */}
+                <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
+                    
+                    {/* Search Bar Container */}
+                    {pedidos.length > 0 && (
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm relative z-10 flex-grow">
+                            <div className="relative w-full max-w-md">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                <input
+                                    type="text"
+                                    placeholder="Pesquisar por ID, data ou criador..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-9 pr-3 py-1.5 bg-transparent border-0 outline-none text-xs placeholder:text-slate-400"
+                                />
+                            </div>
+                            <div className="text-[10px] text-slate-500 font-medium px-3 whitespace-nowrap hidden sm:block">
+                                A mostrar <span className="font-bold text-slate-700">{filteredPedidos.length}</span> / <span className="font-bold text-slate-700">{pedidos.length}</span> pedidos
+                            </div>
                         </div>
                     )}
-                </div>
 
-                {/* Clear Filters */}
-                {(filterTipo !== 'Todos' || filterEstado !== 'Todos' || filterPrioridade !== 'Todas') && (
-                    <button
-                        onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
-                        className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
-                    >
-                        Limpar filtros
-                    </button>
-                )}
+                {/* Filtros Container */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                    <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
+                        <Filter size={16} />
+                        Filtros
+                    </div>
+
+                    {/* Vista: Lista / Histórico */}
+                    {canViewHistorico && (
+                        <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto">
+                            <button
+                                onClick={() => {
+                                    setViewMode('LISTA');
+                                    setFilterEstado('Todos');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                            >
+                                Lista
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setViewMode('HISTORICO');
+                                    setFilterEstado('Todos');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                            >
+                                Histórico
+                            </button>
+                        </div>
+                    )}
+
+                    {canViewHistorico && <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>}
+
+                    {/* Tipo de Pedido Segmented Tabs */}
+                    <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto overflow-x-auto custom-scrollbar">
+                        <button
+                            onClick={() => setFilterTipo('Todos')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'Todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                        >
+                            Todos
+                        </button>
+                        <button
+                            onClick={() => setFilterTipo('MANUAL')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'MANUAL' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                        >
+                            Manuais
+                        </button>
+                        <button
+                            onClick={() => setFilterTipo('AUTOMATICO')}
+                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'AUTOMATICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                        >
+                            Automáticos
+                        </button>
+                    </div>
+
+                    <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+
+                    <div className="flex w-full sm:w-auto gap-2">
+                        {/* Dropdown Estado */}
+                        {(!canViewHistorico || viewMode === 'HISTORICO') && (
+                            <div className="relative flex-1 sm:min-w-[150px]">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsFilterPrioridadeOpen(false); setIsFilterEstadoOpen(!isFilterEstadoOpen); }}
+                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                >
+                                    <span className="truncate">{filterEstado === 'Todos' ? 'Estado' : filterEstado}</span>
+                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {isFilterEstadoOpen && (
+                                    <div 
+                                        onMouseDown={(e) => e.stopPropagation()} 
+                                        className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
+                                        <button
+                                            onClick={() => { setFilterEstado('Todos'); setIsFilterEstadoOpen(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                        >
+                                            Todos os estados
+                                        </button>
+                                        {(canViewHistorico && viewMode === 'HISTORICO' ? historicoEstadoOptions : estadoOptions).map(est => (
+                                            <button
+                                                key={est}
+                                                onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                            >
+                                                {est}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Dropdown Prioridade */}
+                        <div className="relative flex-1 sm:min-w-[150px]">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsFilterEstadoOpen(false); setIsFilterPrioridadeOpen(!isFilterPrioridadeOpen); }}
+                                className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterPrioridade !== 'Todas' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                            >
+                                <span className="truncate">{filterPrioridade === 'Todas' ? 'Prioridade' : filterPrioridade}</span>
+                                <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterPrioridadeOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isFilterPrioridadeOpen && (
+                                <div 
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                >
+                                    <button
+                                        onClick={() => { setFilterPrioridade('Todas'); setIsFilterPrioridadeOpen(false); }}
+                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === 'Todas' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                    >
+                                        Todas as prioridades
+                                    </button>
+                                    {['NORMAL', 'ALTA', 'URGENTE'].map(prio => (
+                                        <button
+                                            key={prio}
+                                            onClick={() => { setFilterPrioridade(prio); setIsFilterPrioridadeOpen(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === prio ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                        >
+                                            {prio}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Clear Filters */}
+                    {(filterTipo !== 'Todos' || filterEstado !== 'Todos' || filterPrioridade !== 'Todas' || searchQuery !== '') && (
+                        <button
+                            onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
+                            className="p-1.5 ml-auto text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                            title="Limpar filtros"
+                        >
+                            <X size={18} strokeWidth={2.5} />
+                        </button>
+                    )}
+                </div>
             </div>
-
-            {/* BARRA DE PESQUISA */}
-            {pedidos.length > 0 && (
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
-                    <div className="relative w-full max-w-md">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Pesquisar por ID, data ou criador..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
-                        />
-                    </div>
-                    <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap">
-                        A mostrar <span className="font-bold text-slate-700">{filteredPedidos.length}</span> de <span className="font-bold text-slate-700">{pedidos.length}</span> pedidos
-                    </div>
-                </div>
-            )}
+            </div>
 
             {loading ? (
                 <div className="flex justify-center items-center h-64 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -717,28 +729,28 @@ export default function PedidosCompra() {
                     <p className="text-sm text-slate-500 mb-6">Tente ajustar os seus filtros de pesquisa ou limpe a pesquisa.</p>
                 </div>
             ) : (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden relative z-0">
-                    <div className="w-full overflow-auto max-h-[calc(100vh-280px)] custom-scrollbar">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-0 relative z-0">
+                    <div className="w-full h-full overflow-auto custom-scrollbar">
                         <table className="w-full text-left relative">
-                            <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md text-slate-500 text-[10px] uppercase tracking-widest font-bold border-b border-slate-200 shadow-sm">
+                            <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th className="px-6 py-4">ID</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">ID</th>
                                     <th 
-                                        className="px-6 py-4 cursor-pointer hover:bg-slate-100 transition-colors group"
+                                        className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group"
                                         onClick={() => handleSort('criadoEm')}
                                     >
                                         <div className="flex items-center gap-2">Data <SortIcon field="criadoEm" /></div>
                                     </th>
-                                    <th className="px-6 py-4">Emitido por</th>
-                                    <th className="px-6 py-4">Prioridade</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Emitido por</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Prioridade</th>
                                     <th 
-                                        className="px-6 py-4 text-right cursor-pointer hover:bg-slate-100 transition-colors group"
+                                        className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 transition-colors group"
                                         onClick={() => handleSort('valorTotalEstimado')}
                                     >
                                         <div className="flex items-center justify-end gap-2"><SortIcon field="valorTotalEstimado" /> Total</div>
                                     </th>
-                                    <th className="px-6 py-4">Estado</th>
-                                    <th className="px-6 py-4 text-center">Ações</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
@@ -760,7 +772,7 @@ export default function PedidosCompra() {
                                                     —
                                                 </span>
                                             ) : (
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getPriorityStyle(p.prioridade)}`}>
+                                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${getPriorityStyle(p.prioridade)}`}>
                                                     {p.prioridade}
                                                 </span>
                                             )}
@@ -775,7 +787,7 @@ export default function PedidosCompra() {
                                                             setOpenStatusAdminId(openStatusAdminId === p.id ? null : p.id);
                                                             setOpenDropdownId(null);
                                                         }}
-                                                        className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${getStatusStyle(p.estado || '')}`}
+                                                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${getStatusStyle(p.estado || '')}`}
                                                     >
                                                         <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
                                                         {p.estado || 'PENDENTE'}
@@ -802,7 +814,7 @@ export default function PedidosCompra() {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
+                                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
                                                     <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
                                                     {p.estado || 'PENDENTE'}
                                                 </span>
@@ -832,7 +844,7 @@ export default function PedidosCompra() {
 
                                                 <button
                                                     onMouseDown={(e) => handleActionMouseDown(p.id, e)}
-                                                    className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
+                                                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
                                                 >
                                                     <MoreVertical size={18} />
                                                 </button>

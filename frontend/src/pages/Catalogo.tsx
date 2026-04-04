@@ -213,7 +213,7 @@ const Catalogo = () => {
         <div className="space-y-6 relative">
             {/* Toast Notification */}
             {toast && (
-                <div className="fixed top-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
+                <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
                             ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                             : 'bg-red-50 border-red-100 text-red-800'
@@ -243,19 +243,19 @@ const Catalogo = () => {
                         {!isSelectionMode && (
                             <div className="flex items-center gap-3 flex-wrap justify-end">
                                 <button
-                                    onClick={enterSelectionMode}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-                                >
-                                    <ShoppingCart size={18} />
-                                    Criar Pedido
-                                </button>
-
-                                <button
                                     onClick={() => setIsAutoOrderModalOpen(true)}
                                     className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 text-sm font-black rounded-lg hover:bg-blue-50 transition-all border-2 border-blue-100 hover:border-blue-200 shadow-sm active:scale-95"
                                 >
                                     <ShoppingCart size={18} />
                                     Pedidos Automáticos
+                                </button>
+
+                                <button
+                                    onClick={enterSelectionMode}
+                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                                >
+                                    <ShoppingCart size={18} />
+                                    Criar Pedido
                                 </button>
 
                                 <div className="relative" ref={actionsMenuRef}>
