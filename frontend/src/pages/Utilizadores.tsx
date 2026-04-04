@@ -135,7 +135,7 @@ const Utilizadores = () => {
     };
 
     return (
-        <div className="space-y-6 relative text-slate-900">
+        <div className="flex flex-col h-[calc(100vh-100px)] relative text-slate-900">
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[110] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success' 
@@ -190,94 +190,107 @@ const Utilizadores = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">Utilizadores</h1>
-                    <p className="mt-2 text-sm text-slate-500">
-                        Gerencie os utilizadores e as suas permissões de acesso ao sistema.
-                    </p>
-                </div>
-                <button
-                    onClick={() => {
-                        setUtilizadorAEditar(null);
-                        setIsModalOpen(true);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm"
-                >
-                    <Plus size={18} />
-                    Novo Utilizador
-                </button>
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative z-20">
-                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2">
-                    <Filter size={16} />
-                    Filtros:
-                </div>
-
-                {/* Role Dropdown */}
-                <div className="relative min-w-[220px]">
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setIsFilterRoleOpen(!isFilterRoleOpen); }}
-                        className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterRole ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                    >
-                        {ROLES.find(r => r.value === filterRole)?.label || 'Todos os Cargos'}
-                        <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterRoleOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {isFilterRoleOpen && (
-                        <div 
-                            onMouseDown={(e) => e.stopPropagation()}
-                            className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
-                        >
-                            <button
-                                onClick={() => { setFilterRole(''); setIsFilterRoleOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterRole ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                            >
-                                Todos os Cargos
-                            </button>
-                            {ROLES.map(role => (
-                                <button
-                                    key={role.value}
-                                    onClick={() => { setFilterRole(role.value); setIsFilterRoleOpen(false); }}
-                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterRole === role.value ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                >
-                                    {role.label}
-                                </button>
-                            ))}
+            {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
+            <div className="sticky top-0 z-40 bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
+                <div className="space-y-5">
+                    
+                    {/* Linha 1: Título e Botões de ação lado a lado */}
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Utilizadores</h1>
+                            <p className="mt-2 text-sm text-slate-500">
+                                Gerencie os utilizadores e as suas permissões de acesso ao sistema.
+                            </p>
                         </div>
-                    )}
-                </div>
+                        <button
+                            onClick={() => {
+                                setUtilizadorAEditar(null);
+                                setIsModalOpen(true);
+                            }}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                        >
+                            <Plus size={18} />
+                            Novo Utilizador
+                        </button>
+                    </div>
 
-                {/* Clear Filters */}
-                {(filterRole !== '' || searchQuery !== '') && (
-                    <button
-                        onClick={() => { setFilterRole(''); setSearchQuery(''); }}
-                        className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
-                    >
-                        Limpar filtros
-                    </button>
-                )}
+                    {/* ── Linha 2: 2 Blocos Separados (Pesquisa + Filtros) ── */}
+                    <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
+                        
+                        {/* Search Bar Container */}
+                        {utilizadores.length > 0 && (
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 p-2 rounded-xl border border-slate-200/60 shadow-sm relative z-10 flex-grow">
+                                <div className="relative w-full max-w-md">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Pesquisar utilizador..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
+                                    />
+                                </div>
+                                <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap hidden sm:block">
+                                    A mostrar <span className="font-bold text-slate-700">{filteredUtilizadores.length}</span> / <span className="font-bold text-slate-700">{utilizadores.length}</span>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Filtros Container */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/80 p-3 rounded-xl border border-slate-200/60 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                            <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
+                                <Filter size={16} />
+                                Filtros
+                            </div>
+
+                            {/* Role Dropdown */}
+                            <div className="relative min-w-[220px]">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsFilterRoleOpen(!isFilterRoleOpen); }}
+                                    className={`w-full flex items-center justify-between gap-2 px-4 py-1.5 bg-white border rounded-lg text-sm font-medium transition-all ${filterRole ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                >
+                                    {ROLES.find(r => r.value === filterRole)?.label || 'Todos os Cargos'}
+                                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterRoleOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                {isFilterRoleOpen && (
+                                    <div 
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
+                                        <button
+                                            onClick={() => { setFilterRole(''); setIsFilterRoleOpen(false); }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterRole ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                        >
+                                            Todos os Cargos
+                                        </button>
+                                        {ROLES.map(role => (
+                                            <button
+                                                key={role.value}
+                                                onClick={() => { setFilterRole(role.value); setIsFilterRoleOpen(false); }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterRole === role.value ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                            >
+                                                {role.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Clear Filters */}
+                            {(filterRole !== '' || searchQuery !== '') && (
+                                <button
+                                    onClick={() => { setFilterRole(''); setSearchQuery(''); }}
+                                    className="p-1.5 ml-auto text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                                    title="Limpar filtros"
+                                >
+                                    <X size={18} strokeWidth={2.5} />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            {utilizadores.length > 0 && (
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
-                    <div className="relative w-full max-w-md">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Pesquisar utilizador..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
-                        />
-                    </div>
-                    <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap">
-                        A mostrar <span className="font-bold text-slate-700">{filteredUtilizadores.length}</span> de <span className="font-bold text-slate-700">{utilizadores.length}</span> utilizadores
-                    </div>
-                </div>
-            )}
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-100 shadow-sm">
@@ -287,31 +300,32 @@ const Utilizadores = () => {
                     <p className="mt-4 text-sm font-medium text-slate-500">A carregar utilizadores...</p>
                 </div>
             ) : sortedUtilizadores.length > 0 ? (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible relative z-0">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-200">
-                                <th className="px-6 py-4">
-                                    <button 
-                                        onClick={() => handleSort('username')}
-                                        className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
-                                    >
-                                        Utilizador
-                                        {getSortIcon('username')}
-                                    </button>
-                                </th>
-                                <th className="px-6 py-4">
-                                    <button 
-                                        onClick={() => handleSort('role')}
-                                        className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
-                                    >
-                                        Cargo
-                                        {getSortIcon('role')}
-                                    </button>
-                                </th>
-                                <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 uppercase tracking-widest">Ações</th>
-                            </tr>
-                        </thead>
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col flex-1 min-h-0 relative z-0">
+                    <div className="w-full h-full overflow-auto custom-scrollbar">
+                        <table className="w-full text-left relative">
+                            <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+                                <tr>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
+                                        <button 
+                                            onClick={() => handleSort('username')}
+                                            className="flex items-center gap-2 group hover:text-slate-900 transition-colors uppercase"
+                                        >
+                                            Utilizador
+                                            {getSortIcon('username')}
+                                        </button>
+                                    </th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
+                                        <button 
+                                            onClick={() => handleSort('role')}
+                                            className="flex items-center gap-2 group hover:text-slate-900 transition-colors uppercase"
+                                        >
+                                            Cargo
+                                            {getSortIcon('role')}
+                                        </button>
+                                    </th>
+                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
+                                </tr>
+                            </thead>
                         <tbody className="divide-y divide-slate-100">
                             {sortedUtilizadores.map((u) => (
                                 <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
@@ -376,6 +390,7 @@ const Utilizadores = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 </div>
             ) : (
                 <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
