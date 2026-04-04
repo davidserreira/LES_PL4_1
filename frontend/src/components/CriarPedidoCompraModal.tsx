@@ -293,7 +293,14 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
     const mockIdStr = pedidoToEdit ? pedidoToEdit.codigoFormatado : (originalDraft ? originalDraft.codigoFormatado : `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`);
 
     const modalContent = (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+        <div 
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) {
+                    handleCloseX();
+                }
+            }}
+        >
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
@@ -709,7 +716,14 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
 
             {/* Confirm Delete Draft Modal */}
             {isConfirmDeleteOpen && (
-                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setIsConfirmDeleteOpen(false);
+                        }
+                    }}
+                >
                     <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-6">
                             <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
