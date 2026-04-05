@@ -33,8 +33,8 @@ export const produtoService = {
         const response = await api.put(`/produtos/${id}`, produto);
         return response.data;
     },
-    delete: async (id: number) => {
-        const response = await api.delete(`/produtos/${id}`);
+    delete: async (id: number, force = false) => {
+        const response = await api.delete(`/produtos/${id}?force=${force}`);
         return response.data;
     }
 };

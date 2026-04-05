@@ -157,15 +157,20 @@ const Catalogo = () => {
         fetchProdutos();
     }, []);
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, force = false): Promise<boolean> => {
         try {
-            await produtoService.delete(id);
+            await produtoService.delete(id, force);
             showToast('Produto eliminado com sucesso.', 'success');
             setProductToEdit(null);
             fetchProdutos();
-        } catch (error) {
+            return true;
+        } catch (error: any) {
+            if (error.response?.data?.code === 'HAS_RELATIONS' && !force) {
+                return false;
+            }
             console.error('Erro ao eliminar produto:', error);
             showToast('Erro ao eliminar o produto. Tente novamente.', 'error');
+            return true;
         }
     };
 

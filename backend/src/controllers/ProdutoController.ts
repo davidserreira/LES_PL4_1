@@ -74,11 +74,25 @@ export const updateProduto = async (req: Request, res: Response) => {
 export const deleteProduto = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        await prisma.produto.delete({
-            where: { id: parseInt(id) }
-        });
+        const force = req.query.force === 'true';
+
+        if (force) {
+            await prisma.linhaPedidoCompra.deleteMany({
+                where: { produtoId: parseInt(id) }
+            });
+            await prisma.produto.delete({
+                where: { id: parseInt(id) }
+            });
+        } else {
+            await prisma.produto.delete({
+                where: { id: parseInt(id) }
+            });
+        }
         res.status(204).send();
     } catch (error: any) {
+        if (error.code === 'P2003') {
+            return res.status(409).json({ error: 'Produto associado a pedidos', code: 'HAS_RELATIONS' });
+        }
         console.error('Erro ao eliminar produto:', error);
         res.status(500).json({ error: 'Erro ao eliminar produto', details: error.message });
     }
