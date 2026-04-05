@@ -64,7 +64,7 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                 const initializedItems = products.map((p: Produto) => {
                     const isCritico = p.stock <= p.stockMinimo;
                     const jaEncomendado = produtosEmPedidosPendentes.has(p.id);
-                    
+
                     return {
                         produto: p,
                         // Sugestão: o que falta para chegar ao mínimo + 1
@@ -88,7 +88,7 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
         return items.filter(item => {
             const matchesSearch = item.produto.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (item.produto.categoria?.toLowerCase() || '').includes(searchQuery.toLowerCase());
-            
+
             if (filterStatus === 'critico') {
                 return matchesSearch && item.produto.stock <= item.produto.stockMinimo;
             }
@@ -100,14 +100,14 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
     }, [items, searchQuery, filterStatus]);
 
     const toggleSelecao = (id: number) => {
-        setItems(prev => prev.map(item => 
+        setItems(prev => prev.map(item =>
             (item.produto.id === id && !item.jaEncomendado) ? { ...item, selecionado: !item.selecionado } : item
         ));
     };
 
     const handleQuantidadeChange = (id: number, val: number) => {
         const novaQtd = Math.max(1, val);
-        setItems(prev => prev.map(item => 
+        setItems(prev => prev.map(item =>
             item.produto.id === id ? { ...item, quantidade: novaQtd } : item
         ));
     };
@@ -145,7 +145,7 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
         .reduce((acc, curr) => acc + (curr.quantidade * curr.produto.preco), 0);
 
     const modalContent = (
-        <div 
+        <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
@@ -154,7 +154,7 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
             }}
         >
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-                
+
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-blue-50/10">
                     <div className="flex items-center gap-3">
@@ -166,7 +166,7 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                             <p className="text-xs text-slate-500 font-medium">Sugestão baseada em stock crítico e reposição saudável</p>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={() => onClose(false)}
                         className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                     >
@@ -235,8 +235,8 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                                     {filteredItems.map((item) => {
                                         const isCritico = item.produto.stock <= item.produto.stockMinimo;
                                         return (
-                                            <tr 
-                                                key={item.produto.id} 
+                                            <tr
+                                                key={item.produto.id}
                                                 className={`transition-colors border-l-4 ${item.jaEncomendado ? 'bg-slate-50 opacity-60 cursor-not-allowed border-l-slate-200' : item.selecionado ? 'bg-blue-50/40 hover:bg-blue-50/60 border-l-blue-500' : 'hover:bg-slate-50 border-l-transparent cursor-pointer'}`}
                                                 onClick={() => !item.jaEncomendado && toggleSelecao(item.produto.id)}
                                             >
@@ -279,8 +279,8 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                                                 </td>
                                                 <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
                                                     <div className="flex items-center justify-center">
-                                                        <input 
-                                                            type="number" 
+                                                        <input
+                                                            type="number"
                                                             min="1"
                                                             disabled={item.jaEncomendado}
                                                             value={item.quantidade}
@@ -315,13 +315,13 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                         <span className="text-2xl font-black text-slate-900 tracking-tight">{formatCurrency(valorTotalEstimado)}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                        <button 
+                        <button
                             onClick={() => onClose(false)}
                             className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors"
                         >
                             Cancelar
                         </button>
-                        <button 
+                        <button
                             onClick={handleSubmit}
                             disabled={isSubmitting || totalItens === 0}
                             className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-black rounded-xl transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 active:scale-95"

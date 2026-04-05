@@ -47,12 +47,14 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     };
 
     const menuItems = [
-        { to: '/', label: 'Dashboard', icon: LayoutDashboard },
-        { to: '/catalogo', label: 'Stock', icon: BookOpen },
-        { to: '/fornecedores', label: 'Fornecedores', icon: Factory },
-        { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList },
-        { to: '/utilizadores', label: 'Utilizadores', icon: Users },
+        { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+        { to: '/catalogo', label: 'Stock', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
+        { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR'] },
+        { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+        { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },
     ];
+
+    const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
 
     return (
         <aside ref={sidebarRef} className={`bg-slate-900 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50`}>
@@ -135,7 +137,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             {/* Navigation */}
             <nav className="flex-1 overflow-y-auto py-4">
                 <ul className="space-y-1 px-3">
-                    {menuItems.map((item) => (
+                    {filteredItems.map((item) => (
                         <li key={item.to}>
                             <NavLink
                                 to={item.to}
