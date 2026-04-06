@@ -9,6 +9,7 @@ import CriarProdutoModal from '../components/CriarProdutoModal';
 import EditarProdutoModal from '../components/EditarProdutoModal';
 import PedidoAutomaticoModal from '../components/PedidoAutomaticoModal';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
+import DetalhesProdutoModal from '../components/DetalhesProdutoModal';
 
 interface Produto {
     id: number;
@@ -20,6 +21,14 @@ interface Produto {
     descricao?: string;
     criadoEm: string;
     fornecedores?: { id: number; nome: string }[];
+    linhasPedido?: {
+        pedidoCompra: {
+            id: number;
+            estado: string;
+            criadoEm: string;
+            prioridade: string;
+        }
+    }[];
 }
 
 interface Toast {
@@ -65,6 +74,7 @@ const Catalogo = () => {
 
     // Edit Modal State
     const [productToEdit, setProductToEdit] = useState<Produto | null>(null);
+    const [productToView, setProductToView] = useState<Produto | null>(null);
 
     // Close header actions menu on click outside
     useEffect(() => {
@@ -157,15 +167,20 @@ const Catalogo = () => {
         fetchProdutos();
     }, []);
 
-    const handleDelete = async (id: number) => {
+    const handleDelete = async (id: number, force?: boolean): Promise<boolean | void> => {
         try {
-            await produtoService.delete(id);
+            await produtoService.delete(id, force);
             showToast('Produto eliminado com sucesso.', 'success');
             setProductToEdit(null);
             fetchProdutos();
-        } catch (error) {
+            return true;
+        } catch (error: any) {
+            if (error.response?.data?.code === 'HAS_RELATIONS' && !force) {
+                return false;
+            }
             console.error('Erro ao eliminar produto:', error);
             showToast('Erro ao eliminar o produto. Tente novamente.', 'error');
+            return true;
         }
     };
 
@@ -435,13 +450,13 @@ const Catalogo = () => {
                                         return (
                                             <tr
                                                 key={produto.id}
-                                                onClick={isSelectionMode ? () => toggleSelect(produto.id) : undefined}
+                                                onClick={isSelectionMode ? () => toggleSelect(produto.id) : () => setProductToView(produto)}
                                                 className={`group transition-all ${
                                                     isSelectionMode
                                                         ? isSelected
                                                             ? 'bg-blue-50/50 cursor-pointer'
                                                             : 'hover:bg-slate-50/60 cursor-pointer'
-                                                        : 'hover:bg-slate-50/50'
+                                                        : 'hover:bg-slate-50/50 cursor-pointer'
                                                 }`}
                                                 style={isSelectionMode && isSelected ? { boxShadow: 'inset 3px 0 0 #3b82f6' } : isSelectionMode ? { boxShadow: 'inset 3px 0 0 transparent' } : {}}
                                             >
@@ -644,6 +659,12 @@ const Catalogo = () => {
                     produto={productToEdit}
                 />
             )}
+
+            <DetalhesProdutoModal
+                isOpen={!!productToView}
+                onClose={() => setProductToView(null)}
+                produto={productToView!}
+            />
         </div>
     );
 };

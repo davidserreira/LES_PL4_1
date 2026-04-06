@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     X, Database, AlertCircle, CheckCircle2,
     DollarSign, Tag, FileText, Edit2, Loader2,
-    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle, Calendar, Package
+    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { fornecedorService } from '../services/fornecedorService';
@@ -30,7 +30,7 @@ interface EditarProdutoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    onDelete: (id: number) => void;
+    onDelete: (id: number, force?: boolean) => Promise<boolean | void> | void;
     produto: Produto;
 }
 
@@ -62,6 +62,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
     // Deletion visual state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     const categoryRef = useRef<HTMLDivElement>(null);
     const fornecedoresRef = useRef<HTMLDivElement>(null);
@@ -95,6 +97,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             setError(null);
             setIsCategoryOpen(false);
             setShowDeleteConfirm(false);
+            setShowForceDeleteConfirm(false);
+            setDeleteLoading(false);
             setIsFornecedoresOpen(false);
         }
     }, [isOpen, produto]);
@@ -210,8 +214,17 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => onDelete(produto.id)}
-                                        className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm"
+                                        disabled={deleteLoading}
+                                        onClick={async () => {
+                                            setDeleteLoading(true);
+                                            const success = await onDelete(produto.id, false);
+                                            setDeleteLoading(false);
+                                            if (success === false) {
+                                                setShowDeleteConfirm(false);
+                                                setShowForceDeleteConfirm(true);
+                                            }
+                                        }}
+                                        className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
                                     >
                                         Sim, Apagar
                                     </button>
@@ -405,52 +418,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                         </div>
                     </div>
 
-                    {/* Section: Associated Orders */}
-                    <div className="space-y-4 pt-2">
-                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-2">
-                            <Package size={14} />
-                            Pedidos Associados
-                        </h3>
-                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 p-4">
-                            {produto.linhasPedido && produto.linhasPedido.length > 0 ? (
-                                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                                   {produto.linhasPedido.map(linha => {
-                                     const ano = new Date(linha.pedidoCompra.criadoEm).getFullYear();
-                                     const pId = String(linha.pedidoCompra.id).padStart(3, '0');
-                                     const estado = linha.pedidoCompra.estado;
-                                     return (
-                                         <div key={linha.pedidoCompra.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-100 transition-colors group">
-                                             <div>
-                                                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
-                                                    Pedido PM-{ano}-{pId}
-                                                </div>
-                                                <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                                                    <Calendar size={12} className="text-slate-400" />
-                                                    {new Date(linha.pedidoCompra.criadoEm).toLocaleDateString('pt-PT')}
-                                                </div>
-                                             </div>
-                                             <div>
-                                                 <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${
-                                                     estado === 'PENDENTE' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                                                     estado === 'RASCUNHO' ? 'bg-slate-200 text-slate-700 border border-slate-300' :
-                                                     'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                                                 }`}>
-                                                    {estado}
-                                                 </span>
-                                             </div>
-                                         </div>
-                                     );
-                                   })}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-6 text-slate-400">
-                                    <Package size={32} strokeWidth={1} className="mb-2 text-slate-300" />
-                                    <p className="text-sm">Sem pedidos associados.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
                     {/* Section: Description */}
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium text-slate-700 ml-0.5">Descrição Curta</label>
@@ -495,6 +462,53 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                     </div>
                 </form>
             </div>
+
+            {/* Confirm Force Delete Modal */}
+            {showForceDeleteConfirm && (
+                <div 
+                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200"
+                    onMouseDown={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setShowForceDeleteConfirm(false);
+                        }
+                    }}
+                >
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                                <AlertTriangle size={24} className="text-red-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Atenção!</h3>
+                            <p className="text-sm text-slate-500">
+                                Este produto está associado a uma ou mais encomendas. Tem a certeza que pretende apagá-lo? Será também removido das referidas encomendas.
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowForceDeleteConfirm(false)}
+                                disabled={deleteLoading}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50 focus:outline-none"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    setDeleteLoading(true);
+                                    await onDelete(produto.id, true);
+                                    setDeleteLoading(false);
+                                    setShowForceDeleteConfirm(false);
+                                }}
+                                disabled={deleteLoading}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-red-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 outline-none"
+                            >
+                                {deleteLoading ? 'A apagar...' : 'Sim, Apagar Mesmo'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

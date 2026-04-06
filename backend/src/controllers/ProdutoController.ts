@@ -81,12 +81,27 @@ export const updateProduto = async (req: Request, res: Response) => {
 export const deleteProduto = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
+        const force = req.query.force === 'true';
+
+        if (force) {
+            // Se forçado, apaga primeiro as LinhasPedidoCompra associadas
+            await prisma.linhaPedidoCompra.deleteMany({
+                where: { produtoId: parseInt(id) }
+            });
+        }
+
         await prisma.produto.delete({
             where: { id: parseInt(id) }
         });
         res.status(204).send();
     } catch (error: any) {
         console.error('Erro ao eliminar produto:', error);
+        if (error.code === 'P2003') {
+            return res.status(409).json({ 
+                error: 'Não é possível eliminar este produto pois está associado a pedidos.',
+                code: 'HAS_RELATIONS'
+            });
+        }
         res.status(500).json({ error: 'Erro ao eliminar produto', details: error.message });
     }
 };
