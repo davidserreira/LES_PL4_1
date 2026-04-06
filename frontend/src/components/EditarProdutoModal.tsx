@@ -16,6 +16,14 @@ interface Produto {
     categoria?: string;
     descricao?: string;
     fornecedores?: { id: number; nome: string }[];
+    linhasPedido?: {
+        pedidoCompra: {
+            id: number;
+            estado: string;
+            criadoEm: string;
+            prioridade: string;
+        }
+    }[];
 }
 
 interface EditarProdutoModalProps {
