@@ -8,6 +8,13 @@ export const getProdutos = async (req: Request, res: Response) => {
             include: {
                 fornecedores: {
                     select: { id: true, nome: true, estado: true }
+                },
+                linhasPedido: {
+                    include: {
+                        pedidoCompra: {
+                            select: { id: true, estado: true, criadoEm: true, prioridade: true }
+                        }
+                    }
                 }
             },
             orderBy: { criadoEm: 'desc' }

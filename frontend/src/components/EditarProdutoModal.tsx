@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     X, Database, AlertCircle, CheckCircle2,
     DollarSign, Tag, FileText, Edit2, Loader2,
-    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check
+    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle, Calendar, Package
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { fornecedorService } from '../services/fornecedorService';
@@ -16,6 +16,14 @@ interface Produto {
     categoria?: string;
     descricao?: string;
     fornecedores?: { id: number; nome: string }[];
+    linhasPedido?: {
+        pedidoCompra: {
+            id: number;
+            estado: string;
+            criadoEm: string;
+            prioridade: string;
+        }
+    }[];
 }
 
 interface EditarProdutoModalProps {
@@ -394,6 +402,52 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                     />
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Section: Associated Orders */}
+                    <div className="space-y-4 pt-2">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-2">
+                            <Package size={14} />
+                            Pedidos Associados
+                        </h3>
+                        <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50 p-4">
+                            {produto.linhasPedido && produto.linhasPedido.length > 0 ? (
+                                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                                   {produto.linhasPedido.map(linha => {
+                                     const ano = new Date(linha.pedidoCompra.criadoEm).getFullYear();
+                                     const pId = String(linha.pedidoCompra.id).padStart(3, '0');
+                                     const estado = linha.pedidoCompra.estado;
+                                     return (
+                                         <div key={linha.pedidoCompra.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm hover:border-blue-100 transition-colors group">
+                                             <div>
+                                                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-700 transition-colors">
+                                                    Pedido PM-{ano}-{pId}
+                                                </div>
+                                                <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                                                    <Calendar size={12} className="text-slate-400" />
+                                                    {new Date(linha.pedidoCompra.criadoEm).toLocaleDateString('pt-PT')}
+                                                </div>
+                                             </div>
+                                             <div>
+                                                 <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${
+                                                     estado === 'PENDENTE' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
+                                                     estado === 'RASCUNHO' ? 'bg-slate-200 text-slate-700 border border-slate-300' :
+                                                     'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                                                 }`}>
+                                                    {estado}
+                                                 </span>
+                                             </div>
+                                         </div>
+                                     );
+                                   })}
+                                </div>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                                    <Package size={32} strokeWidth={1} className="mb-2 text-slate-300" />
+                                    <p className="text-sm">Sem pedidos associados.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
