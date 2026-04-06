@@ -4,6 +4,7 @@ import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
 import AvaliarFornecedorModal from '../components/AvaliarFornecedorModal';
+import type { Utilizador } from '../services/utilizadorService';
 
 interface Fornecedor {
     id: number;
@@ -37,6 +38,11 @@ const Fornecedores = () => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<Toast | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [user] = useState<Utilizador | null>(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+    const [hasMyAvaliacao, setHasMyAvaliacao] = useState<Record<number, boolean>>({});
 
     // Sorting state
     const [sortField, setSortField] = useState<SortField>('id');
@@ -124,9 +130,19 @@ const Fornecedores = () => {
             : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
-    const handleActionMouseDown = (id: number, e: React.MouseEvent) => {
+    const handleActionMouseDown = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
-        setOpenDropdownId(openDropdownId === id ? null : id);
+        const willOpen = openDropdownId !== id;
+        setOpenDropdownId(willOpen ? id : null);
+
+        if (willOpen && user?.id && hasMyAvaliacao[id] === undefined) {
+            try {
+                const existing = await fornecedorService.getMinhaAvaliacao(id, user.id);
+                setHasMyAvaliacao(prev => ({ ...prev, [id]: Boolean(existing) }));
+            } catch {
+                // fallback: keep default label
+            }
+        }
     };
 
     const handleToggleEstado = async (id: number, currentEstado: boolean) => {
@@ -425,7 +441,7 @@ const Fornecedores = () => {
                                                         }}
                                                         className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
                                                     >
-                                                        Avaliar Fornecedor
+                                                        {user?.id && hasMyAvaliacao[fornecedor.id] ? 'Editar avaliação' : 'Avaliar Fornecedor'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleToggleEstado(fornecedor.id, fornecedor.estado)}
@@ -491,9 +507,13 @@ const Fornecedores = () => {
             <AvaliarFornecedorModal
                 isOpen={fornecedorAAvaliar !== null}
                 fornecedor={fornecedorAAvaliar}
+                utilizadorId={user?.id ?? null}
                 onClose={() => setFornecedorAAvaliar(null)}
-                onSuccess={() => {
-                    showToast('Avaliação registada com sucesso!', 'success');
+                onSuccess={(updated) => {
+                    if (fornecedorAAvaliar?.id) {
+                        setHasMyAvaliacao(prev => ({ ...prev, [fornecedorAAvaliar.id]: true }));
+                    }
+                    showToast(updated ? 'Avaliação atualizada com sucesso!' : 'Avaliação registada com sucesso!', 'success');
                 }}
             />
 

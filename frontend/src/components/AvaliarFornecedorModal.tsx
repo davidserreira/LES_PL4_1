@@ -10,8 +10,9 @@ interface Fornecedor {
 interface AvaliarFornecedorModalProps {
     isOpen: boolean;
     fornecedor: Fornecedor | null;
+    utilizadorId: number | null;
     onClose: () => void;
-    onSuccess: () => void;
+    onSuccess: (updated: boolean) => void;
 }
 
 type CriterioKey = 'qualidade' | 'pontualidade' | 'comunicacao' | 'preco' | 'conformidade';
@@ -48,10 +49,12 @@ const StarsRating = ({ value, onChange }: { value: number; onChange: (n: number)
     );
 };
 
-const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: AvaliarFornecedorModalProps) => {
+const AvaliarFornecedorModal = ({ isOpen, fornecedor, utilizadorId, onClose, onSuccess }: AvaliarFornecedorModalProps) => {
     const [isClosing, setIsClosing] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [loadingExisting, setLoadingExisting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [isEditing, setIsEditing] = useState(false);
 
     const [ratings, setRatings] = useState<Record<CriterioKey, number>>({
         qualidade: 0,
@@ -72,17 +75,54 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
             setIsClosing(false);
             setError(null);
         }
-        if (isOpen && fornecedor) {
-            setRatings({
-                qualidade: 0,
-                pontualidade: 0,
-                comunicacao: 0,
-                preco: 0,
-                conformidade: 0,
-            });
-            setComentario('');
+        if (!isOpen || !fornecedor) return;
+
+        // Reset UI state on open, then try to load existing evaluation (edit flow)
+        setIsEditing(false);
+        setLoadingExisting(false);
+        setRatings({
+            qualidade: 0,
+            pontualidade: 0,
+            comunicacao: 0,
+            preco: 0,
+            conformidade: 0,
+        });
+        setComentario('');
+
+        if (!utilizadorId) {
+            setError('Utilizador não autenticado.');
+            return;
         }
-    }, [isOpen, fornecedor]);
+
+        let cancelled = false;
+        (async () => {
+            try {
+                setLoadingExisting(true);
+                const existing = await fornecedorService.getMinhaAvaliacao(fornecedor.id, utilizadorId);
+                if (cancelled) return;
+                if (existing) {
+                    setIsEditing(true);
+                    setRatings({
+                        qualidade: existing.qualidade,
+                        pontualidade: existing.pontualidade,
+                        comunicacao: existing.comunicacao,
+                        preco: existing.preco,
+                        conformidade: existing.conformidade,
+                    });
+                    setComentario(existing.comentario || '');
+                }
+            } catch {
+                if (!cancelled) {
+                    // If we fail to fetch, keep create mode but do not block user from submitting
+                    setIsEditing(false);
+                }
+            } finally {
+                if (!cancelled) setLoadingExisting(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [isOpen, fornecedor, utilizadorId]);
 
     const handleClose = () => {
         setIsClosing(true);
@@ -99,6 +139,11 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
         e.preventDefault();
         setError(null);
 
+        if (!utilizadorId) {
+            setError('Utilizador não autenticado.');
+            return;
+        }
+
         if (!Object.values(ratings).every(isValidRating)) {
             setError('Seleciona uma pontuação (1–5) em todos os critérios.');
             return;
@@ -106,7 +151,8 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
 
         setLoading(true);
         try {
-            await fornecedorService.avaliar(fornecedor.id, {
+            const res = await fornecedorService.avaliar(fornecedor.id, {
+                utilizadorId,
                 qualidade: ratings.qualidade,
                 pontualidade: ratings.pontualidade,
                 comunicacao: ratings.comunicacao,
@@ -114,7 +160,7 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
                 conformidade: ratings.conformidade,
                 comentario: comentario.trim() || undefined,
             });
-            onSuccess();
+            onSuccess(Boolean(res?.updated));
             handleClose();
         } catch (err: unknown) {
             const errorMessage = err && typeof err === 'object' && 'response' in err
@@ -138,7 +184,7 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
                             <CheckCircle2 size={20} className="text-emerald-400" />
-                            Avaliar Fornecedor
+                            {isEditing ? 'Editar avaliação' : 'Avaliar Fornecedor'}
                         </h2>
                         <button
                             onClick={handleClose}
@@ -150,6 +196,12 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
+                    {loadingExisting && (
+                        <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 flex gap-3 items-center">
+                            <Loader2 className="animate-spin text-slate-500 shrink-0" size={18} />
+                            <p className="text-sm font-medium text-slate-700">A carregar a tua avaliação...</p>
+                        </div>
+                    )}
                     {error && (
                         <div className="animate-shake rounded-lg bg-red-50 border border-red-100 p-3 flex gap-3 items-center">
                             <AlertCircle className="text-red-500 shrink-0" size={18} />
@@ -217,18 +269,18 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Aval
                         </button>
                         <button
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || loadingExisting}
                             className="flex-[2] bg-slate-900 text-white font-semibold rounded-xl hover:bg-slate-800 transition-all active:scale-[0.98] disabled:opacity-50 text-sm flex items-center justify-center gap-2 shadow-sm"
                         >
                             {loading ? (
                                 <>
                                     <Loader2 className="animate-spin" size={18} />
-                                    A registar...
+                                    A guardar...
                                 </>
                             ) : (
                                 <>
                                     <CheckCircle2 size={18} />
-                                    Registar Avaliação
+                                    {isEditing ? 'Guardar alterações' : 'Registar Avaliação'}
                                 </>
                             )}
                         </button>
