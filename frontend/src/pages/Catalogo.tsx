@@ -397,7 +397,7 @@ const Catalogo = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md shadow-sm border-b border-slate-200">
                                     <tr>
-                                        <th className="px-6 py-4">
+                                        <th className="px-6 py-3">
                                             <button 
                                                 onClick={() => handleSort('nome')}
                                                 className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
@@ -406,8 +406,8 @@ const Catalogo = () => {
                                                 {getSortIcon('nome')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoria</th>
-                                        <th className="px-6 py-4 text-center">
+                                        <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoria</th>
+                                        <th className="px-6 py-3 text-center">
                                             <button 
                                                 onClick={() => handleSort('stock')}
                                                 className="flex items-center justify-center gap-2 mx-auto text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
@@ -416,8 +416,8 @@ const Catalogo = () => {
                                                 {getSortIcon('stock')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Stock Mín.</th>
-                                        <th className="px-6 py-4 text-right">
+                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Stock Mín.</th>
+                                        <th className="px-6 py-3 text-right">
                                             <button 
                                                 onClick={() => handleSort('preco')}
                                                 className="flex items-center justify-end gap-2 ml-auto text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
@@ -426,9 +426,9 @@ const Catalogo = () => {
                                                 {getSortIcon('preco')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
+                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
                                         {/* Ações OR Selecionar column */}
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
                                             {isSelectionMode ? 'Selecionar' : 'Ações'}
                                         </th>
                                     </tr>
