@@ -9,6 +9,7 @@ import CriarProdutoModal from '../components/CriarProdutoModal';
 import EditarProdutoModal from '../components/EditarProdutoModal';
 import PedidoAutomaticoModal from '../components/PedidoAutomaticoModal';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
+import DetalhesProdutoModal from '../components/DetalhesProdutoModal';
 
 interface Produto {
     id: number;
@@ -20,6 +21,14 @@ interface Produto {
     descricao?: string;
     criadoEm: string;
     fornecedores?: { id: number; nome: string }[];
+    linhasPedido?: {
+        pedidoCompra: {
+            id: number;
+            estado: string;
+            criadoEm: string;
+            prioridade: string;
+        }
+    }[];
 }
 
 interface Toast {
@@ -65,6 +74,7 @@ const Catalogo = () => {
 
     // Edit Modal State
     const [productToEdit, setProductToEdit] = useState<Produto | null>(null);
+    const [productToView, setProductToView] = useState<Produto | null>(null);
 
     // Close header actions menu on click outside
     useEffect(() => {
@@ -157,7 +167,7 @@ const Catalogo = () => {
         fetchProdutos();
     }, []);
 
-    const handleDelete = async (id: number, force = false): Promise<boolean> => {
+    const handleDelete = async (id: number, force?: boolean): Promise<boolean | void> => {
         try {
             await produtoService.delete(id, force);
             showToast('Produto eliminado com sucesso.', 'success');
@@ -397,7 +407,7 @@ const Catalogo = () => {
                             <table className="w-full text-left border-collapse">
                                 <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md shadow-sm border-b border-slate-200">
                                     <tr>
-                                        <th className="px-6 py-3">
+                                        <th className="px-6 py-4">
                                             <button 
                                                 onClick={() => handleSort('nome')}
                                                 className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
@@ -406,8 +416,8 @@ const Catalogo = () => {
                                                 {getSortIcon('nome')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoria</th>
-                                        <th className="px-6 py-3 text-center">
+                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoria</th>
+                                        <th className="px-6 py-4 text-center">
                                             <button 
                                                 onClick={() => handleSort('stock')}
                                                 className="flex items-center justify-center gap-2 mx-auto text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
@@ -416,8 +426,8 @@ const Catalogo = () => {
                                                 {getSortIcon('stock')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Stock Mín.</th>
-                                        <th className="px-6 py-3 text-right">
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Stock Mín.</th>
+                                        <th className="px-6 py-4 text-right">
                                             <button 
                                                 onClick={() => handleSort('preco')}
                                                 className="flex items-center justify-end gap-2 ml-auto text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
@@ -426,9 +436,9 @@ const Catalogo = () => {
                                                 {getSortIcon('preco')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
                                         {/* Ações OR Selecionar column */}
-                                        <th className="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
                                             {isSelectionMode ? 'Selecionar' : 'Ações'}
                                         </th>
                                     </tr>
@@ -440,13 +450,13 @@ const Catalogo = () => {
                                         return (
                                             <tr
                                                 key={produto.id}
-                                                onClick={isSelectionMode ? () => toggleSelect(produto.id) : undefined}
+                                                onClick={isSelectionMode ? () => toggleSelect(produto.id) : () => setProductToView(produto)}
                                                 className={`group transition-all ${
                                                     isSelectionMode
                                                         ? isSelected
                                                             ? 'bg-blue-50/50 cursor-pointer'
                                                             : 'hover:bg-slate-50/60 cursor-pointer'
-                                                        : 'hover:bg-slate-50/50'
+                                                        : 'hover:bg-slate-50/50 cursor-pointer'
                                                 }`}
                                                 style={isSelectionMode && isSelected ? { boxShadow: 'inset 3px 0 0 #3b82f6' } : isSelectionMode ? { boxShadow: 'inset 3px 0 0 transparent' } : {}}
                                             >
@@ -649,6 +659,12 @@ const Catalogo = () => {
                     produto={productToEdit}
                 />
             )}
+
+            <DetalhesProdutoModal
+                isOpen={!!productToView}
+                onClose={() => setProductToView(null)}
+                produto={productToView!}
+            />
         </div>
     );
 };
