@@ -344,17 +344,17 @@ const Fornecedores = () => {
                                     <tr>
                                     <th
                                         onClick={() => handleSort('nome')}
-                                        className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                     >
                                         <div className="flex items-center gap-2">
                                             Fornecedor
                                             {getSortIcon('nome')}
                                         </div>
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Categoria</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Categoria</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">

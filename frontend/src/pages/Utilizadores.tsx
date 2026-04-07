@@ -305,7 +305,7 @@ const Utilizadores = () => {
                         <table className="w-full text-left relative">
                             <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
                                         <button 
                                             onClick={() => handleSort('username')}
                                             className="flex items-center gap-2 group hover:text-slate-900 transition-colors uppercase"
@@ -314,7 +314,7 @@ const Utilizadores = () => {
                                             {getSortIcon('username')}
                                         </button>
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
                                         <button 
                                             onClick={() => handleSort('role')}
                                             className="flex items-center gap-2 group hover:text-slate-900 transition-colors uppercase"
@@ -323,13 +323,13 @@ const Utilizadores = () => {
                                             {getSortIcon('role')}
                                         </button>
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
                                 </tr>
                             </thead>
                         <tbody className="divide-y divide-slate-100">
                             {sortedUtilizadores.map((u) => (
                                 <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-3">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 font-bold border border-slate-200 transition-transform group-hover:scale-105">
                                                 {u.username.charAt(0).toUpperCase()}
@@ -340,10 +340,10 @@ const Utilizadores = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
+                                    <td className="px-6 py-3">
                                         {getRoleBadge(u.role)}
                                     </td>
-                                    <td className="px-6 py-4 text-right overflow-visible">
+                                    <td className="px-6 py-3 text-right overflow-visible">
                                         <div className="relative flex justify-end">
                                             <button
                                                 onMouseDown={(e) => {

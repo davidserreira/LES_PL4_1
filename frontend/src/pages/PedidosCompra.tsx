@@ -514,40 +514,40 @@ export default function PedidosCompra() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <button 
                         onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
-                        className={`p-4 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterTipo === 'Todos' && filterEstado === 'Todos' && filterPrioridade === 'Todas' && !searchQuery ? 'bg-blue-50/70 border-blue-200 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-blue-100 hover:shadow-md'}`}
+                        className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterTipo === 'Todos' && filterEstado === 'Todos' && filterPrioridade === 'Todas' && !searchQuery ? 'bg-blue-50/70 border-blue-200 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-blue-100 hover:shadow-md'}`}
                     >
                         <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Total</p>
-                            <h3 className="text-2xl font-black text-slate-800 leading-none">{pedidos.length}</h3>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total</p>
+                            <h3 className="text-xl font-black text-slate-800 leading-none">{pedidos.length}</h3>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                            <ClipboardList size={20} />
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <ClipboardList size={16} />
                         </div>
                     </button>
                     
                     <button 
                         onClick={() => { setFilterPrioridade('URGENTE'); setSearchQuery(''); }}
-                        className={`p-4 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'URGENTE' ? 'bg-red-50/70 border-red-200 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-red-100 hover:shadow-md'}`}
+                        className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'URGENTE' ? 'bg-red-50/70 border-red-200 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-red-100 hover:shadow-md'}`}
                     >
                         <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Urgentes</p>
-                            <h3 className="text-2xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'URGENTE' && p.estado !== 'CANCELADO').length}</h3>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Urgentes</p>
+                            <h3 className="text-xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'URGENTE' && p.estado !== 'CANCELADO').length}</h3>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                            <AlertTriangle size={20} />
+                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
+                            <AlertTriangle size={16} />
                         </div>
                     </button>
 
                     <button 
                         onClick={() => { setFilterPrioridade('ALTA'); setSearchQuery(''); }}
-                        className={`p-4 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'ALTA' ? 'bg-amber-50/70 border-amber-200 ring-2 ring-amber-500/20' : 'bg-white border-slate-200 hover:border-amber-100 hover:shadow-md'}`}
+                        className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'ALTA' ? 'bg-amber-50/70 border-amber-200 ring-2 ring-amber-500/20' : 'bg-white border-slate-200 hover:border-amber-100 hover:shadow-md'}`}
                     >
                         <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Alta Prioridade</p>
-                            <h3 className="text-2xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'ALTA' && p.estado !== 'CANCELADO').length}</h3>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Alta Prioridade</p>
+                            <h3 className="text-xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'ALTA' && p.estado !== 'CANCELADO').length}</h3>
                         </div>
-                        <div className="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <Clock size={20} />
+                        <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                            <Clock size={16} />
                         </div>
                     </button>
                 </div>
@@ -734,34 +734,34 @@ export default function PedidosCompra() {
                         <table className="w-full text-left relative">
                             <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">ID</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">ID</th>
                                     <th 
-                                        className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group"
                                         onClick={() => handleSort('criadoEm')}
                                     >
                                         <div className="flex items-center gap-2">Data <SortIcon field="criadoEm" /></div>
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Emitido por</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Prioridade</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Emitido por</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Prioridade</th>
                                     <th 
-                                        className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 transition-colors group"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 transition-colors group"
                                         onClick={() => handleSort('valorTotalEstimado')}
                                     >
                                         <div className="flex items-center justify-end gap-2"><SortIcon field="valorTotalEstimado" /> Total</div>
                                     </th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
-                                    <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {filteredPedidos.map((p) => (
                                     <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-4 font-bold text-slate-900">
+                                        <td className="px-6 py-3 font-bold text-slate-900">
                                             <div>{p.codigoFormatado}</div>
                                             <div className="text-[10px] text-slate-400 font-medium bg-slate-100 inline-block px-1.5 rounded mt-0.5">{p.tipo}</div>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-600 font-medium">{formatDate(p.criadoEm)}</td>
-                                        <td className="px-6 py-4 text-slate-600 font-medium">
+                                        <td className="px-6 py-3 text-slate-600 font-medium">{formatDate(p.criadoEm)}</td>
+                                        <td className="px-6 py-3 text-slate-600 font-medium">
                                             {p.criadoPor?.username
                                                 ? `${p.criadoPor.username} (${getRoleLabel(p.criadoPor.role)})`
                                                 : '—'}
