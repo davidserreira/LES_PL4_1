@@ -11,6 +11,10 @@
         -moz-user-select: none;
         -ms-user-select: none;
     }
+
+    body:has(.fixed.inset-0) {
+        overflow: hidden;
+    }
 }
 
 @layer utilities {
