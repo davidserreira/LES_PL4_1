@@ -66,5 +66,21 @@ export const fornecedorService = {
     getAvaliacaoMedia: async (id: number) => {
         const response = await api.get(`/fornecedores/${id}/avaliacao-media`);
         return response.data as { totalAvaliacoes: number; media: number | null };
+    },
+    getAvaliacoes: async (id: number) => {
+        const response = await api.get(`/fornecedores/${id}/avaliacoes`);
+        return response.data as {
+            id: number;
+            fornecedorId: number;
+            utilizadorId: number;
+            qualidade: number;
+            pontualidade: number;
+            comunicacao: number;
+            preco: number;
+            conformidade: number;
+            comentario: string | null;
+            dataCriacao: string;
+            utilizador: { id: number; username: string };
+        }[];
     }
 };

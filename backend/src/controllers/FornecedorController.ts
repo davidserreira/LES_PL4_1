@@ -1,6 +1,36 @@
 import { Request, Response } from 'express';
 import prisma from '../lib/prisma';
 
+export const getAvaliacoesFornecedor = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const fornecedorId = parseInt(id);
+
+        const fornecedor = await prisma.fornecedor.findUnique({ where: { id: fornecedorId } });
+        if (!fornecedor) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        const avaliacoes = await prisma.avaliacao.findMany({
+            where: { fornecedorId },
+            include: {
+                utilizador: {
+                    select: {
+                        id: true,
+                        username: true,
+                    }
+                }
+            },
+            orderBy: { dataCriacao: 'desc' }
+        });
+
+        res.json(avaliacoes);
+    } catch (error: any) {
+        console.error('Erro ao obter avaliações:', error);
+        res.status(500).json({ error: 'Erro ao obter listagem de avaliações do fornecedor', details: error.message });
+    }
+};
+
 export const getFornecedores = async (req: Request, res: Response) => {
     try {
         const fornecedores = await prisma.fornecedor.findMany({
