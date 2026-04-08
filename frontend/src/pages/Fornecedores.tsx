@@ -4,6 +4,7 @@ import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
 import AvaliarFornecedorModal from '../components/AvaliarFornecedorModal';
+import ListarAvaliacoesFornecedorModal from '../components/ListarAvaliacoesFornecedorModal';
 import type { Utilizador } from '../services/utilizadorService';
 import { createPortal } from 'react-dom';
 
@@ -36,6 +37,7 @@ interface Toast {
 const Fornecedores = () => {
     const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isListAvaliacoesOpen, setIsListAvaliacoesOpen] = useState(false);
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<Toast | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -587,16 +589,19 @@ const Fornecedores = () => {
                                     </span>
                                 </div>
                             </div>
-                            {avaliacaoMedia?.totalAvaliacoes ? (
+                            {avaliacaoMedia ? (
                                 <div className="flex flex-col border-b border-slate-100 pb-3">
                                     <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Pontuação Média</span>
                                     <div className="flex items-center justify-between">
                                         <span className="text-slate-800 font-semibold">
-                                            {avaliacaoMedia.media?.toFixed(1)} / 5
+                                            {avaliacaoMedia.totalAvaliacoes > 0 ? `${avaliacaoMedia.media?.toFixed(1)} / 5` : 'Sem classificações'}
                                         </span>
-                                        <span className="text-xs font-bold text-slate-500">
+                                        <button
+                                            onClick={() => setIsListAvaliacoesOpen(true)}
+                                            className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors focus:outline-none"
+                                        >
                                             {avaliacaoMedia.totalAvaliacoes} {avaliacaoMedia.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
-                                        </span>
+                                        </button>
                                     </div>
                                 </div>
                             ) : null}
@@ -655,6 +660,15 @@ const Fornecedores = () => {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {detalhesFornecedor && (
+                <ListarAvaliacoesFornecedorModal
+                    isOpen={isListAvaliacoesOpen}
+                    onClose={() => setIsListAvaliacoesOpen(false)}
+                    fornecedorId={detalhesFornecedor.id}
+                    fornecedorNome={detalhesFornecedor.nome}
+                />
             )}
         </div>
     );
