@@ -450,7 +450,11 @@ const Fornecedores = () => {
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {sortedFornecedores.map((fornecedor) => (
-                                    <tr key={fornecedor.id} className="hover:bg-slate-50/80 transition-all group">
+                                    <tr 
+                                        key={fornecedor.id} 
+                                        onClick={() => setDetalhesFornecedor(fornecedor)}
+                                        className="hover:bg-slate-50/80 transition-all group cursor-pointer"
+                                    >
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
                                                 <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-blue-600 transition-colors">
@@ -480,6 +484,7 @@ const Fornecedores = () => {
                                         <td className="px-6 py-5 text-center relative">
                                             <button
                                                 onMouseDown={(e) => handleActionMouseDown(fornecedor.id, e)}
+                                                onClick={(e) => e.stopPropagation()}
                                                 className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
                                             >
                                                 <MoreVertical size={18} />
