@@ -4,6 +4,8 @@ import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
 import AvaliarFornecedorModal from '../components/AvaliarFornecedorModal';
+import type { Utilizador } from '../services/utilizadorService';
+import { createPortal } from 'react-dom';
 
 interface Fornecedor {
     id: number;
@@ -37,6 +39,11 @@ const Fornecedores = () => {
     const [loading, setLoading] = useState(true);
     const [toast, setToast] = useState<Toast | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [user] = useState<Utilizador | null>(() => {
+        const savedUser = localStorage.getItem('user');
+        return savedUser ? JSON.parse(savedUser) : null;
+    });
+    const [hasMyAvaliacao, setHasMyAvaliacao] = useState<Record<number, boolean>>({});
 
     // Sorting state
     const [sortField, setSortField] = useState<SortField>('id');
@@ -44,6 +51,7 @@ const Fornecedores = () => {
 
     // Actions Dropdown & Details state
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const [dropdownAnchor, setDropdownAnchor] = useState<DOMRect | null>(null);
     const [detalhesFornecedor, setDetalhesFornecedor] = useState<Fornecedor | null>(null);
     const [fornecedorAEditar, setFornecedorAEditar] = useState<Fornecedor | null>(null);
     const [fornecedorAAvaliar, setFornecedorAAvaliar] = useState<Pick<Fornecedor, 'id' | 'nome'> | null>(null);
@@ -62,6 +70,7 @@ const Fornecedores = () => {
     useEffect(() => {
         const handleClickOutside = () => {
             setOpenDropdownId(null);
+            setDropdownAnchor(null);
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -124,9 +133,89 @@ const Fornecedores = () => {
             : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
-    const handleActionMouseDown = (id: number, e: React.MouseEvent) => {
+    const handleActionMouseDown = async (id: number, e: React.MouseEvent) => {
         e.stopPropagation();
-        setOpenDropdownId(openDropdownId === id ? null : id);
+        const willOpen = openDropdownId !== id;
+        setOpenDropdownId(willOpen ? id : null);
+        setDropdownAnchor(willOpen ? (e.currentTarget as HTMLElement).getBoundingClientRect() : null);
+
+        if (willOpen && user?.id && hasMyAvaliacao[id] === undefined) {
+            try {
+                const existing = await fornecedorService.getMinhaAvaliacao(id, user.id);
+                setHasMyAvaliacao(prev => ({ ...prev, [id]: Boolean(existing) }));
+            } catch {
+                // fallback: keep default label
+            }
+        }
+    };
+
+    const renderActionsDropdown = (fornecedor: Fornecedor) => {
+        if (openDropdownId !== fornecedor.id || !dropdownAnchor) return null;
+
+        const menuWidth = 176; // w-44
+        const top = dropdownAnchor.top + dropdownAnchor.height / 2;
+        const left = Math.max(12, dropdownAnchor.right - menuWidth - 8);
+
+        return createPortal(
+            <div
+                onMouseDown={(e) => e.stopPropagation()}
+                className="fixed inset-0 z-[80]"
+            >
+                <div
+                    className="absolute inset-0"
+                    onMouseDown={() => {
+                        setOpenDropdownId(null);
+                        setDropdownAnchor(null);
+                    }}
+                />
+                <div
+                    className="fixed w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-[81] animate-in fade-in zoom-in-95 duration-100"
+                    style={{ top, left, transform: 'translateY(-50%)' }}
+                >
+                    <button
+                        onClick={() => {
+                            setDetalhesFornecedor(fornecedor);
+                            setOpenDropdownId(null);
+                            setDropdownAnchor(null);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                    >
+                        Ver Detalhes
+                    </button>
+                    <button
+                        onClick={() => {
+                            setFornecedorAEditar(fornecedor);
+                            setOpenDropdownId(null);
+                            setDropdownAnchor(null);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                    >
+                        Editar Fornecedor
+                    </button>
+                    <button
+                        onClick={() => {
+                            setFornecedorAAvaliar({ id: fornecedor.id, nome: fornecedor.nome });
+                            setOpenDropdownId(null);
+                            setDropdownAnchor(null);
+                        }}
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                    >
+                        {user?.id && hasMyAvaliacao[fornecedor.id] ? 'Editar avaliação' : 'Avaliar Fornecedor'}
+                    </button>
+                    <button
+                        onClick={() => {
+                            handleToggleEstado(fornecedor.id, fornecedor.estado);
+                            setOpenDropdownId(null);
+                            setDropdownAnchor(null);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${fornecedor.estado ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                    >
+                        {fornecedor.estado ? 'Inativar Fornecedor' : 'Ativar Fornecedor'}
+                    </button>
+                </div>
+            </div>,
+            document.body
+        );
     };
 
     const handleToggleEstado = async (id: number, currentEstado: boolean) => {
@@ -394,47 +483,7 @@ const Fornecedores = () => {
                                                 <MoreVertical size={18} />
                                             </button>
 
-                                            {/* Dropdown Menu */}
-                                            {openDropdownId === fornecedor.id && (
-                                                <div
-                                                    onMouseDown={(e) => e.stopPropagation()}
-                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100"
-                                                >
-                                                    <button
-                                                        onClick={() => {
-                                                            setDetalhesFornecedor(fornecedor);
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                                                    >
-                                                        Ver Detalhes
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setFornecedorAEditar(fornecedor);
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                                                    >
-                                                        Editar Fornecedor
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setFornecedorAAvaliar({ id: fornecedor.id, nome: fornecedor.nome });
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                                                    >
-                                                        Avaliar Fornecedor
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleToggleEstado(fornecedor.id, fornecedor.estado)}
-                                                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${fornecedor.estado ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
-                                                    >
-                                                        {fornecedor.estado ? 'Inativar Fornecedor' : 'Ativar Fornecedor'}
-                                                    </button>
-                                                </div>
-                                            )}
+                                            {renderActionsDropdown(fornecedor)}
                                         </td>
                                     </tr>
                                 ))}
@@ -491,9 +540,13 @@ const Fornecedores = () => {
             <AvaliarFornecedorModal
                 isOpen={fornecedorAAvaliar !== null}
                 fornecedor={fornecedorAAvaliar}
+                utilizadorId={user?.id ?? null}
                 onClose={() => setFornecedorAAvaliar(null)}
-                onSuccess={() => {
-                    showToast('Avaliação registada com sucesso!', 'success');
+                onSuccess={(updated) => {
+                    if (fornecedorAAvaliar?.id) {
+                        setHasMyAvaliacao(prev => ({ ...prev, [fornecedorAAvaliar.id]: true }));
+                    }
+                    showToast(updated ? 'Avaliação atualizada com sucesso!' : 'Avaliação registada com sucesso!', 'success');
                 }}
             />
 

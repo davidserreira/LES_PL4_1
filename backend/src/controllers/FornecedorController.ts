@@ -154,33 +154,81 @@ export const avaliarFornecedor = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const fornecedorId = parseInt(id);
-        const { qualidade, pontualidade, comunicacao, preco, conformidade, comentario } = req.body;
+        const { utilizadorId, qualidade, pontualidade, comunicacao, preco, conformidade, comentario } = req.body;
 
         const fornecedor = await prisma.fornecedor.findUnique({ where: { id: fornecedorId } });
         if (!fornecedor) {
             return res.status(404).json({ error: 'Fornecedor não encontrado' });
         }
 
+        const userIdNum = typeof utilizadorId === 'string' ? Number(utilizadorId) : utilizadorId;
+        if (!userIdNum || !Number.isInteger(userIdNum)) {
+            return res.status(400).json({ error: 'utilizadorId é obrigatório.' });
+        }
+
+        const utilizador = await prisma.utilizador.findUnique({ where: { id: userIdNum } });
+        if (!utilizador) {
+            return res.status(404).json({ error: 'Utilizador não encontrado' });
+        }
+
         if (![qualidade, pontualidade, comunicacao, preco, conformidade].every(isValidRating)) {
             return res.status(400).json({ error: 'Todos os critérios devem ter um valor inteiro entre 1 e 5.' });
         }
 
-        const avaliacao = await prisma.avaliacao.create({
-            data: {
-                fornecedorId,
-                qualidade: Number(qualidade),
-                pontualidade: Number(pontualidade),
-                comunicacao: Number(comunicacao),
-                preco: Number(preco),
-                conformidade: Number(conformidade),
-                comentario: comentario || null,
-            }
+        const payload = {
+            qualidade: Number(qualidade),
+            pontualidade: Number(pontualidade),
+            comunicacao: Number(comunicacao),
+            preco: Number(preco),
+            conformidade: Number(conformidade),
+            comentario: comentario || null,
+        };
+
+        const existing = await prisma.avaliacao.findUnique({
+            where: { fornecedorId_utilizadorId: { fornecedorId, utilizadorId: userIdNum } }
         });
 
-        res.status(201).json(avaliacao);
+        const avaliacao = await prisma.avaliacao.upsert({
+            where: { fornecedorId_utilizadorId: { fornecedorId, utilizadorId: userIdNum } },
+            create: {
+                fornecedorId,
+                utilizadorId: userIdNum,
+                ...payload
+            },
+            update: payload
+        });
+
+        res.status(existing ? 200 : 201).json({ ...avaliacao, updated: Boolean(existing) });
     } catch (error: any) {
         console.error('Erro ao avaliar fornecedor:', error);
         res.status(500).json({ error: 'Erro ao registar avaliação do fornecedor', details: error.message });
+    }
+};
+
+export const getMinhaAvaliacaoFornecedor = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const fornecedorId = parseInt(id);
+        const { utilizadorId } = req.query;
+
+        const userIdNum = typeof utilizadorId === 'string' ? Number(utilizadorId) : NaN;
+        if (!userIdNum || !Number.isInteger(userIdNum)) {
+            return res.status(400).json({ error: 'utilizadorId é obrigatório.' });
+        }
+
+        const fornecedor = await prisma.fornecedor.findUnique({ where: { id: fornecedorId } });
+        if (!fornecedor) {
+            return res.status(404).json({ error: 'Fornecedor não encontrado' });
+        }
+
+        const avaliacao = await prisma.avaliacao.findUnique({
+            where: { fornecedorId_utilizadorId: { fornecedorId, utilizadorId: userIdNum } }
+        });
+
+        res.json(avaliacao);
+    } catch (error: any) {
+        console.error('Erro ao obter minha avaliação:', error);
+        res.status(500).json({ error: 'Erro ao obter avaliação do fornecedor', details: error.message });
     }
 };
 

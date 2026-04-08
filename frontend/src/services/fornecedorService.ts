@@ -37,6 +37,7 @@ export const fornecedorService = {
         return response.data;
     },
     avaliar: async (id: number, avaliacao: {
+        utilizadorId: number;
         qualidade: number;
         pontualidade: number;
         comunicacao: number;
@@ -46,6 +47,21 @@ export const fornecedorService = {
     }) => {
         const response = await api.post(`/fornecedores/${id}/avaliacoes`, avaliacao);
         return response.data;
+    },
+    getMinhaAvaliacao: async (id: number, utilizadorId: number) => {
+        const response = await api.get(`/fornecedores/${id}/minha-avaliacao`, { params: { utilizadorId } });
+        return response.data as (null | {
+            id: number;
+            fornecedorId: number;
+            utilizadorId: number;
+            qualidade: number;
+            pontualidade: number;
+            comunicacao: number;
+            preco: number;
+            conformidade: number;
+            comentario: string | null;
+            dataCriacao: string;
+        });
     },
     getAvaliacaoMedia: async (id: number) => {
         const response = await api.get(`/fornecedores/${id}/avaliacao-media`);
