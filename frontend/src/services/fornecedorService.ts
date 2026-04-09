@@ -32,6 +32,11 @@ export const fornecedorService = {
         categoria: string;
         observacoes?: string;
         estado?: boolean;
+        valorMinimoEncomenda?: number;
+        prazoMedioEntrega?: number;
+        custoTransporte?: number;
+        metodoPagamento?: string;
+        diasEntrega?: string;
     }) => {
         const response = await api.put(`/fornecedores/${id}`, fornecedor);
         return response.data;

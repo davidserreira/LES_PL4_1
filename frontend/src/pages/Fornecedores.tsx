@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown } from 'lucide-react';
+import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, Clock, Truck, HandCoins, CalendarDays, Edit, DollarSign, FileText, Database, Package } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
+import EditarCondicoesModal from '../components/EditarCondicoesModal';
 import AvaliarFornecedorModal from '../components/AvaliarFornecedorModal';
 import ListarAvaliacoesFornecedorModal from '../components/ListarAvaliacoesFornecedorModal';
 import type { Utilizador } from '../services/utilizadorService';
@@ -24,6 +25,12 @@ interface Fornecedor {
         categoria: string;
         stock: number;
     }[];
+    // Condições Comerciais
+    valorMinimoEncomenda?: number | null;
+    prazoMedioEntrega?: number | null;
+    custoTransporte?: number | null;
+    metodoPagamento?: string | null;
+    diasEntrega?: string | null;
 }
 
 type SortField = 'id' | 'nome';
@@ -56,9 +63,13 @@ const Fornecedores = () => {
     const [dropdownAnchor, setDropdownAnchor] = useState<DOMRect | null>(null);
     const [detalhesFornecedor, setDetalhesFornecedor] = useState<Fornecedor | null>(null);
     const [fornecedorAEditar, setFornecedorAEditar] = useState<Fornecedor | null>(null);
+    const [fornecedorCondicoesAEditar, setFornecedorCondicoesAEditar] = useState<Fornecedor | null>(null);
     const [fornecedorAAvaliar, setFornecedorAAvaliar] = useState<Pick<Fornecedor, 'id' | 'nome'> | null>(null);
     const [savingObs, setSavingObs] = useState(false);
     const [avaliacaoMedia, setAvaliacaoMedia] = useState<{ media: number | null; totalAvaliacoes: number } | null>(null);
+    
+    // Tabs in details modal
+    const [activeTab, setActiveTab] = useState<'geral' | 'condicoes'>('geral');
 
     // Filter states
     const [filterStatus, setFilterStatus] = useState<'todos' | 'ativos' | 'inativos'>('todos');
@@ -544,6 +555,22 @@ const Fornecedores = () => {
                 }}
             />
 
+            <EditarCondicoesModal
+                isOpen={fornecedorCondicoesAEditar !== null}
+                fornecedor={fornecedorCondicoesAEditar}
+                onClose={() => setFornecedorCondicoesAEditar(null)}
+                onSuccess={() => {
+                    if (detalhesFornecedor) {
+                        // Immediately reload the supplier from the updated list or fetch it
+                        fetchFornecedores();
+                        // Also, we can close the details modal or fetch its new details
+                        setDetalhesFornecedor(null);
+                        setActiveTab('geral');
+                    }
+                    showToast('Condições de Compra atualizadas com sucesso!', 'success');
+                }}
+            />
+
             <AvaliarFornecedorModal
                 isOpen={fornecedorAAvaliar !== null}
                 fornecedor={fornecedorAAvaliar}
@@ -561,107 +588,260 @@ const Fornecedores = () => {
             {detalhesFornecedor && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDetalhesFornecedor(null)} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-in zoom-in-95 duration-200 overflow-hidden">
-                        <div className="bg-slate-900 p-6 flex justify-between items-start">
-                            <div className="pr-4">
-                                <h2 className="text-xl font-bold text-white leading-tight">{detalhesFornecedor.nome}</h2>
-                                <p className="text-slate-400 text-sm mt-1">{detalhesFornecedor.email}</p>
+                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Header Modal - Light Version (Like Stock Details) */}
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100">
+                                    <Factory size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                                        {detalhesFornecedor.nome}
+                                    </h2>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200/70 text-slate-600 uppercase tracking-wider">
+                                            ID: {detalhesFornecedor.id}
+                                        </span>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 tracking-wider">
+                                            {detalhesFornecedor.categoria}
+                                        </span>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 tracking-wider">
+                                            {detalhesFornecedor.email}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                            <button onClick={() => setDetalhesFornecedor(null)} className="p-1.5 text-slate-400 hover:bg-white/10 hover:text-white transition-colors rounded-lg flex-shrink-0">
+                            <button 
+                                onClick={() => { setDetalhesFornecedor(null); setActiveTab('geral'); }}
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                            >
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="p-6 space-y-5">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex flex-col bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">NIF</span>
-                                    <span className="text-slate-800 font-mono font-semibold">{detalhesFornecedor.nif}</span>
-                                </div>
-                                <div className="flex flex-col bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Contacto</span>
-                                    <span className="text-slate-800 font-semibold">{detalhesFornecedor.contacto}</span>
-                                </div>
-                            </div>
-                            <div className="flex flex-col border-b border-slate-100 pb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Tipo de Produtos</span>
-                                <span className="text-slate-800 font-medium inline-flex">{detalhesFornecedor.categoria}</span>
-                            </div>
-                            <div className="flex flex-col border-b border-slate-100 pb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Estado</span>
-                                <div>
-                                    <span className={`inline-flex items-center px-2.5 py-1.5 rounded-full text-sm font-bold border ${detalhesFornecedor.estado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
-                                        {detalhesFornecedor.estado ? 'Ativo' : 'Inativo'}
-                                    </span>
-                                </div>
-                            </div>
-                            {avaliacaoMedia ? (
-                                <div className="flex flex-col border-b border-slate-100 pb-3">
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Pontuação Média</span>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-slate-800 font-semibold">
-                                            {avaliacaoMedia.totalAvaliacoes > 0 ? `${avaliacaoMedia.media?.toFixed(1)} / 5` : 'Sem classificações'}
-                                        </span>
-                                        <button
-                                            onClick={() => setIsListAvaliacoesOpen(true)}
-                                            className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline transition-colors focus:outline-none"
-                                        >
-                                            {avaliacaoMedia.totalAvaliacoes} {avaliacaoMedia.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
-                                        </button>
-                                    </div>
-                                </div>
-                            ) : null}
-                            <div className="flex flex-col border-b border-slate-100 pb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Desde</span>
-                                <span className="text-slate-800 font-medium">
-                                    {new Date(detalhesFornecedor.criadoEm).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                </span>
-                            </div>
-                            
-                            {/* Produtos Fornecidos */}
-                            <div className="flex flex-col border-b border-slate-100 pb-3">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Produtos Fornecidos</span>
-                                {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 ? (
-                                    <div className="max-h-32 overflow-y-auto pr-2 custom-scrollbar space-y-2">
-                                        {detalhesFornecedor.produtos.map(prod => (
-                                            <div key={prod.id} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-lg">
+
+                        {/* Tabs Header */}
+                        <div className="flex border-b border-slate-200 bg-slate-50/80 px-6">
+                            <button 
+                                className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === 'geral' ? 'border-emerald-500 text-emerald-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'}`}
+                                onClick={() => setActiveTab('geral')}
+                            >
+                                Info Geral
+                            </button>
+                            <button 
+                                className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === 'condicoes' ? 'border-emerald-500 text-emerald-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'}`}
+                                onClick={() => setActiveTab('condicoes')}
+                            >
+                                Condições de Compra
+                            </button>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative custom-scrollbar space-y-6">
+                            {activeTab === 'geral' && (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Card: Identificação */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                <FileText size={14} /> Identificação
+                                            </h3>
+                                            <div>
+                                                <p className="text-sm text-slate-500 mb-0.5">NIF</p>
+                                                <p className="text-xl font-black text-slate-900 font-mono tracking-tight">{detalhesFornecedor.nif}</p>
+                                            </div>
+                                            <div className="pt-2 border-t border-slate-100">
+                                                <p className="text-sm text-slate-500 mb-0.5">Contacto Telefónico</p>
+                                                <p className="text-lg font-bold text-slate-700">{detalhesFornecedor.contacto}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Card: Ficha de Fornecedor */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                <Database size={14} /> Ficha de Fornecedor
+                                            </h3>
+                                            <div className="flex items-center justify-between">
                                                 <div>
-                                                    <div className="text-sm font-bold text-slate-800 leading-tight">{prod.nome}</div>
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{prod.categoria || 'Sem Categoria'}</div>
+                                                    <p className="text-sm text-slate-500 mb-0.5">Tipo de Produtos</p>
+                                                    <p className="text-lg font-bold text-slate-900">{detalhesFornecedor.categoria}</p>
                                                 </div>
-                                                <div className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
-                                                    Stock: {prod.stock}
+                                                <div className="text-right">
+                                                    <p className="text-sm text-slate-500 mb-0.5">Estado</p>
+                                                    {detalhesFornecedor.estado ? (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                            <CheckCircle2 size={12} />
+                                                            ATIVO
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                                                            <X size={12} />
+                                                            INATIVO
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
-                                        ))}
+                                            <div className="pt-2 border-t border-slate-100">
+                                                <p className="text-sm text-slate-500 mb-0.5">Parceiro Desde</p>
+                                                <p className="text-base font-bold text-slate-700">
+                                                    {new Date(detalhesFornecedor.criadoEm).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="text-sm text-slate-500 italic p-3 bg-slate-50 rounded-lg border border-slate-100 text-center">
-                                        Este fornecedor não tem produtos associados.
-                                    </div>
-                                )}
-                            </div>
 
-                            <div className="flex flex-col pt-1">
-                                <div className="flex items-center justify-between mb-1.5">
-                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Observações</span>
-                                    <button
-                                        onClick={() => handleSaveObservacoes(detalhesFornecedor.id)}
-                                        disabled={savingObs}
-                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 disabled:opacity-50 transition-opacity"
-                                    >
-                                        {savingObs ? 'A Guardar...' : 'Guardar'}
-                                    </button>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Avaliação */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                    <AlertCircle size={14} /> Pontuação Média
+                                                </h3>
+                                                {avaliacaoMedia && avaliacaoMedia.totalAvaliacoes > 0 && (
+                                                    <button
+                                                        onClick={() => setIsListAvaliacoesOpen(true)}
+                                                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline uppercase tracking-wider"
+                                                    >
+                                                        {avaliacaoMedia.totalAvaliacoes} {avaliacaoMedia.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-2xl font-black text-slate-900">
+                                                    {avaliacaoMedia && avaliacaoMedia.totalAvaliacoes > 0 ? `${avaliacaoMedia.media?.toFixed(1)} / 5` : 'N/A'}
+                                                </p>
+                                                <p className="text-xs font-medium text-slate-500 mt-0.5">classificação global</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Observações */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                    <FileText size={14} /> Observações
+                                                </h3>
+                                                {savingObs ? (
+                                                    <span className="text-[10px] font-bold text-slate-400 animate-pulse uppercase tracking-wider">A GUARDAR...</span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleSaveObservacoes(detalhesFornecedor.id)}
+                                                        disabled={detalhesFornecedor.observacoes === (detalhesFornecedor.observacoes || '') && false /* Wait! Previous code used detalhesFornecedor.observacoes, the old logic was: onChange={(e) => setDetalhesFornecedor({ ...detalhesFornecedor, observacoes: e.target.value })} */}
+                                                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 disabled:text-transparent transition-colors uppercase tracking-wider disabled:opacity-50"
+                                                    >
+                                                        Guardar
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <textarea 
+                                                value={detalhesFornecedor.observacoes || ''}
+                                                onChange={(e) => setDetalhesFornecedor({ ...detalhesFornecedor, observacoes: e.target.value })}
+                                                rows={2}
+                                                className="w-full flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar text-slate-700"
+                                                placeholder="Informação adicional opcional..."
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Produtos Fornecidos */}
+                                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                            <Package size={14} /> Produtos Fornecidos
+                                        </h3>
+                                        {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 ? (
+                                            <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                                                {detalhesFornecedor.produtos.map(prod => (
+                                                    <div key={prod.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 transition-colors">
+                                                        <div>
+                                                            <div className="text-sm font-bold text-slate-900 leading-tight">{prod.nome}</div>
+                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{prod.categoria || 'Sem Categoria'}</div>
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-emerald-600 bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-md uppercase tracking-wider">
+                                                            Stock: {prod.stock}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center py-6 text-slate-400">
+                                                <Package size={32} strokeWidth={1} className="mb-2 text-slate-300" />
+                                                <p className="text-sm">Este fornecedor não fornece produtos de inventário.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="relative">
-                                    <textarea
-                                        value={detalhesFornecedor.observacoes || ''}
-                                        onChange={(e) => setDetalhesFornecedor({ ...detalhesFornecedor, observacoes: e.target.value })}
-                                        rows={3}
-                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
-                                        placeholder="Informação adicional opcional..."
-                                    />
+                            )}
+
+                            {activeTab === 'condicoes' && (
+                                <div className="space-y-4">
+                                    {/* Action Bar */}
+                                    {user?.role === 'ADMINISTRADOR' && (
+                                        <div className="flex justify-end pb-2">
+                                            <button 
+                                                onClick={() => setFornecedorCondicoesAEditar(detalhesFornecedor)}
+                                                className="px-4 py-2 bg-emerald-50 text-emerald-700 font-bold rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
+                                            >
+                                                <Edit size={16} />
+                                                Editar Condições
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Card: Condições Financeiras */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                <DollarSign size={14} /> Condições Financeiras
+                                            </h3>
+                                            <div>
+                                                <p className="text-sm text-slate-500 mb-0.5">Valor mínimo por encomenda</p>
+                                                <p className="text-2xl font-black text-slate-900">
+                                                    {detalhesFornecedor.valorMinimoEncomenda != null ? `${Number(detalhesFornecedor.valorMinimoEncomenda).toFixed(2)} €` : '--'}
+                                                </p>
+                                            </div>
+                                            <div className="pt-2 border-t border-slate-100">
+                                                <p className="text-sm text-slate-500 mb-0.5">Custo de transporte</p>
+                                                <p className="text-lg font-bold text-slate-700">
+                                                    {detalhesFornecedor.custoTransporte != null ? `${Number(detalhesFornecedor.custoTransporte).toFixed(2)} €` : '--'}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Card: Logística */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                <Truck size={14} /> Logística
+                                            </h3>
+                                            <div>
+                                                <p className="text-sm text-slate-500 mb-0.5">Prazo médio de entrega</p>
+                                                <p className="text-2xl font-black text-slate-900">
+                                                    {detalhesFornecedor.prazoMedioEntrega != null ? `${detalhesFornecedor.prazoMedioEntrega} dias` : '--'}
+                                                </p>
+                                            </div>
+                                            <div className="pt-2 border-t border-slate-100">
+                                                <p className="text-sm text-slate-500 mb-0.5">Dias de entrega</p>
+                                                <p className="text-lg font-bold text-slate-700">
+                                                    {detalhesFornecedor.diasEntrega || '--'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Card: Pagamento */}
+                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                                <HandCoins size={14} /> Pagamento
+                                            </h3>
+                                            <div>
+                                                <p className="text-sm text-slate-500 mb-0.5">Método de pagamento</p>
+                                                <p className="text-xl font-black text-slate-900">
+                                                    {detalhesFornecedor.metodoPagamento || '--'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
