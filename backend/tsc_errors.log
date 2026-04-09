@@ -1,0 +1,1 @@
+src/controllers/PedidoCompraController.ts(63,17): error TS2353: Object literal may only specify known properties, and 'prioridade' does not exist in type '(Without<PedidoCompraCreateInput, PedidoCompraUncheckedCreateInput> & PedidoCompraUncheckedCreateInput) | (Without<...> & PedidoCompraCreateInput)'.

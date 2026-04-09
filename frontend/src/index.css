@@ -1,12 +1,19 @@
 @import "tailwindcss";
 
 @layer base {
+    html {
+        font-size: 80%; /* Reduz a escala global da UI (equivalente a zoom de ~80%) */
+    }
     body {
         @apply bg-slate-50 text-slate-900 antialiased;
         user-select: none;
         -webkit-user-select: none;
         -moz-user-select: none;
         -ms-user-select: none;
+    }
+
+    body:has(.fixed.inset-0) {
+        overflow: hidden;
     }
 }
 

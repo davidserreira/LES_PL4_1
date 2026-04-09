@@ -1,11 +1,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import {
-    X, Package, Database, AlertCircle, CheckCircle2,
+    X, Database, AlertCircle, CheckCircle2,
     DollarSign, Tag, FileText, Plus, Loader2,
-    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown
+    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Factory, Check
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
+import { fornecedorService } from '../services/fornecedorService';
 
 interface CriarProdutoModalProps {
     isOpen: boolean;
@@ -33,8 +34,23 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
     const [error, setError] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+    
+    // Fornecedores State
+    const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean }[]>([]);
+    const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
+    const [isFornecedoresOpen, setIsFornecedoresOpen] = useState(false);
 
     const categoryRef = useRef<HTMLDivElement>(null);
+    const fornecedoresRef = useRef<HTMLDivElement>(null);
+
+    // Fetch active suppliers when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            fornecedorService.getAll().then(data => {
+                setFornecedores(data.filter((f: any) => f.estado === true));
+            }).catch(err => console.error("Failed to load fornecedores", err));
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         if (isOpen) {
@@ -44,11 +60,14 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
         }
     }, [isOpen]);
 
-    // Close dropdown on click outside
+    // Close dropdowns on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
                 setIsCategoryOpen(false);
+            }
+            if (fornecedoresRef.current && !fornecedoresRef.current.contains(event.target as Node)) {
+                setIsFornecedoresOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -60,6 +79,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
         setTimeout(() => {
             onClose();
             setIsClosing(false);
+            setSelectedFornecedores([]);
         }, 300);
     };
 
@@ -102,6 +122,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                 preco: precoNumber,
                 categoria: categoria || undefined,
                 descricao: descricao || undefined,
+                fornecedorIds: selectedFornecedores.length > 0 ? selectedFornecedores : undefined,
             });
             onSuccess();
             handleClose();
@@ -112,6 +133,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
             setPreco('0.00');
             setCategoria('');
             setDescricao('');
+            setSelectedFornecedores([]);
         } catch (error) {
             console.error('Erro ao criar produto:', error);
             setError('Ocorreu um erro ao criar o produto. Verifique a sua ligação.');
@@ -216,7 +238,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                     </div>
                                 )}
                             </div>
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 pt-1">
                                 <label className="text-sm font-medium text-slate-700 ml-0.5">Preço (€)</label>
                                 <div className="relative">
                                     <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -231,6 +253,60 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                     />
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Suppliers Select */}
+                        <div className="space-y-1.5 relative" ref={fornecedoresRef}>
+                            <label className="text-sm font-medium text-slate-700 ml-0.5">Fornecedores Vinculados (Opcional)</label>
+                            <button
+                                type="button"
+                                onClick={() => setIsFornecedoresOpen(!isFornecedoresOpen)}
+                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all flex items-center justify-between text-sm group"
+                            >
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                    <Factory size={16} className={selectedFornecedores.length > 0 ? "text-emerald-500 shrink-0" : "text-slate-400 shrink-0"} />
+                                    <span className={`truncate ${selectedFornecedores.length > 0 ? "text-slate-900" : "text-slate-400"}`}>
+                                        {selectedFornecedores.length > 0 
+                                            ? `${selectedFornecedores.length} fornecedor(es) selecionado(s)` 
+                                            : "Selecionar fornecedores..."}
+                                    </span>
+                                </div>
+                                <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform duration-200 ${isFornecedoresOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {isFornecedoresOpen && (
+                                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200 max-h-48 overflow-y-auto custom-scrollbar">
+                                    {fornecedores.length > 0 ? (
+                                        fornecedores.map((fornecedor) => {
+                                            const isSelected = selectedFornecedores.includes(fornecedor.id);
+                                            return (
+                                                <button
+                                                    key={fornecedor.id}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedFornecedores(prev => 
+                                                            isSelected ? prev.filter(id => id !== fornecedor.id) : [...prev, fornecedor.id]
+                                                        );
+                                                    }}
+                                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-sm text-left group"
+                                                >
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 group-hover:border-emerald-400'}`}>
+                                                        {isSelected && <Check size={12} strokeWidth={3} />}
+                                                    </div>
+                                                    <span className={`truncate ${isSelected ? 'text-slate-900 font-medium' : 'text-slate-600'}`}>
+                                                        {fornecedor.nome}
+                                                    </span>
+                                                </button>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="px-4 py-3 text-sm text-slate-500 text-center italic">
+                                            Nenhum fornecedor ativo disponível.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
 

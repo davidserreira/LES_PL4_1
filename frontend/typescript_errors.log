@@ -1,0 +1,2 @@
+src/App.tsx(2,8): error TS6133: 'React' is declared but its value is never read.
+src/components/CriarProdutoModal.tsx(4,8): error TS6133: 'Package' is declared but its value is never read.
