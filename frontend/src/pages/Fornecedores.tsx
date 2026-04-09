@@ -774,7 +774,7 @@ const Fornecedores = () => {
                             {activeTab === 'condicoes' && (
                                 <div className="space-y-4">
                                     {/* Action Bar */}
-                                    {user?.role === 'ADMINISTRADOR' && (
+                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_FINANCEIRO') && (
                                         <div className="flex justify-end pb-2">
                                             <button 
                                                 onClick={() => setFornecedorCondicoesAEditar(detalhesFornecedor)}
