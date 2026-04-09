@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
@@ -66,7 +66,8 @@ export default function PedidosCompra() {
     const [filterTipo, setFilterTipo] = useState('Todos');
     const [filterEstado, setFilterEstado] = useState('Todos');
     const [filterPrioridade, setFilterPrioridade] = useState('Todas');
-    const [sortField, setSortField] = useState<'criadoEm' | 'valorTotalEstimado'>('criadoEm');
+    type SortField = 'id' | 'criadoEm' | 'criador' | 'prioridade' | 'valorTotalEstimado' | 'estado';
+    const [sortField, setSortField] = useState<SortField>('criadoEm');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
     const [isFilterPrioridadeOpen, setIsFilterPrioridadeOpen] = useState(false);
@@ -310,20 +311,36 @@ export default function PedidosCompra() {
             if (sortField === 'valorTotalEstimado') {
                 valA = a.valorTotalEstimado || 0;
                 valB = b.valorTotalEstimado || 0;
-            } else {
+                return sortOrder === 'asc' ? valA - valB : valB - valA;
+            } else if (sortField === 'criadoEm') {
                 valA = new Date(a.criadoEm).getTime();
                 valB = new Date(b.criadoEm).getTime();
+                return sortOrder === 'asc' ? valA - valB : valB - valA;
+            } else if (sortField === 'id') {
+                const strA = a.codigoFormatado || '';
+                const strB = b.codigoFormatado || '';
+                return sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+            } else if (sortField === 'criador') {
+                const strA = a.criadoPor?.username || '';
+                const strB = b.criadoPor?.username || '';
+                return sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
+            } else if (sortField === 'prioridade') {
+                const prioMap = { 'URGENTE': 3, 'ALTA': 2, 'NORMAL': 1, 'BAIXA': 0 };
+                const numA = a.estado === 'CANCELADO' ? -1 : prioMap[a.prioridade as keyof typeof prioMap] || 0;
+                const numB = b.estado === 'CANCELADO' ? -1 : prioMap[b.prioridade as keyof typeof prioMap] || 0;
+                return sortOrder === 'asc' ? numA - numB : numB - numA;
+            } else if (sortField === 'estado') {
+                const strA = a.estado || '';
+                const strB = b.estado || '';
+                return sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
             }
-
-            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
             return 0;
         });
 
         return result;
     }, [pedidos, canViewHistorico, viewMode, historicoStatuses, searchQuery, filterEstado, filterTipo, filterPrioridade, sortField, sortOrder]);
 
-    const handleSort = (field: 'criadoEm' | 'valorTotalEstimado') => {
+    const handleSort = (field: SortField) => {
         if (sortField === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
         } else {
@@ -332,13 +349,9 @@ export default function PedidosCompra() {
         }
     };
 
-    const SortIcon = ({ field }: { field: 'criadoEm' | 'valorTotalEstimado' }) => {
-        return (
-            <ArrowUpDown 
-                size={14} 
-                className={`transition-colors ${sortField === field ? 'text-emerald-600' : 'text-slate-300 group-hover:text-slate-400'}`} 
-            />
-        );
+    const SortIcon = ({ field }: { field: SortField }) => {
+        if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-400" />;
+        return sortOrder === 'asc' ? <ArrowUp size={14} className="text-emerald-600" /> : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
     const getPriorityStyle = (priority: string) => {
@@ -734,22 +747,42 @@ export default function PedidosCompra() {
                         <table className="w-full text-left relative">
                             <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">ID</th>
                                     <th 
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        onClick={() => handleSort('id')}
+                                    >
+                                        <div className="flex items-center gap-2">ID <SortIcon field="id" /></div>
+                                    </th>
+                                    <th 
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('criadoEm')}
                                     >
                                         <div className="flex items-center gap-2">Data <SortIcon field="criadoEm" /></div>
                                     </th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Emitido por</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Prioridade</th>
                                     <th 
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 transition-colors group"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        onClick={() => handleSort('criador')}
+                                    >
+                                        <div className="flex items-center gap-2">Emitido por <SortIcon field="criador" /></div>
+                                    </th>
+                                    <th 
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        onClick={() => handleSort('prioridade')}
+                                    >
+                                        <div className="flex items-center gap-2">Prioridade <SortIcon field="prioridade" /></div>
+                                    </th>
+                                    <th 
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('valorTotalEstimado')}
                                     >
                                         <div className="flex items-center justify-end gap-2"><SortIcon field="valorTotalEstimado" /> Total</div>
                                     </th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
+                                    <th 
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        onClick={() => handleSort('estado')}
+                                    >
+                                        <div className="flex items-center gap-2">Estado <SortIcon field="estado" /></div>
+                                    </th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>

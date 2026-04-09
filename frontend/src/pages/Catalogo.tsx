@@ -36,7 +36,7 @@ interface Toast {
     type: 'success' | 'error';
 }
 
-type SortField = 'nome' | 'stock' | 'preco';
+type SortField = 'nome' | 'categoria' | 'stock' | 'stockMinimo' | 'preco' | 'estado';
 type SortOrder = 'asc' | 'desc';
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
@@ -151,16 +151,24 @@ const Catalogo = () => {
     });
 
     const sortedProdutos = [...filteredProdutos].sort((a, b) => {
-        let aValue = a[sortField] ?? 0;
-        let bValue = b[sortField] ?? 0;
+        if (sortField === 'estado') {
+            const aCritico = a.stock <= a.stockMinimo ? 1 : 0;
+            const bCritico = b.stock <= b.stockMinimo ? 1 : 0;
+            return sortOrder === 'asc' ? aCritico - bCritico : bCritico - aCritico;
+        }
 
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-            return sortOrder === 'asc' ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+        const aValue = a[sortField as keyof Produto];
+        const bValue = b[sortField as keyof Produto];
+
+        if (typeof aValue === 'string' || typeof bValue === 'string') {
+            const strA = String(aValue || '');
+            const strB = String(bValue || '');
+            return sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
         }
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-            return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-        }
-        return 0;
+        
+        const numA = Number(aValue || 0);
+        const numB = Number(bValue || 0);
+        return sortOrder === 'asc' ? numA - numB : numB - numA;
     });
 
     useEffect(() => {
@@ -416,7 +424,15 @@ const Catalogo = () => {
                                                 {getSortIcon('nome')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoria</th>
+                                        <th className="px-6 py-4">
+                                            <button 
+                                                onClick={() => handleSort('categoria')}
+                                                className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
+                                            >
+                                                Categoria
+                                                {getSortIcon('categoria')}
+                                            </button>
+                                        </th>
                                         <th className="px-6 py-4 text-center">
                                             <button 
                                                 onClick={() => handleSort('stock')}
@@ -426,7 +442,15 @@ const Catalogo = () => {
                                                 {getSortIcon('stock')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Stock Mín.</th>
+                                        <th className="px-6 py-4 text-center">
+                                            <button 
+                                                onClick={() => handleSort('stockMinimo')}
+                                                className="flex items-center justify-center gap-2 mx-auto text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
+                                            >
+                                                Stock Mín.
+                                                {getSortIcon('stockMinimo')}
+                                            </button>
+                                        </th>
                                         <th className="px-6 py-4 text-right">
                                             <button 
                                                 onClick={() => handleSort('preco')}
@@ -436,7 +460,15 @@ const Catalogo = () => {
                                                 {getSortIcon('preco')}
                                             </button>
                                         </th>
-                                        <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</th>
+                                        <th className="px-6 py-4 text-center">
+                                            <button 
+                                                onClick={() => handleSort('estado')}
+                                                className="flex items-center justify-center gap-2 mx-auto text-xs font-bold text-slate-500 uppercase tracking-widest group hover:text-slate-900 transition-colors"
+                                            >
+                                                Estado
+                                                {getSortIcon('estado')}
+                                            </button>
+                                        </th>
                                         {/* Ações OR Selecionar column */}
                                         <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">
                                             {isSelectionMode ? 'Selecionar' : 'Ações'}
