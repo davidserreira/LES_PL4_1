@@ -5,8 +5,9 @@ import {
 } from 'lucide-react';
 import { utilizadorService, Utilizador } from '../services/utilizadorService';
 import UtilizadorModal from '../components/UtilizadorModal';
+import { Power, PowerOff } from 'lucide-react';
 
-type SortField = 'id' | 'username' | 'role';
+type SortField = 'id' | 'username' | 'role' | 'ativo';
 type SortOrder = 'asc' | 'desc';
 
 interface Toast {
@@ -22,6 +23,14 @@ const Utilizadores = () => {
     const [utilizadorAEliminar, setUtilizadorAEliminar] = useState<Utilizador | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [toast, setToast] = useState<Toast | null>(null);
+    const [currentUser, setCurrentUser] = useState<Utilizador | null>(null);
+    const [isSelfInactivateModalOpen, setIsSelfInactivateModalOpen] = useState(false);
+    const [userToToggle, setUserToToggle] = useState<Utilizador | null>(null);
+
+    useEffect(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) setCurrentUser(JSON.parse(savedUser));
+    }, []);
 
     // Sorting state
     const [sortField, setSortField] = useState<SortField>('username');
@@ -80,6 +89,53 @@ const Utilizadores = () => {
         }
     };
 
+    const handleToggleStatus = async (utilizador: Utilizador) => {
+        if (!currentUser) return;
+
+        // Prevent inactivating other admins
+        if (utilizador.role === 'ADMINISTRADOR' && utilizador.id !== currentUser.id && utilizador.ativo !== false) {
+            showToast('Não é permitido inativar outros utilizadores administradores.', 'error');
+            setOpenDropdownId(null);
+            return;
+        }
+
+        const isSelfInactivating = utilizador.id === currentUser.id && utilizador.ativo !== false;
+
+        if (isSelfInactivating) {
+            setUserToToggle(utilizador);
+            setIsSelfInactivateModalOpen(true);
+            setOpenDropdownId(null);
+            return;
+        }
+
+        executeToggleStatus(utilizador);
+    };
+
+    const executeToggleStatus = async (utilizador: Utilizador) => {
+        try {
+            const newStatus = !utilizador.ativo;
+            await utilizadorService.update(utilizador.id, { ativo: newStatus });
+            
+            setUtilizadores(utilizadores.map(u => 
+                u.id === utilizador.id ? { ...u, ativo: newStatus } : u
+            ));
+            
+            showToast(`Utilizador marcado como ${newStatus ? 'ativo' : 'inativo'} com sucesso`, 'success');
+
+            // If self-inactivated, logout
+            if (utilizador.id === currentUser?.id && newStatus === false) {
+                setTimeout(() => {
+                    localStorage.removeItem('user');
+                    window.location.reload();
+                }, 2000);
+            }
+        } catch (error) {
+            showToast('Erro ao atualizar estado do utilizador', 'error');
+        } finally {
+            setOpenDropdownId(null);
+        }
+    };
+
     const filteredUtilizadores = utilizadores.filter((u) => {
         const query = searchQuery.toLowerCase();
         const matchesSearch = u.username.toLowerCase().includes(query) || u.role.toLowerCase().includes(query);
@@ -96,6 +152,11 @@ const Utilizadores = () => {
         }
         if (typeof aValue === 'number' && typeof bValue === 'number') {
             return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+        }
+        if (sortField === 'ativo') {
+            const aAtivo = a.ativo === false ? 0 : 1; // default is true if undefined
+            const bAtivo = b.ativo === false ? 0 : 1;
+            return sortOrder === 'asc' ? bAtivo - aAtivo : aAtivo - bAtivo;
         }
         return 0;
     });
@@ -147,6 +208,70 @@ const Utilizadores = () => {
                         <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70 transition-opacity">
                             <X size={16} />
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {isSelfInactivateModalOpen && (
+                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+                    <div 
+                        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-500" 
+                        onClick={() => setIsSelfInactivateModalOpen(false)} 
+                    />
+                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-300">
+                        {/* Status bar */}
+                        <div className="h-2 bg-amber-500 w-full" />
+                        
+                        <div className="p-8">
+                            <div className="flex flex-col items-center text-center mb-8">
+                                <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6 border border-amber-100 shadow-inner">
+                                    <PowerOff size={36} className="text-amber-600 animate-pulse" />
+                                </div>
+                                <h3 className="text-2xl font-black text-slate-900 tracking-tight mb-3">Auto-Inativação Crítica</h3>
+                                <p className="text-sm text-slate-500 leading-relaxed font-medium">
+                                    Está prestes a suspender o seu próprio acesso. Esta ação tem consequências imediatas no seu acesso ao sistema.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4 mb-8 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                <div className="flex gap-3 items-start">
+                                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <div className="w-2 h-2 rounded-full bg-amber-600" />
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-normal font-bold">Será desconectado instantaneamente.</p>
+                                </div>
+                                <div className="flex gap-3 items-start">
+                                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <div className="w-2 h-2 rounded-full bg-amber-600" />
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-normal font-bold">Perderá permissões para gerir Stock, Pedidos e Fornecedores.</p>
+                                </div>
+                                <div className="flex gap-3 items-start">
+                                    <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center shrink-0 mt-0.5">
+                                        <div className="w-2 h-2 rounded-full bg-amber-600" />
+                                    </div>
+                                    <p className="text-xs text-slate-600 leading-normal font-bold">Apenas outro administrador poderá reverter esta ação.</p>
+                                </div>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button
+                                    onClick={() => setIsSelfInactivateModalOpen(false)}
+                                    className="flex-1 px-6 py-3.5 bg-slate-100 text-slate-600 font-black rounded-2xl hover:bg-slate-200 transition-all text-sm active:scale-95"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsSelfInactivateModalOpen(false);
+                                        if (userToToggle) executeToggleStatus(userToToggle);
+                                    }}
+                                    className="flex-1 px-6 py-3.5 bg-amber-600 text-white font-black rounded-2xl hover:bg-amber-700 transition-all text-sm shadow-lg shadow-amber-600/20 active:scale-95"
+                                >
+                                    Confirmar e Sair
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -323,6 +448,15 @@ const Utilizadores = () => {
                                             {getSortIcon('role')}
                                         </div>
                                     </th>
+                                    <th 
+                                        onClick={() => handleSort('ativo')}
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            Estado
+                                            {getSortIcon('ativo')}
+                                        </div>
+                                    </th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
                                 </tr>
                             </thead>
@@ -335,13 +469,32 @@ const Utilizadores = () => {
                                                 {u.username.charAt(0).toUpperCase()}
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-sm font-bold text-slate-900">{u.username}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm font-bold text-slate-900">{u.username}</span>
+                                                    {u.id === currentUser?.id && (
+                                                        <span className="px-1.5 py-0.5 bg-slate-100 text-[8px] font-black text-slate-500 border border-slate-200 rounded-md uppercase tracking-wider flex items-center gap-1">
+                                                            <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                                                            Logado
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <span className="text-[10px] text-slate-400 font-medium">ID: #{u.id}</span>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-3">
                                         {getRoleBadge(u.role)}
+                                    </td>
+                                    <td className="px-6 py-3">
+                                        {u.ativo === false ? (
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black border bg-slate-50 text-slate-500 border-slate-200">
+                                                Inativo
+                                            </span>
+                                        ) : (
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black border bg-emerald-50 text-emerald-700 border-emerald-100">
+                                                Ativo
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-3 text-right overflow-visible">
                                         <div className="relative flex justify-end">
@@ -370,6 +523,25 @@ const Utilizadores = () => {
                                                     >
                                                         <Edit2 size={16} />
                                                         Editar Dados
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            // Only block if trying to INACTIVATE another admin
+                                                            if (u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id && u.ativo !== false) {
+                                                                showToast('Não é permitido inativar outros administradores.', 'error');
+                                                                setOpenDropdownId(null);
+                                                                return;
+                                                            }
+                                                            handleToggleStatus(u);
+                                                        }}
+                                                        className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${
+                                                            u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id && u.ativo !== false
+                                                                ? 'text-slate-300 cursor-not-allowed'
+                                                                : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-600'
+                                                        }`}
+                                                    >
+                                                        {u.ativo === false ? <Power size={16} /> : <PowerOff size={16} />}
+                                                        {u.ativo === false ? 'Ativar Conta' : 'Inativar Conta'}
                                                     </button>
                                                     <div className="h-px bg-slate-100 mx-2 my-1" />
                                                     <button
