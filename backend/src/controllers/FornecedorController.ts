@@ -132,7 +132,14 @@ export const updateObservacoes = async (req: Request, res: Response) => {
 export const updateFornecedor = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const { nome, nif, contacto, email, categoria, observacoes, estado } = req.body;
+        const { 
+            nome, nif, contacto, email, categoria, observacoes, estado,
+            valorMinimoEncomenda, 
+            prazoMedioEntrega, 
+            custoTransporte, 
+            metodoPagamento, 
+            diasEntrega
+        } = req.body;
 
         const existing = await prisma.fornecedor.findUnique({
             where: { id: parseInt(id) }
@@ -158,6 +165,11 @@ export const updateFornecedor = async (req: Request, res: Response) => {
                 categoria,
                 observacoes: observacoes ?? existing.observacoes,
                 estado: typeof estado === 'boolean' ? estado : existing.estado,
+                valorMinimoEncomenda: valorMinimoEncomenda !== undefined ? valorMinimoEncomenda : existing.valorMinimoEncomenda,
+                prazoMedioEntrega: prazoMedioEntrega !== undefined ? prazoMedioEntrega : existing.prazoMedioEntrega,
+                custoTransporte: custoTransporte !== undefined ? custoTransporte : existing.custoTransporte,
+                metodoPagamento: metodoPagamento !== undefined ? metodoPagamento : existing.metodoPagamento,
+                diasEntrega: diasEntrega !== undefined ? diasEntrega : existing.diasEntrega,
             }
         });
 

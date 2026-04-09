@@ -47,6 +47,13 @@ model Fornecedor {
   observacoes String?  @db.Text
   criadoEm    DateTime @default(now())
 
+  // Condições Comerciais / Compra
+  valorMinimoEncomenda Float?
+  prazoMedioEntrega    Int?
+  custoTransporte      Float?
+  metodoPagamento      String?
+  diasEntrega          String?
+
   produtos   Produto[] // US1.9 - Associar a Produto
   avaliacoes Avaliacao[] // US1.8 - Avaliar Fornecedor
 }
