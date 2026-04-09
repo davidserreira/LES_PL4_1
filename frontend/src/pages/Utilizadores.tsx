@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
     Plus, AlertCircle, CheckCircle2, X, Search, 
     MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, User, Trash2, Edit2
@@ -79,10 +80,25 @@ const Utilizadores = () => {
 
     const handleDelete = async () => {
         if (!utilizadorAEliminar) return;
+
+        // Safety check: prevent deleting other admins
+        if (utilizadorAEliminar.role === 'ADMINISTRADOR' && utilizadorAEliminar.id !== currentUser?.id) {
+            showToast('Ação bloqueada: Não é permitido eliminar outros administradores.', 'error');
+            setUtilizadorAEliminar(null);
+            return;
+        }
+
         try {
             await utilizadorService.delete(utilizadorAEliminar.id);
             setUtilizadores(utilizadores.filter((u) => u.id !== utilizadorAEliminar.id));
             showToast('Utilizador removido com sucesso', 'success');
+            
+            // If self-deleted, logout
+            if (utilizadorAEliminar.id === currentUser?.id) {
+                localStorage.removeItem('user');
+                window.location.reload();
+            }
+            
             setUtilizadorAEliminar(null);
         } catch (error) {
             showToast('Erro ao remover utilizador', 'error');
@@ -113,7 +129,10 @@ const Utilizadores = () => {
 
     const executeToggleStatus = async (utilizador: Utilizador) => {
         try {
-            const newStatus = !utilizador.ativo;
+            // Treat undefined as true (default state for active users)
+            const currentStatus = utilizador.ativo !== false;
+            const newStatus = !currentStatus;
+            
             await utilizadorService.update(utilizador.id, { ativo: newStatus });
             
             setUtilizadores(utilizadores.map(u => 
@@ -212,8 +231,8 @@ const Utilizadores = () => {
                 </div>
             )}
 
-            {isSelfInactivateModalOpen && (
-                <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+            {isSelfInactivateModalOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div 
                         className="fixed inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-500" 
                         onClick={() => setIsSelfInactivateModalOpen(false)} 
@@ -273,11 +292,12 @@ const Utilizadores = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
-            {utilizadorAEliminar && (
-                <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            {utilizadorAEliminar && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
                     <div 
                         className="fixed inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" 
                         onClick={() => setUtilizadorAEliminar(null)} 
@@ -312,7 +332,8 @@ const Utilizadores = () => {
                             </div>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
@@ -546,6 +567,11 @@ const Utilizadores = () => {
                                                     <div className="h-px bg-slate-100 mx-2 my-1" />
                                                     <button
                                                         onClick={() => {
+                                                            if (u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id) {
+                                                                showToast('Não é permitido eliminar outros administradores.', 'error');
+                                                                setOpenDropdownId(null);
+                                                                return;
+                                                            }
                                                             setUtilizadorAEliminar(u);
                                                             setOpenDropdownId(null);
                                                         }}
@@ -577,7 +603,26 @@ const Utilizadores = () => {
             <UtilizadorModal 
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                onSuccess={fetchUtilizadores}
+                onSuccess={() => {
+                    fetchUtilizadores();
+                    // Checking if current user (me) was edited and possibly inactivated
+                    if (utilizadorAEditar?.id === currentUser?.id) {
+                        // We need to re-fetch me if I want to be 100% sure, 
+                        // but usually the modal closes on success.
+                        // Let's do a simple check: if the user intentionally edited their own data,
+                        // we can re-check their status from the local storage or just wait for them to notice.
+                        // Actually, the most robust way is to re-load me from the newly fetched list.
+                        utilizadorService.getById(currentUser.id).then(me => {
+                            if (me.ativo === false) {
+                                showToast('A sua conta foi inativada. A sair...', 'success');
+                                setTimeout(() => {
+                                    localStorage.removeItem('user');
+                                    window.location.reload();
+                                }, 2000);
+                            }
+                        });
+                    }
+                }}
                 utilizador={utilizadorAEditar}
             />
         </div>

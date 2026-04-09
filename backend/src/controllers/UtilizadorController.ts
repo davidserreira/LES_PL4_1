@@ -30,13 +30,14 @@ export class UtilizadorController {
     }
 
     static async criar(req: Request, res: Response) {
-        const { username, password, role } = req.body;
+        const { username, password, role, ativo } = req.body;
         try {
             const novoUtilizador = await prisma.utilizador.create({
                 data: {
                     username,
                     password: password || '123456',
-                    role
+                    role,
+                    ativo: ativo !== undefined ? ativo : true
                 }
             });
             res.status(201).json(novoUtilizador);

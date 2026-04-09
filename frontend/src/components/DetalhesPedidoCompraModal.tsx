@@ -100,9 +100,9 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
 
     const totalProdutos = pedido.linhas?.reduce((acc, l) => acc + l.quantidade, 0) || 0;
 
-    const modalContent = (
+    return createPortal(
         <div 
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
@@ -269,8 +269,7 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
-
-    return createPortal(modalContent, document.body);
 }

@@ -1,6 +1,7 @@
 import {
     X, Package, Calendar, Tag, AlertTriangle, CheckCircle2, Factory, DollarSign, Database, FileText
 } from 'lucide-react';
+import { createPortal } from 'react-dom';
 
 interface Produto {
     id: number;
@@ -36,9 +37,9 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
 
     const isCritico = produto.stock <= produto.stockMinimo;
 
-    return (
+    return createPortal(
         <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
@@ -201,6 +202,7 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
