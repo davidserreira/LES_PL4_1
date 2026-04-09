@@ -5,6 +5,7 @@ export interface Utilizador {
     username: string;
     role: 'ADMINISTRADOR' | 'RESPONSAVEL_STOCK' | 'RESPONSAVEL_FINANCEIRO';
     password?: string;
+    ativo?: boolean;
 }
 
 export const utilizadorService = {
