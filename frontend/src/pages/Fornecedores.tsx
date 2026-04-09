@@ -33,7 +33,7 @@ interface Fornecedor {
     diasEntrega?: string | null;
 }
 
-type SortField = 'id' | 'nome';
+type SortField = 'id' | 'nome' | 'categoria' | 'contacto' | 'estado';
 type SortOrder = 'asc' | 'desc';
 
 interface Toast {
@@ -112,22 +112,27 @@ const Fornecedores = () => {
     });
 
     const sortedFornecedores = [...filteredFornecedores].sort((a, b) => {
-        let aValue = a[sortField];
-        let bValue = b[sortField];
+        if (sortField === 'estado') {
+            // Ativo (true) vs Inativo (false). We'll treat true as 1, false as 0. Let's make true (Ativo) come first on 'asc'.
+            const aEstado = a.estado ? 1 : 0;
+            const bEstado = b.estado ? 1 : 0;
+            return sortOrder === 'asc' ? bEstado - aEstado : aEstado - bEstado;
+        }
 
-        // Handle string comparison for names
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const aValue = a[sortField as keyof Fornecedor];
+        const bValue = b[sortField as keyof Fornecedor];
+
+        if (typeof aValue === 'string' || typeof bValue === 'string') {
+            const strA = String(aValue || '');
+            const strB = String(bValue || '');
             return sortOrder === 'asc'
-                ? aValue.localeCompare(bValue)
-                : bValue.localeCompare(aValue);
+                ? strA.localeCompare(strB)
+                : strB.localeCompare(strA);
         }
 
-        // Handle numeric comparison for IDs
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-            return sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
-        }
-
-        return 0;
+        const numA = Number(aValue || 0);
+        const numB = Number(bValue || 0);
+        return sortOrder === 'asc' ? numA - numB : numB - numA;
     });
 
     const handleSort = (field: SortField) => {
@@ -454,9 +459,33 @@ const Fornecedores = () => {
                                             {getSortIcon('nome')}
                                         </div>
                                     </th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Categoria</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Contacto</th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">Estado</th>
+                                    <th
+                                        onClick={() => handleSort('categoria')}
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            Categoria
+                                            {getSortIcon('categoria')}
+                                        </div>
+                                    </th>
+                                    <th
+                                        onClick={() => handleSort('contacto')}
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            Contacto
+                                            {getSortIcon('contacto')}
+                                        </div>
+                                    </th>
+                                    <th
+                                        onClick={() => handleSort('estado')}
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
+                                            Estado
+                                            {getSortIcon('estado')}
+                                        </div>
+                                    </th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>

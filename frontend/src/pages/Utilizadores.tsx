@@ -112,8 +112,8 @@ const Utilizadores = () => {
     const getSortIcon = (field: SortField) => {
         if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-400 group-hover:text-slate-600" />;
         return sortOrder === 'asc' 
-            ? <ArrowUp size={14} className="text-blue-600" /> 
-            : <ArrowDown size={14} className="text-blue-600" />;
+            ? <ArrowUp size={14} className="text-emerald-600" /> 
+            : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
     const getRoleBadge = (role: Utilizador['role']) => {
@@ -305,23 +305,23 @@ const Utilizadores = () => {
                         <table className="w-full text-left relative">
                             <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
-                                        <button 
-                                            onClick={() => handleSort('username')}
-                                            className="flex items-center gap-2 group hover:text-slate-900 transition-colors uppercase"
-                                        >
+                                    <th 
+                                        onClick={() => handleSort('username')}
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
                                             Utilizador
                                             {getSortIcon('username')}
-                                        </button>
+                                        </div>
                                     </th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left">
-                                        <button 
-                                            onClick={() => handleSort('role')}
-                                            className="flex items-center gap-2 group hover:text-slate-900 transition-colors uppercase"
-                                        >
+                                    <th 
+                                        onClick={() => handleSort('role')}
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                    >
+                                        <div className="flex items-center gap-2">
                                             Cargo
                                             {getSortIcon('role')}
-                                        </button>
+                                        </div>
                                     </th>
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
                                 </tr>
