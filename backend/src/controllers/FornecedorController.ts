@@ -49,7 +49,7 @@ export const getFornecedores = async (req: Request, res: Response) => {
 
 export const createFornecedor = async (req: Request, res: Response) => {
     try {
-        const { nome, nif, contacto, email, categoria, observacoes } = req.body;
+        const { nome, nif, contacto, email, categoria, observacoes, produtoIds } = req.body;
 
         // Basic validation
         if (!nome) return res.status(400).json({ error: 'O nome é obrigatório' });
@@ -66,6 +66,9 @@ export const createFornecedor = async (req: Request, res: Response) => {
                 email,
                 categoria,
                 observacoes: observacoes || null,
+                produtos: produtoIds && produtoIds.length > 0 ? {
+                    connect: produtoIds.map((id: number) => ({ id }))
+                } : undefined
             }
         });
         res.status(201).json(fornecedor);
@@ -138,7 +141,8 @@ export const updateFornecedor = async (req: Request, res: Response) => {
             prazoMedioEntrega, 
             custoTransporte, 
             metodoPagamento, 
-            diasEntrega
+            diasEntrega,
+            produtoIds
         } = req.body;
 
         const existing = await prisma.fornecedor.findUnique({
@@ -170,6 +174,9 @@ export const updateFornecedor = async (req: Request, res: Response) => {
                 custoTransporte: custoTransporte !== undefined ? custoTransporte : existing.custoTransporte,
                 metodoPagamento: metodoPagamento !== undefined ? metodoPagamento : existing.metodoPagamento,
                 diasEntrega: diasEntrega !== undefined ? diasEntrega : existing.diasEntrega,
+                produtos: produtoIds !== undefined ? {
+                    set: produtoIds.map((id: number) => ({ id }))
+                } : undefined
             }
         });
 

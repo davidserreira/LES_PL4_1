@@ -3,6 +3,7 @@ import {
     X, AlertCircle, CheckCircle2, Factory, Hash, Phone, Loader2, Plus, Mail, Tag, ChevronDown, Pill, Syringe, Bath, Stethoscope, Layers, FileText
 } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
+import { produtoService } from '../services/produtoService';
 
 interface CriarFornecedorModalProps {
     isOpen: boolean;
@@ -30,6 +31,10 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
     const [error, setError] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+    
+    // Associar produtos
+    const [produtoIds, setProdutoIds] = useState<number[]>([]);
+    const [produtos, setProdutos] = useState<{ id: number; nome: string; categoria?: string }[]>([]);
 
     const categoryRef = useRef<HTMLDivElement>(null);
 
@@ -38,6 +43,12 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             setIsClosing(false);
             setError(null);
             setIsCategoryOpen(false);
+            setProdutoIds([]);
+            
+            // Carregar produtos para associação
+            produtoService.getAll()
+                .then(data => setProdutos(data))
+                .catch(err => console.error('Erro ao carregar produtos', err));
         }
     }, [isOpen]);
 
@@ -118,6 +129,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                 email,
                 categoria,
                 observacoes: observacoes || undefined,
+                produtoIds,
             });
             onSuccess();
             handleClose();
@@ -128,6 +140,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             setEmail('');
             setCategoria('');
             setObservacoes('');
+            setProdutoIds([]);
         } catch (error: any) {
             console.error('Erro ao criar fornecedor:', error);
             setError(error.response?.data?.error || 'Ocorreu um erro ao criar o fornecedor.');
@@ -291,6 +304,50 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                 className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
                                 placeholder="Informação adicional opcional..."
                             />
+                        </div>
+                    </div>
+                    
+                    {/* Section: Associar Produtos */}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                        <label className="text-sm font-medium text-slate-700 ml-0.5">Produtos Fornecidos</label>
+                        <p className="text-xs text-slate-500 ml-0.5 mb-2">Selecione os produtos que este fornecedor disponibiliza.</p>
+                        
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            <div className="max-h-48 overflow-y-auto custom-scrollbar p-2">
+                                {produtos.length > 0 ? (
+                                    produtos.map(produto => (
+                                        <label key={produto.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group">
+                                            <div className="relative flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-5 h-5 border-2 border-slate-300 rounded peer checked:bg-blue-600 checked:border-blue-600 appearance-none cursor-pointer text-white transition-all"
+                                                    checked={produtoIds.includes(produto.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setProdutoIds([...produtoIds, produto.id]);
+                                                        } else {
+                                                            setProdutoIds(produtoIds.filter(id => id !== produto.id));
+                                                        }
+                                                    }}
+                                                />
+                                                <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 left-1 top-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{produto.nome}</p>
+                                                {produto.categoria && (
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">{produto.categoria}</span>
+                                                )}
+                                            </div>
+                                        </label>
+                                    ))
+                                ) : (
+                                    <div className="p-4 text-center text-sm text-slate-500 italic">
+                                        Nenhum produto disponível no sistema.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
