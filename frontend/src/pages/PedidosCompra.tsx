@@ -786,9 +786,9 @@ export default function PedidosCompra() {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="">
                                 {filteredPedidos.map((p) => (
-                                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-b-0">
                                         <td className="px-6 py-3 font-bold text-slate-900">
                                             <div>{p.codigoFormatado}</div>
                                             <div className="text-[10px] text-slate-400 font-medium bg-slate-100 inline-block px-1.5 rounded mt-0.5">{p.tipo}</div>
