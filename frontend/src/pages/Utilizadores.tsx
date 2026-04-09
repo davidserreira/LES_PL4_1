@@ -326,9 +326,9 @@ const Utilizadores = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
                                 </tr>
                             </thead>
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody className="">
                             {sortedUtilizadores.map((u) => (
-                                <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors">
+                                <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-b-0">
                                     <td className="px-6 py-3">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 font-bold border border-slate-200 transition-transform group-hover:scale-105">

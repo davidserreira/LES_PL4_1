@@ -475,7 +475,7 @@ const Catalogo = () => {
                                         </th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100">
+                                <tbody className="">
                                     {sortedProdutos.map((produto) => {
                                         const isSelected = selectedIds.includes(produto.id);
 
@@ -483,7 +483,7 @@ const Catalogo = () => {
                                             <tr
                                                 key={produto.id}
                                                 onClick={isSelectionMode ? () => toggleSelect(produto.id) : () => setProductToView(produto)}
-                                                className={`group transition-all ${
+                                                className={`group transition-all border-b border-slate-100 last:border-b-0 ${
                                                     isSelectionMode
                                                         ? isSelected
                                                             ? 'bg-blue-50/50 cursor-pointer'

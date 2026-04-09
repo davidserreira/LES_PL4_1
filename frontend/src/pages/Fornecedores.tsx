@@ -489,12 +489,12 @@ const Fornecedores = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="">
                                 {sortedFornecedores.map((fornecedor) => (
                                     <tr 
                                         key={fornecedor.id} 
                                         onClick={() => setDetalhesFornecedor(fornecedor)}
-                                        className="hover:bg-slate-50/80 transition-all group cursor-pointer"
+                                        className="hover:bg-slate-50/80 transition-all group cursor-pointer border-b border-slate-100 last:border-b-0"
                                     >
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
