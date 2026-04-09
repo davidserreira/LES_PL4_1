@@ -184,6 +184,7 @@ const Fornecedores = () => {
                 <div
                     className="fixed w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-[81] animate-in fade-in zoom-in-95 duration-100"
                     style={{ top, left, transform: 'translateY(-50%)' }}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <button
                         onClick={() => {
