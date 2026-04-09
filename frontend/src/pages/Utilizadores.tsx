@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-    Plus, AlertCircle, CheckCircle2, X, Search, 
+import {
+    Plus, AlertCircle, CheckCircle2, X, Search,
     MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, User, Trash2, Edit2
 } from 'lucide-react';
 import { utilizadorService, Utilizador } from '../services/utilizadorService';
@@ -92,13 +92,13 @@ const Utilizadores = () => {
             await utilizadorService.delete(utilizadorAEliminar.id);
             setUtilizadores(utilizadores.filter((u) => u.id !== utilizadorAEliminar.id));
             showToast('Utilizador removido com sucesso', 'success');
-            
+
             // If self-deleted, logout
             if (utilizadorAEliminar.id === currentUser?.id) {
                 localStorage.removeItem('user');
                 window.location.reload();
             }
-            
+
             setUtilizadorAEliminar(null);
         } catch (error) {
             showToast('Erro ao remover utilizador', 'error');
@@ -132,13 +132,13 @@ const Utilizadores = () => {
             // Treat undefined as true (default state for active users)
             const currentStatus = utilizador.ativo !== false;
             const newStatus = !currentStatus;
-            
+
             await utilizadorService.update(utilizador.id, { ativo: newStatus });
-            
-            setUtilizadores(utilizadores.map(u => 
+
+            setUtilizadores(utilizadores.map(u =>
                 u.id === utilizador.id ? { ...u, ativo: newStatus } : u
             ));
-            
+
             showToast(`Utilizador marcado como ${newStatus ? 'ativo' : 'inativo'} com sucesso`, 'success');
 
             // If self-inactivated, logout
@@ -191,8 +191,8 @@ const Utilizadores = () => {
 
     const getSortIcon = (field: SortField) => {
         if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-400 group-hover:text-slate-600" />;
-        return sortOrder === 'asc' 
-            ? <ArrowUp size={14} className="text-emerald-600" /> 
+        return sortOrder === 'asc'
+            ? <ArrowUp size={14} className="text-emerald-600" />
             : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
@@ -218,10 +218,10 @@ const Utilizadores = () => {
         <div className="flex flex-col h-[calc(100vh-100px)] relative text-slate-900">
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[110] animate-in slide-in-from-right-full duration-300">
-                    <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success' 
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-800' 
+                    <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
+                        ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                         : 'bg-red-50 border-red-100 text-red-800'
-                    }`}>
+                        }`}>
                         {toast.type === 'success' ? <CheckCircle2 size={20} className="text-emerald-500" /> : <AlertCircle size={20} className="text-red-500" />}
                         <span className="text-sm font-bold">{toast.message}</span>
                         <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70 transition-opacity">
@@ -233,14 +233,14 @@ const Utilizadores = () => {
 
             {isSelfInactivateModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                    <div 
-                        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-500" 
-                        onClick={() => setIsSelfInactivateModalOpen(false)} 
+                    <div
+                        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xl animate-in fade-in duration-500"
+                        onClick={() => setIsSelfInactivateModalOpen(false)}
                     />
                     <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md border border-slate-200 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-300">
                         {/* Status bar */}
                         <div className="h-2 bg-amber-500 w-full" />
-                        
+
                         <div className="p-8">
                             <div className="flex flex-col items-center text-center mb-8">
                                 <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mb-6 border border-amber-100 shadow-inner">
@@ -272,7 +272,7 @@ const Utilizadores = () => {
                                     <p className="text-xs text-slate-600 leading-normal font-bold">Apenas outro administrador poderá reverter esta ação.</p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <button
                                     onClick={() => setIsSelfInactivateModalOpen(false)}
@@ -298,9 +298,9 @@ const Utilizadores = () => {
 
             {utilizadorAEliminar && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-                    <div 
-                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300" 
-                        onClick={() => setUtilizadorAEliminar(null)} 
+                    <div
+                        className="fixed inset-0 bg-slate-900/40 backdrop-blur-md animate-in fade-in duration-300"
+                        onClick={() => setUtilizadorAEliminar(null)}
                     />
                     <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-6">
@@ -315,7 +315,7 @@ const Utilizadores = () => {
                                     </p>
                                 </div>
                             </div>
-                            
+
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setUtilizadorAEliminar(null)}
@@ -339,7 +339,7 @@ const Utilizadores = () => {
             {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
             <div className="sticky top-0 z-40 bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
                 <div className="space-y-5">
-                    
+
                     {/* Linha 1: Título e Botões de ação lado a lado */}
                     <div className="flex justify-between items-center">
                         <div>
@@ -353,7 +353,7 @@ const Utilizadores = () => {
                                 setUtilizadorAEditar(null);
                                 setIsModalOpen(true);
                             }}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
                         >
                             <Plus size={18} />
                             Novo Utilizador
@@ -362,7 +362,7 @@ const Utilizadores = () => {
 
                     {/* ── Linha 2: 2 Blocos Separados (Pesquisa + Filtros) ── */}
                     <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
-                        
+
                         {/* Search Bar Container */}
                         {utilizadores.length > 0 && (
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 p-2 rounded-xl border border-slate-200/60 shadow-sm relative z-10 flex-grow">
@@ -400,7 +400,7 @@ const Utilizadores = () => {
                                 </button>
 
                                 {isFilterRoleOpen && (
-                                    <div 
+                                    <div
                                         onMouseDown={(e) => e.stopPropagation()}
                                         className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
                                     >
@@ -451,7 +451,7 @@ const Utilizadores = () => {
                         <table className="w-full text-left relative">
                             <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th 
+                                    <th
                                         onClick={() => handleSort('username')}
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                     >
@@ -460,7 +460,7 @@ const Utilizadores = () => {
                                             {getSortIcon('username')}
                                         </div>
                                     </th>
-                                    <th 
+                                    <th
                                         onClick={() => handleSort('role')}
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                     >
@@ -469,7 +469,7 @@ const Utilizadores = () => {
                                             {getSortIcon('role')}
                                         </div>
                                     </th>
-                                    <th 
+                                    <th
                                         onClick={() => handleSort('ativo')}
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                     >
@@ -481,113 +481,112 @@ const Utilizadores = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Ações</th>
                                 </tr>
                             </thead>
-                        <tbody className="">
-                            {sortedUtilizadores.map((u) => (
-                                <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-b-0">
-                                    <td className="px-6 py-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 font-bold border border-slate-200 transition-transform group-hover:scale-105">
-                                                {u.username.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-sm font-bold text-slate-900">{u.username}</span>
-                                                    {u.id === currentUser?.id && (
-                                                        <span className="px-1.5 py-0.5 bg-slate-100 text-[8px] font-black text-slate-500 border border-slate-200 rounded-md uppercase tracking-wider flex items-center gap-1">
-                                                            <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
-                                                            Logado
-                                                        </span>
-                                                    )}
+                            <tbody className="">
+                                {sortedUtilizadores.map((u) => (
+                                    <tr key={u.id} className="group hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-b-0">
+                                        <td className="px-6 py-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 font-bold border border-slate-200 transition-transform group-hover:scale-105">
+                                                    {u.username.charAt(0).toUpperCase()}
                                                 </div>
-                                                <span className="text-[10px] text-slate-400 font-medium">ID: #{u.id}</span>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-3">
-                                        {getRoleBadge(u.role)}
-                                    </td>
-                                    <td className="px-6 py-3">
-                                        {u.ativo === false ? (
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black border bg-slate-50 text-slate-500 border-slate-200">
-                                                Inativo
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black border bg-emerald-50 text-emerald-700 border-emerald-100">
-                                                Ativo
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-3 text-right overflow-visible">
-                                        <div className="relative flex justify-end">
-                                            <button
-                                                onMouseDown={(e) => {
-                                                    e.stopPropagation();
-                                                    setOpenDropdownId(openDropdownId === u.id ? null : u.id);
-                                                }}
-                                                className={`p-2 rounded-lg transition-all ${openDropdownId === u.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
-
-                                            {openDropdownId === u.id && (
-                                                <div 
-                                                    onMouseDown={(e) => e.stopPropagation()}
-                                                    className="absolute right-10 top-1/2 -translate-y-1/2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-200"
-                                                >
-                                                    <button
-                                                        onClick={() => {
-                                                            setUtilizadorAEditar(u);
-                                                            setIsModalOpen(true);
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                                                    >
-                                                        <Edit2 size={16} />
-                                                        Editar Dados
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            // Only block if trying to INACTIVATE another admin
-                                                            if (u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id && u.ativo !== false) {
-                                                                showToast('Não é permitido inativar outros administradores.', 'error');
-                                                                setOpenDropdownId(null);
-                                                                return;
-                                                            }
-                                                            handleToggleStatus(u);
-                                                        }}
-                                                        className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${
-                                                            u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id && u.ativo !== false
-                                                                ? 'text-slate-300 cursor-not-allowed'
-                                                                : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-600'
-                                                        }`}
-                                                    >
-                                                        {u.ativo === false ? <Power size={16} /> : <PowerOff size={16} />}
-                                                        {u.ativo === false ? 'Ativar Conta' : 'Inativar Conta'}
-                                                    </button>
-                                                    <div className="h-px bg-slate-100 mx-2 my-1" />
-                                                    <button
-                                                        onClick={() => {
-                                                            if (u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id) {
-                                                                showToast('Não é permitido eliminar outros administradores.', 'error');
-                                                                setOpenDropdownId(null);
-                                                                return;
-                                                            }
-                                                            setUtilizadorAEliminar(u);
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                        Eliminar Registo
-                                                    </button>
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-bold text-slate-900">{u.username}</span>
+                                                        {u.id === currentUser?.id && (
+                                                            <span className="px-1.5 py-0.5 bg-slate-100 text-[8px] font-black text-slate-500 border border-slate-200 rounded-md uppercase tracking-wider flex items-center gap-1">
+                                                                <div className="w-1 h-1 bg-emerald-500 rounded-full"></div>
+                                                                Logado
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 font-medium">ID: #{u.id}</span>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {getRoleBadge(u.role)}
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            {u.ativo === false ? (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black border bg-slate-50 text-slate-500 border-slate-200">
+                                                    Inativo
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black border bg-emerald-50 text-emerald-700 border-emerald-100">
+                                                    Ativo
+                                                </span>
                                             )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                        </td>
+                                        <td className="px-6 py-3 text-right overflow-visible">
+                                            <div className="relative flex justify-end">
+                                                <button
+                                                    onMouseDown={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenDropdownId(openDropdownId === u.id ? null : u.id);
+                                                    }}
+                                                    className={`p-2 rounded-lg transition-all ${openDropdownId === u.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                                                >
+                                                    <MoreVertical size={18} />
+                                                </button>
+
+                                                {openDropdownId === u.id && (
+                                                    <div
+                                                        onMouseDown={(e) => e.stopPropagation()}
+                                                        className="absolute right-10 top-1/2 -translate-y-1/2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-50 py-1.5 animate-in fade-in zoom-in-95 duration-200"
+                                                    >
+                                                        <button
+                                                            onClick={() => {
+                                                                setUtilizadorAEditar(u);
+                                                                setIsModalOpen(true);
+                                                                setOpenDropdownId(null);
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                                                        >
+                                                            <Edit2 size={16} />
+                                                            Editar Dados
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                // Only block if trying to INACTIVATE another admin
+                                                                if (u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id && u.ativo !== false) {
+                                                                    showToast('Não é permitido inativar outros administradores.', 'error');
+                                                                    setOpenDropdownId(null);
+                                                                    return;
+                                                                }
+                                                                handleToggleStatus(u);
+                                                            }}
+                                                            className={`w-full flex items-center gap-3 px-4 py-2 text-sm transition-colors ${u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id && u.ativo !== false
+                                                                    ? 'text-slate-300 cursor-not-allowed'
+                                                                    : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-600'
+                                                                }`}
+                                                        >
+                                                            {u.ativo === false ? <Power size={16} /> : <PowerOff size={16} />}
+                                                            {u.ativo === false ? 'Ativar Conta' : 'Inativar Conta'}
+                                                        </button>
+                                                        <div className="h-px bg-slate-100 mx-2 my-1" />
+                                                        <button
+                                                            onClick={() => {
+                                                                if (u.role === 'ADMINISTRADOR' && u.id !== currentUser?.id) {
+                                                                    showToast('Não é permitido eliminar outros administradores.', 'error');
+                                                                    setOpenDropdownId(null);
+                                                                    return;
+                                                                }
+                                                                setUtilizadorAEliminar(u);
+                                                                setOpenDropdownId(null);
+                                                            }}
+                                                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                            Eliminar Registo
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             ) : (
@@ -600,18 +599,13 @@ const Utilizadores = () => {
                 </div>
             )}
 
-            <UtilizadorModal 
+            <UtilizadorModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onSuccess={() => {
                     fetchUtilizadores();
                     // Checking if current user (me) was edited and possibly inactivated
-                    if (utilizadorAEditar?.id === currentUser?.id) {
-                        // We need to re-fetch me if I want to be 100% sure, 
-                        // but usually the modal closes on success.
-                        // Let's do a simple check: if the user intentionally edited their own data,
-                        // we can re-check their status from the local storage or just wait for them to notice.
-                        // Actually, the most robust way is to re-load me from the newly fetched list.
+                    if (utilizadorAEditar?.id && currentUser?.id && utilizadorAEditar.id === currentUser.id) {
                         utilizadorService.getById(currentUser.id).then(me => {
                             if (me.ativo === false) {
                                 showToast('A sua conta foi inativada. A sair...', 'success');
