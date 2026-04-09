@@ -1,23 +1,13 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
+import Dashboard from './pages/Dashboard';
 import Catalogo from './pages/Catalogo';
 import Fornecedores from './pages/Fornecedores';
 import Utilizadores from './pages/Utilizadores';
 import Login from './pages/Login';
 import PedidosCompra from './pages/PedidosCompra';
 import { Utilizador } from './services/utilizadorService';
-
-function Dashboard() {
-    return (
-        <div className="space-y-6">
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Dashboard</h1>
-            <p className="mt-2 text-sm text-slate-500">
-                Bem-vindo ao painel de administração da clínica.
-            </p>
-        </div>
-    );
-}
 
 function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
