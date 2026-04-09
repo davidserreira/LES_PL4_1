@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, User, Shield, Lock, AlertCircle, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 import { utilizadorService, Utilizador } from '../services/utilizadorService';
 
@@ -19,13 +20,20 @@ const UtilizadorModal: React.FC<UtilizadorModalProps> = ({ isOpen, onClose, onSu
     const [formData, setFormData] = useState({
         username: '',
         role: 'RESPONSAVEL_STOCK' as Utilizador['role'],
-        password: ''
+        password: '',
+        ativo: true
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
     const [isRoleOpen, setIsRoleOpen] = useState(false);
+    const [currentUser, setCurrentUser] = useState<Utilizador | null>(null);
     const roleRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const savedUser = localStorage.getItem('user');
+        if (savedUser) setCurrentUser(JSON.parse(savedUser));
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -36,13 +44,15 @@ const UtilizadorModal: React.FC<UtilizadorModalProps> = ({ isOpen, onClose, onSu
                 setFormData({
                     username: utilizador.username,
                     role: utilizador.role,
-                    password: ''
+                    password: '',
+                    ativo: utilizador.ativo !== false
                 });
             } else {
                 setFormData({
                     username: '',
                     role: 'RESPONSAVEL_STOCK',
-                    password: ''
+                    password: '',
+                    ativo: true
                 });
             }
         }
@@ -92,8 +102,8 @@ const UtilizadorModal: React.FC<UtilizadorModalProps> = ({ isOpen, onClose, onSu
 
     const selectedRole = ROLES.find(r => r.value === formData.role);
 
-    return (
-        <div className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+    return createPortal(
+        <div className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
             <div className={`absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`} onClick={handleClose} />
             
             <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
@@ -183,6 +193,35 @@ const UtilizadorModal: React.FC<UtilizadorModalProps> = ({ isOpen, onClose, onSu
                                 />
                             </div>
                         </div>
+
+                        <div className="flex items-center justify-between py-3 px-4 bg-slate-50 rounded-xl border border-slate-100 transition-colors">
+                            <div className="space-y-0.5">
+                                <label className="text-sm font-bold text-slate-800">Estado da Conta</label>
+                                <p className="text-[10px] text-slate-500 font-medium">Define se o utilizador pode ou não aceder ao sistema</p>
+                            </div>
+                             <div className="flex items-center gap-3">
+                                <span className={`text-[10px] uppercase font-black tracking-wider ${formData.ativo ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                    {formData.ativo ? 'Ativo' : 'Inativo'}
+                                </span>
+                                <button
+                                    type="button"
+                                    disabled={utilizador && utilizador.role === 'ADMINISTRADOR' && utilizador.id !== currentUser?.id && utilizador.ativo !== false}
+                                    onClick={() => setFormData({ ...formData, ativo: !formData.ativo })}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ring-offset-2 focus:ring-2 focus:ring-blue-500 ${(utilizador && utilizador.role === 'ADMINISTRADOR' && utilizador.id !== currentUser?.id && utilizador.ativo !== false) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${formData.ativo ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                                >
+                                    <span
+                                        className={`${
+                                            formData.ativo ? 'translate-x-6' : 'translate-x-1'
+                                        } inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm`}
+                                    />
+                                </button>
+                            </div>
+                            {(utilizador && utilizador.role === 'ADMINISTRADOR' && utilizador.id !== currentUser?.id && utilizador.ativo !== false) && (
+                                <p className="absolute -bottom-5 right-0 text-[9px] font-bold text-amber-600 animate-pulse">
+                                    Não é permitido inativar outros administradores
+                                </p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex gap-3 pt-4">
@@ -213,7 +252,8 @@ const UtilizadorModal: React.FC<UtilizadorModalProps> = ({ isOpen, onClose, onSu
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

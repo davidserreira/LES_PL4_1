@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
     X, AlertCircle, CheckCircle2, Factory, Hash, Phone, Loader2, Plus, Mail, Tag, ChevronDown, Pill, Syringe, Bath, Stethoscope, Layers, FileText
 } from 'lucide-react';
@@ -151,9 +152,9 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
 
     const SelectedCategoryIcon = CATEGORIES.find(c => c.name === categoria)?.icon || Tag;
 
-    return (
+    return createPortal(
         <div
-            className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
+            className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
         >
             {/* Backdrop */}
             <div
@@ -380,7 +381,8 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
