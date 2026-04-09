@@ -3,6 +3,7 @@ import {
     X, AlertCircle, CheckCircle2, Factory, Hash, Phone, Loader2, Mail, Tag, ChevronDown, Pill, Syringe, Bath, Stethoscope, Layers, FileText, Pencil
 } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
+import { produtoService } from '../services/produtoService';
 
 interface Fornecedor {
     id: number;
@@ -14,6 +15,7 @@ interface Fornecedor {
     categoria: string;
     observacoes?: string;
     criadoEm: string;
+    produtos?: { id: number; nome: string }[];
 }
 
 interface EditarFornecedorModalProps {
@@ -44,6 +46,10 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
     const [error, setError] = useState<string | null>(null);
     const [isClosing, setIsClosing] = useState(false);
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+    
+    // Associar produtos
+    const [produtoIds, setProdutoIds] = useState<number[]>([]);
+    const [produtosLista, setProdutosLista] = useState<{ id: number; nome: string; categoria?: string }[]>([]);
 
     const categoryRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +65,12 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
             setCategoria(fornecedor.categoria);
             setObservacoes(fornecedor.observacoes || '');
             setEstado(fornecedor.estado);
+            setProdutoIds(fornecedor.produtos?.map(p => p.id) || []);
+            
+            // Carregar todos os produtos para a lista
+            produtoService.getAll()
+                .then(data => setProdutosLista(data))
+                .catch(err => console.error('Erro ao carregar produtos', err));
         }
     }, [isOpen, fornecedor]);
 
@@ -134,6 +146,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                 categoria,
                 observacoes: observacoes || undefined,
                 estado,
+                produtoIds,
             });
             onSuccess();
             handleClose();
@@ -310,6 +323,54 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                                 className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
                                 placeholder="Informação adicional opcional..."
                             />
+                        </div>
+                    </div>
+
+                    {/* Section: Associar Produtos */}
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                        <div className="flex items-center">
+                            <label className="text-sm font-medium text-slate-700 ml-0.5">Produtos Fornecidos</label>
+                            {!estado && <span className="text-xs text-red-500 font-bold ml-2">(Ative o fornecedor para associar produtos)</span>}
+                        </div>
+                        <p className="text-xs text-slate-500 ml-0.5 mb-2">Selecione os produtos que este fornecedor disponibiliza.</p>
+                        
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            <div className="max-h-48 overflow-y-auto custom-scrollbar p-2">
+                                {produtosLista.length > 0 ? (
+                                    produtosLista.map(produto => (
+                                        <label key={produto.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group">
+                                            <div className="relative flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-5 h-5 border-2 border-slate-300 rounded peer checked:bg-blue-600 checked:border-blue-600 appearance-none cursor-pointer text-white transition-all"
+                                                    checked={produtoIds.includes(produto.id)}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setProdutoIds([...produtoIds, produto.id]);
+                                                        } else {
+                                                            setProdutoIds(produtoIds.filter(id => id !== produto.id));
+                                                        }
+                                                    }}
+                                                    disabled={!estado}
+                                                />
+                                                <svg className="absolute w-3 h-3 text-white pointer-events-none opacity-0 peer-checked:opacity-100 left-1 top-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="20 6 9 17 4 12" />
+                                                </svg>
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{produto.nome}</p>
+                                                {produto.categoria && (
+                                                    <span className="text-[10px] uppercase font-bold text-slate-400">{produto.categoria}</span>
+                                                )}
+                                            </div>
+                                        </label>
+                                    ))
+                                ) : (
+                                    <div className="p-4 text-center text-sm text-slate-500 italic">
+                                        Nenhum produto disponível no sistema.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

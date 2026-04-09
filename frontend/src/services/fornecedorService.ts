@@ -12,6 +12,7 @@ export const fornecedorService = {
         email: string;
         categoria: string;
         observacoes?: string;
+        produtoIds?: number[];
     }) => {
         const response = await api.post('/fornecedores', fornecedor);
         return response.data;
@@ -37,6 +38,7 @@ export const fornecedorService = {
         custoTransporte?: number;
         metodoPagamento?: string;
         diasEntrega?: string;
+        produtoIds?: number[];
     }) => {
         const response = await api.put(`/fornecedores/${id}`, fornecedor);
         return response.data;
