@@ -32,13 +32,19 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
-            <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-slate-900/60 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-xl">
+        <div className="relative min-h-screen overflow-hidden bg-slate-950 flex items-center justify-center px-4 py-8">
+            <div className="pointer-events-none absolute inset-0" aria-hidden>
+                <div className="absolute -left-[20%] -top-[15%] h-[min(42rem,85vw)] w-[min(42rem,85vw)] rounded-full bg-emerald-500/[0.14] blur-[100px] animate-login-drift" />
+                <div className="absolute -right-[18%] bottom-[-10%] h-[min(36rem,75vw)] w-[min(36rem,75vw)] rounded-full bg-teal-600/[0.1] blur-[90px] animate-login-drift-reverse" />
+                <div className="absolute left-[40%] top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.07] blur-[72px] animate-login-drift [animation-delay:-8s]" />
+            </div>
+
+            <div className="relative w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 bg-slate-900/60 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 slide-in-from-bottom-5 duration-700 motion-reduce:duration-0">
                 {/* Left side - brand / intro */}
                 <div className="hidden md:flex flex-col justify-between p-8 bg-gradient-to-b from-slate-900 to-slate-950 border-r border-slate-800">
-                    <div>
+                    <div className="animate-in fade-in slide-in-from-left-3 duration-700 delay-150 motion-reduce:animate-none">
                         <div className="flex items-center gap-3 mb-8">
-                            <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center">
+                            <div className="w-11 h-11 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center animate-login-shield-glow motion-reduce:animate-none">
                                 <ShieldCheck className="text-emerald-400" size={26} />
                             </div>
                             <div>
@@ -53,7 +59,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                         </p>
                     </div>
 
-                    <div className="space-y-3 mt-10">
+                    <div className="space-y-3 mt-10 animate-in fade-in slide-in-from-left-3 duration-700 delay-300 motion-reduce:animate-none">
                         <div className="flex items-center gap-3 text-slate-400 text-xs">
                             <div className="w-7 h-7 rounded-xl bg-slate-800/80 flex items-center justify-center">
                                 <Lock size={14} className="text-emerald-400" />
@@ -67,10 +73,10 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                 </div>
 
                 {/* Right side - form */}
-                <div className="p-8 md:p-10 bg-slate-950/60">
+                <div className="p-8 md:p-10 bg-slate-950/60 animate-in fade-in slide-in-from-right-3 duration-700 delay-200 motion-reduce:animate-none">
                     <div className="mb-8 md:mb-10 md:hidden">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/40 flex items-center justify-center animate-login-shield-glow motion-reduce:animate-none">
                                 <ShieldCheck className="text-emerald-400" size={22} />
                             </div>
                             <div>
@@ -88,8 +94,8 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                     </div>
 
                     {error && (
-                        <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3 text-sm text-red-200">
-                            <AlertCircle size={18} className="mt-0.5" />
+                        <div className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 flex items-start gap-3 text-sm text-red-200 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <AlertCircle size={18} className="mt-0.5 shrink-0 animate-pulse motion-reduce:animate-none" />
                             <p>{error}</p>
                         </div>
                     )}
@@ -128,7 +134,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full mt-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-lg shadow-emerald-900/40 hover:bg-emerald-500 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                            className="w-full mt-2 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-semibold shadow-lg shadow-emerald-900/40 hover:bg-emerald-500 hover:shadow-emerald-600/25 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2 motion-reduce:transition-none"
                         >
                             {loading ? (
                                 <>
