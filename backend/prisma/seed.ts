@@ -27,10 +27,14 @@ async function main() {
     });
     console.log(`✅ Utilizador: Admin (${admin.id})`);
 
-    // 2. Criar Fornecedores de teste (a US1.9 prevê Fornecedor)
+    // 2. Criar Fornecedores de teste
     const fornecedorA = await prisma.fornecedor.upsert({
         where: { nif: '123456789' },
-        update: {},
+        update: {
+            valorMinimoEncomenda: 80.00,
+            prazoMedioEntrega: 3,
+            custoTransporte: 12.00
+        },
         create: {
             nome: 'PetFood Elite Lda',
             nif: '123456789',
@@ -38,13 +42,20 @@ async function main() {
             email: 'encomendas@petfood.pt',
             estado: true,
             categoria: 'Alimentação',
-            observacoes: 'Fornecedor principal de rações premium.'
+            observacoes: 'Fornecedor principal de rações premium.',
+            valorMinimoEncomenda: 80.00,
+            prazoMedioEntrega: 3,
+            custoTransporte: 12.00
         }
     });
 
     const fornecedorB = await prisma.fornecedor.upsert({
         where: { nif: '987654321' },
-        update: {},
+        update: {
+            valorMinimoEncomenda: 150.00,
+            prazoMedioEntrega: 7,
+            custoTransporte: 25.00
+        },
         create: {
             nome: 'VetPharma SA',
             nif: '987654321',
@@ -52,10 +63,26 @@ async function main() {
             email: 'labs@vetpharma.pt',
             estado: true,
             categoria: 'Medicamentos',
-            observacoes: 'Material cirúrgico e vacinação.'
+            observacoes: 'Material cirúrgico e vacinação.',
+            valorMinimoEncomenda: 150.00,
+            prazoMedioEntrega: 7,
+            custoTransporte: 25.00
         }
     });
-    console.log(`✅ Fornecedores criados.`);
+    
+    await prisma.avaliacao.upsert({
+        where: { fornecedorId_utilizadorId: { fornecedorId: fornecedorA.id, utilizadorId: admin.id } },
+        update: {},
+        create: { fornecedorId: fornecedorA.id, utilizadorId: admin.id, qualidade: 5, pontualidade: 4, preco: 4, comunicacao: 5, conformidade: 5 }
+    });
+
+    await prisma.avaliacao.upsert({
+        where: { fornecedorId_utilizadorId: { fornecedorId: fornecedorB.id, utilizadorId: admin.id } },
+        update: {},
+        create: { fornecedorId: fornecedorB.id, utilizadorId: admin.id, qualidade: 4, pontualidade: 3, preco: 2, comunicacao: 4, conformidade: 5 }
+    });
+
+    console.log(`✅ Fornecedores criados e Avaliados.`);
 
     // 3. Criar Produtos de teste
     // Como os produtos não têm "unique constraint" no nome, verifico se já existem produtos

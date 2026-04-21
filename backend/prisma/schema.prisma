@@ -57,6 +57,7 @@ model Fornecedor {
 
   produtos   Produto[] // US1.9 - Associar a Produto
   avaliacoes Avaliacao[] // US1.8 - Avaliar Fornecedor
+  linhasPedido LinhaPedidoCompra[]
 }
 
 model Avaliacao {
@@ -112,6 +113,9 @@ model LinhaPedidoCompra {
 
   produtoId Int
   produto   Produto @relation(fields: [produtoId], references: [id])
+
+  fornecedorId  Int?
+  fornecedor    Fornecedor? @relation(fields: [fornecedorId], references: [id])
 
   quantidade    Float
   precoUnitario Float
