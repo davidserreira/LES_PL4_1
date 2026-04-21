@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Check, Trash2, ArrowLeft, Loader2, Package, Building2, ChevronDown, Star } from 'lucide-react';
-import { fornecedorService } from '../services/fornecedorService';
+import { X, Check, Trash2, ArrowLeft, Loader2, Package, Building2, ChevronDown, Star, AlertTriangle } from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import { SmartDropdown } from './SmartDropdown';
 
@@ -18,7 +17,6 @@ const formatCurrency = (value: number) => {
 export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalAprovarPedidoProps) {
     const [step, setStep] = useState(1);
     const [linhasAprovadas, setLinhasAprovadas] = useState<any[]>([]);
-    const [fornecedores, setFornecedores] = useState<any[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<Record<number, number>>({});
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const triggerRefs = useRef<Record<number, HTMLElement | null>>({});
@@ -44,23 +42,22 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
     useEffect(() => {
         if (isOpen && pedido?.linhas) {
             setStep(1);
-            setLinhasAprovadas([...pedido.linhas]);
             setError(null);
+            setLinhasAprovadas([...pedido.linhas]);
             
-            // Fetch fornecedores
-            fornecedorService.getAll().then(data => {
-                const activeFornecedores = data.filter((f: any) => f.estado === true);
-                setFornecedores(activeFornecedores);
-                
-                // Pre-select mockup for Phase 2
-                const initialSelections: Record<number, number> = {};
-                if (activeFornecedores.length > 0) {
-                    pedido.linhas.forEach((linha: any) => {
-                        initialSelections[linha.id] = activeFornecedores[0].id; // Mock pre-selection
-                    });
+            // Pré-selecionar os fornecedores já guardados nas linhas (se existirem)
+            const initialSelections: Record<number, number> = {};
+            pedido.linhas.forEach((linha: any) => {
+                if (linha.fornecedorId) {
+                    initialSelections[linha.id] = linha.fornecedorId;
+                } else if (linha.produto?.fornecedores?.length > 0) {
+                    // Pré-selecionar o primeiro fornecedor disponível se só há um
+                    if (linha.produto.fornecedores.length === 1) {
+                        initialSelections[linha.id] = linha.produto.fornecedores[0].id;
+                    }
                 }
-                setSelectedFornecedores(initialSelections);
-            }).catch(e => console.error(e));
+            });
+            setSelectedFornecedores(initialSelections);
         }
     }, [isOpen, pedido]);
 
@@ -243,9 +240,11 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                             
                             <div className="space-y-3">
                                 {linhasAprovadas.map((linha) => {
-                                    const selectedF = fornecedores.find(f => f.id === selectedFornecedores[linha.id]);
+                                    const produtoFornecedores: any[] = linha.produto?.fornecedores || [];
+                                    const selectedF = produtoFornecedores.find((f: any) => f.id === selectedFornecedores[linha.id]);
                                     const selectedMedia = selectedF ? getMediaAvaliacao(selectedF.avaliacoes) : null;
                                     const isOpen = openDropdownId === linha.id;
+                                    const semFornecedores = produtoFornecedores.length === 0;
 
                                     return (
                                     <div key={linha.id} className={`rounded-xl border transition-all duration-200 overflow-visible ${isOpen ? 'border-emerald-400 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/10' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
@@ -284,100 +283,109 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                             )}
                                         </div>
                                         
-                                        {/* Trigger do select */}
-                                        <div className="px-4 pb-4">
-                                            <div
-                                                ref={(el) => { triggerRefs.current[linha.id] = el; }}
-                                                className={`w-full px-3.5 py-2.5 rounded-lg cursor-pointer select-none transition-all text-sm font-medium flex items-center justify-between gap-3 ${
-                                                    isOpen 
-                                                        ? 'bg-emerald-50 border border-emerald-400 text-emerald-800' 
-                                                        : selectedF 
-                                                            ? 'bg-slate-50 border border-slate-200 hover:border-emerald-300 text-slate-700' 
-                                                            : 'bg-white border border-dashed border-slate-300 hover:border-emerald-400 text-slate-400'
-                                                }`}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setOpenDropdownId(isOpen ? null : linha.id);
-                                                }}
-                                            >
-                                                <div className="flex items-center gap-2 min-w-0">
-                                                    <Building2 size={14} className={selectedF ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
-                                                    <span className="truncate">
-                                                        {selectedF ? selectedF.nome : 'Clique para selecionar fornecedor...'}
-                                                    </span>
-                                                </div>
-                                                <ChevronDown size={14} className={`shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-600' : 'text-slate-400'}`} />
+                                        {/* Aviso se produto sem fornecedores associados */}
+                                        {semFornecedores && (
+                                            <div className="mx-4 mb-4 px-3 py-2.5 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+                                                <AlertTriangle size={14} className="text-amber-600 shrink-0" />
+                                                <span className="text-xs text-amber-700 font-medium">Este produto não tem fornecedores associados. Associe um fornecedor primeiro.</span>
                                             </div>
-                                        </div>
+                                        )}
 
-                                        <SmartDropdown 
-                                            isOpen={isOpen} 
-                                            triggerRef={{ current: triggerRefs.current[linha.id] }}
-                                        >
-                                            {/* Header do Dropdown */}
-                                            <div className="px-4 py-2 border-b border-slate-100 mb-1">
-                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornecedores disponíveis</span>
-                                            </div>
-                                            {fornecedores.map((f: any, i: number) => {
-                                                const media = getMediaAvaliacao(f.avaliacoes);
-                                                const mediaVal = media ? parseFloat(media) : 0;
-                                                const isRecommended = i === 0;
-                                                const isSelected = selectedFornecedores[linha.id] === f.id;
-                                                
-                                                return (
-                                                    <div 
-                                                        key={f.id}
-                                                        onClick={() => {
-                                                            setSelectedFornecedores(prev => ({ ...prev, [linha.id]: f.id }));
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className={`mx-2 mb-1 px-3 py-3 rounded-lg cursor-pointer transition-all duration-150 ${
-                                                            isSelected 
-                                                                ? 'bg-emerald-50 border border-emerald-200' 
-                                                                : 'hover:bg-slate-50 border border-transparent hover:border-slate-200'
-                                                        }`}
-                                                    >
-                                                        {/* Nome + badges */}
-                                                        <div className="flex items-center justify-between mb-2.5">
-                                                            <div className="flex items-center gap-2">
-                                                                {isSelected && (
-                                                                    <div className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
-                                                                        <Check size={10} className="text-white" strokeWidth={3} />
-                                                                    </div>
-                                                                )}
-                                                                <span className={`font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-slate-800'}`}>{f.nome}</span>
-                                                            </div>
-                                                            {isRecommended && (
-                                                                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
-                                                                    ★ Recomendado
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        
-                                                        {/* Métricas em cards */}
-                                                        <div className="grid grid-cols-3 gap-2">
-                                                            <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
-                                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Entrega</span>
-                                                                <span className="text-xs font-bold text-slate-800">{Math.floor(f.prazoMedioEntrega || 0)}d</span>
-                                                            </div>
-                                                            <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
-                                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Mín.</span>
-                                                                <span className="text-xs font-bold text-slate-800">{formatCurrency(f.valorMinimoEncomenda || 0)}</span>
-                                                            </div>
-                                                            <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
-                                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Aval.</span>
-                                                                <span className={`text-xs font-bold flex items-center justify-center gap-0.5 ${mediaVal >= 4 ? 'text-amber-500' : mediaVal >= 2.5 ? 'text-orange-400' : 'text-slate-400'}`}>
-                                                                    <Star size={9} className={mediaVal > 0 ? 'fill-current' : 'fill-slate-300'} />
-                                                                    {media || '—'}
-                                                                </span>
-                                                            </div>
-                                                        </div>
+                                        {/* Trigger do select - só mostra se há fornecedores */}
+                                        {!semFornecedores && (
+                                            <div className="px-4 pb-4">
+                                                <div
+                                                    ref={(el) => { triggerRefs.current[linha.id] = el; }}
+                                                    className={`w-full px-3.5 py-2.5 rounded-lg cursor-pointer select-none transition-all text-sm font-medium flex items-center justify-between gap-3 ${
+                                                        isOpen 
+                                                            ? 'bg-emerald-50 border border-emerald-400 text-emerald-800' 
+                                                            : selectedF 
+                                                                ? 'bg-slate-50 border border-slate-200 hover:border-emerald-300 text-slate-700' 
+                                                                : 'bg-white border border-dashed border-slate-300 hover:border-emerald-400 text-slate-400'
+                                                    }`}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenDropdownId(isOpen ? null : linha.id);
+                                                    }}
+                                                >
+                                                    <div className="flex items-center gap-2 min-w-0">
+                                                        <Building2 size={14} className={selectedF ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
+                                                        <span className="truncate">
+                                                            {selectedF ? selectedF.nome : 'Clique para selecionar fornecedor...'}
+                                                        </span>
                                                     </div>
-                                                );
-                                            })}
-                                        </SmartDropdown>
+                                                    <ChevronDown size={14} className={`shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-600' : 'text-slate-400'}`} />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!semFornecedores && (
+                                            <SmartDropdown 
+                                                isOpen={isOpen} 
+                                                triggerRef={{ current: triggerRefs.current[linha.id] }}
+                                            >
+                                                <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornecedores disponíveis</span>
+                                                </div>
+                                                {produtoFornecedores.map((f: any, i: number) => {
+                                                    const media = getMediaAvaliacao(f.avaliacoes);
+                                                    const mediaVal = media ? parseFloat(media) : 0;
+                                                    const isRecommended = i === 0;
+                                                    const isSelected = selectedFornecedores[linha.id] === f.id;
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={f.id}
+                                                            onClick={() => {
+                                                                setSelectedFornecedores(prev => ({ ...prev, [linha.id]: f.id }));
+                                                                setOpenDropdownId(null);
+                                                            }}
+                                                            className={`mx-2 mb-1 px-3 py-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                                                                isSelected 
+                                                                    ? 'bg-emerald-50 border border-emerald-200' 
+                                                                    : 'hover:bg-slate-50 border border-transparent hover:border-slate-200'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-2.5">
+                                                                <div className="flex items-center gap-2">
+                                                                    {isSelected && (
+                                                                        <div className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
+                                                                            <Check size={10} className="text-white" strokeWidth={3} />
+                                                                        </div>
+                                                                    )}
+                                                                    <span className={`font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-slate-800'}`}>{f.nome}</span>
+                                                                </div>
+                                                                {isRecommended && (
+                                                                    <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                                                                        ★ Recomendado
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="grid grid-cols-3 gap-2">
+                                                                <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Entrega</span>
+                                                                    <span className="text-xs font-bold text-slate-800">{Math.floor(f.prazoMedioEntrega || 0)}d</span>
+                                                                </div>
+                                                                <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Mín.</span>
+                                                                    <span className="text-xs font-bold text-slate-800">{formatCurrency(f.valorMinimoEncomenda || 0)}</span>
+                                                                </div>
+                                                                <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Aval.</span>
+                                                                    <span className={`text-xs font-bold flex items-center justify-center gap-0.5 ${mediaVal >= 4 ? 'text-amber-500' : mediaVal >= 2.5 ? 'text-orange-400' : 'text-slate-400'}`}>
+                                                                        <Star size={9} className={mediaVal > 0 ? 'fill-current' : 'fill-slate-300'} />
+                                                                        {media || '—'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </SmartDropdown>
+                                        )}
                                     </div>
                                     );
+
                                 })}
                             </div>
                         </div>
@@ -404,7 +412,8 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 bg-white">
                                         {linhasAprovadas.map((linha) => {
-                                            const fornecedorName = fornecedores.find(f => f.id === selectedFornecedores[linha.id])?.nome || '—';
+                                            const produtoFornecedores: any[] = linha.produto?.fornecedores || [];
+                                            const fornecedorName = produtoFornecedores.find((f: any) => f.id === selectedFornecedores[linha.id])?.nome || '—';
                                             const unitPrice = linha.produto?.preco || 0;
                                             const subtotal = linha.quantidade * unitPrice;
                                             return (

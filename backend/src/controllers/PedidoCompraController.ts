@@ -105,7 +105,16 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
             include: {
                 linhas: {
                     include: {
-                        produto: true,
+                        produto: {
+                            include: {
+                                fornecedores: {
+                                    include: { avaliacoes: true }
+                                }
+                            }
+                        },
+                        fornecedor: {
+                            include: { avaliacoes: true }
+                        }
                     }
                 },
                 criadoPor: true,
@@ -116,6 +125,40 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
     } catch (error) {
         console.error('Erro ao listar Pedidos de Compra:', error);
         return res.status(500).json({ error: 'Erro interno ao listar pedidos de compra.' });
+    }
+};
+
+export const getPedidoById = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const id = Number(req.params.id);
+        if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
+
+        const pedido = await prisma.pedidoCompra.findUnique({
+            where: { id },
+            include: {
+                linhas: {
+                    include: {
+                        produto: {
+                            include: {
+                                fornecedores: {
+                                    include: { avaliacoes: true }
+                                }
+                            }
+                        },
+                        fornecedor: {
+                            include: { avaliacoes: true }
+                        }
+                    }
+                },
+                criadoPor: true,
+            }
+        });
+
+        if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
+        return res.json(mapPedidoToDTO(pedido));
+    } catch (error) {
+        console.error('Erro ao obter Pedido de Compra:', error);
+        return res.status(500).json({ error: 'Erro interno ao obter pedido de compra.' });
     }
 };
 
@@ -183,6 +226,21 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
 
         if (!linhasAprovadas || !Array.isArray(linhasAprovadas) || linhasAprovadas.length === 0) {
             return res.status(400).json({ error: 'Deve aprovar pelo menos uma linha com fornecedor selecionado.' });
+        }
+
+        // Validar que cada fornecedor pertence efetivamente ao produto daquela linha (regra crítica)
+        for (const linhaAprovada of linhasAprovadas) {
+            const linhaDB = await prisma.linhaPedidoCompra.findUnique({
+                where: { id: linhaAprovada.id },
+                include: { produto: { include: { fornecedores: true } } }
+            });
+            if (!linhaDB) {
+                throw new Error(`Linha ${linhaAprovada.id} não encontrada.`);
+            }
+            const fornecedorValido = linhaDB.produto.fornecedores.some((f: any) => f.id === linhaAprovada.fornecedorId);
+            if (!fornecedorValido) {
+                throw new Error(`Fornecedor ${linhaAprovada.fornecedorId} não está associado ao produto da linha ${linhaAprovada.id}.`);
+            }
         }
 
         // Executar a "Aprovação" numa Transação de Base de Dados para consistência relacional

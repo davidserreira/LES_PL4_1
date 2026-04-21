@@ -9,6 +9,11 @@ export const pedidoCompraService = {
         const response = await api.get('/pedidos');
         return response.data;
     },
+    getById: async (id: number) => {
+        const response = await api.get(`/pedidos/${id}`);
+        return response.data;
+    },
+
     getRascunhos: async () => {
         const response = await api.get('/pedidos/rascunhos');
         return response.data;

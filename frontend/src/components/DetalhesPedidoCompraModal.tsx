@@ -1,6 +1,14 @@
-import { X, Calendar, User, Tag, Hash, Package, FileText } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
+
+interface Fornecedor {
+    id: number;
+    nome: string;
+    nif?: string;
+    contacto?: string;
+    email?: string;
+}
 
 interface Produto {
     id: number;
@@ -17,6 +25,8 @@ interface LinhaPedido {
     precoUnitario: number;
     valorTotal: number;
     produto?: Produto;
+    fornecedor?: Fornecedor;
+    fornecedorId?: number;
 }
 
 interface PedidoCompra {
@@ -88,10 +98,8 @@ const getStatusStyle = (status: string) => {
         case 'APROVADO': return 'text-emerald-700 bg-emerald-50 border-emerald-100';
         case 'CANCELADO':
         case 'RECUSADO': return 'text-red-700 bg-red-50 border-red-100';
-
         case 'ENTREGUE': return 'text-blue-700 bg-blue-50 border-blue-100';
         default: return 'text-slate-700 bg-slate-50 border-slate-200';
-
     }
 };
 
@@ -99,6 +107,7 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
     if (!isOpen || !pedido) return null;
 
     const totalProdutos = pedido.linhas?.reduce((acc, l) => acc + l.quantidade, 0) || 0;
+    const isAprovado = pedido.estado === 'APROVADO';
 
     return createPortal(
         <div 
@@ -112,14 +121,27 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
-                            Detalhes do Pedido
-                            <span className="text-sm font-black bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200">
-                                {pedido.codigoFormatado}
-                            </span>
-                        </h2>
+                <div className={`flex items-center justify-between px-6 py-4 border-b ${isAprovado ? 'border-emerald-100 bg-gradient-to-r from-emerald-50 to-teal-50' : 'border-slate-100 bg-white'}`}>
+                    <div className="flex items-center gap-3">
+                        {isAprovado && (
+                            <div className="w-9 h-9 bg-emerald-100 border border-emerald-200 rounded-xl flex items-center justify-center">
+                                <ShieldCheck size={18} className="text-emerald-600" />
+                            </div>
+                        )}
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-3">
+                                Detalhes do Pedido
+                                <span className="text-sm font-black bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg border border-slate-200">
+                                    {pedido.codigoFormatado}
+                                </span>
+                            </h2>
+                            {isAprovado && (
+                                <p className="text-xs text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
+                                    <Lock size={10} />
+                                    Pedido aprovado e bloqueado — fornecedores alocados definitivamente
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <button 
                         onClick={onClose}
@@ -174,58 +196,130 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                                         {pedido.estado}
                                     </span>
                                 </div>
+                                {isAprovado && (
+                                    <div>
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border bg-slate-50 text-slate-500 border-slate-200">
+                                            <Lock size={9} /> Bloqueado
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Produtos List */}
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-800">Linhas do Pedido ({pedido.linhas?.length || 0})</h3>
+                    {/* Produtos List — APROVADO: vista locked premium */}
+                    {isAprovado ? (
+                        <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden shadow-sm">
+                            <div className="p-5 border-b border-emerald-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/60 to-teal-50/40">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-bold text-slate-800">Linhas Aprovadas ({pedido.linhas?.length || 0})</h3>
+                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                        <Lock size={8} /> Fornecedores Alocados
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="divide-y divide-slate-100">
+                                {pedido.linhas && pedido.linhas.length > 0 ? (
+                                    pedido.linhas.map((linha, index) => (
+                                        <div key={linha.id || index} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50/50 transition-colors">
+                                            {/* Left: Product info */}
+                                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                <div className="w-9 h-9 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                                                    <Package size={15} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <h4 className="font-bold text-slate-900 text-sm truncate">{linha.produto?.nome || `Produto #${linha.id}`}</h4>
+                                                    <div className="flex items-center gap-2 mt-0.5">
+                                                        <span className="inline-flex px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 text-[9px] uppercase font-bold tracking-wider">
+                                                            {linha.produto?.categoria || 'Sem categoria'}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">{linha.quantidade} un × {formatCurrency(linha.precoUnitario)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Right: Supplier locked + subtotal */}
+                                            <div className="flex items-center gap-6 shrink-0">
+                                                {/* Supplier locked badge */}
+                                                <div className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-right min-w-[160px]">
+                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1 justify-end">
+                                                        <Building2 size={9} /> Fornecedor Alocado
+                                                    </p>
+                                                    {linha.fornecedor ? (
+                                                        <p className="text-sm font-bold text-emerald-700">{linha.fornecedor.nome}</p>
+                                                    ) : (
+                                                        <p className="text-sm font-medium text-slate-400 italic">Não definido</p>
+                                                    )}
+                                                </div>
+                                                {/* Subtotal */}
+                                                <div className="text-right min-w-[90px]">
+                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Subtotal</p>
+                                                    <p className="text-sm font-bold text-slate-900">{formatCurrency(linha.valorTotal)}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="px-6 py-10 text-center text-slate-400">
+                                        Nenhuma linha encontrada.
+                                    </div>
+                                )}
+                            </div>
+                            <div className="bg-emerald-50 px-6 py-4 flex items-center justify-end gap-6 border-t border-emerald-100">
+                                <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">Total:</span>
+                                <span className="text-xl font-bold text-emerald-700">{formatCurrency(pedido.valorTotalEstimado)}</span>
+                            </div>
                         </div>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50/50 text-slate-500 text-xs border-b border-slate-100 uppercase tracking-wider">
-                                    <tr>
-                                        <th className="px-5 py-3 font-semibold">Produto</th>
-                                        <th className="px-5 py-3 font-semibold">Categoria</th>
-                                        <th className="px-5 py-3 font-semibold text-center">Quantidade</th>
-                                        <th className="px-5 py-3 font-semibold text-right">Preço Unit.</th>
-                                        <th className="px-5 py-3 font-semibold text-right">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {pedido.linhas && pedido.linhas.length > 0 ? (
-                                        pedido.linhas.map((linha, index) => (
-                                            <tr key={linha.id || index} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-5 py-3 font-medium text-slate-900">
-                                                    {linha.produto?.nome || `Produto #${linha.id}`}
-                                                </td>
-                                                <td className="px-5 py-3">
-                                                    <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase font-bold tracking-wider">
-                                                        {linha.produto?.categoria || 'Sem categoria'}
-                                                    </span>
-                                                </td>
-                                                <td className="px-5 py-3 text-center font-bold text-slate-700 w-24">{linha.quantidade}</td>
-                                                <td className="px-5 py-3 text-right text-slate-500 w-32">{formatCurrency(linha.precoUnitario)}</td>
-                                                <td className="px-5 py-3 text-right font-bold text-slate-900 w-32">{formatCurrency(linha.valorTotal)}</td>
-                                            </tr>
-                                        ))
-                                    ) : (
+                    ) : (
+                        /* PENDENTE / RECUSADO / CANCELADO: tabela standard */
+                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+                                <h3 className="text-sm font-bold text-slate-800">Linhas do Pedido ({pedido.linhas?.length || 0})</h3>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm">
+                                    <thead className="bg-slate-50/50 text-slate-500 text-xs border-b border-slate-100 uppercase tracking-wider">
                                         <tr>
-                                            <td colSpan={5} className="px-5 py-8 text-center text-slate-400">
-                                                Nenhuma linha encontrada.
-                                            </td>
+                                            <th className="px-5 py-3 font-semibold">Produto</th>
+                                            <th className="px-5 py-3 font-semibold">Categoria</th>
+                                            <th className="px-5 py-3 font-semibold text-center">Quantidade</th>
+                                            <th className="px-5 py-3 font-semibold text-right">Preço Unit.</th>
+                                            <th className="px-5 py-3 font-semibold text-right">Subtotal</th>
                                         </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {pedido.linhas && pedido.linhas.length > 0 ? (
+                                            pedido.linhas.map((linha, index) => (
+                                                <tr key={linha.id || index} className="hover:bg-slate-50/50 transition-colors">
+                                                    <td className="px-5 py-3 font-medium text-slate-900">
+                                                        {linha.produto?.nome || `Produto #${linha.id}`}
+                                                    </td>
+                                                    <td className="px-5 py-3">
+                                                        <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase font-bold tracking-wider">
+                                                            {linha.produto?.categoria || 'Sem categoria'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-3 text-center font-bold text-slate-700 w-24">{linha.quantidade}</td>
+                                                    <td className="px-5 py-3 text-right text-slate-500 w-32">{formatCurrency(linha.precoUnitario)}</td>
+                                                    <td className="px-5 py-3 text-right font-bold text-slate-900 w-32">{formatCurrency(linha.valorTotal)}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={5} className="px-5 py-8 text-center text-slate-400">
+                                                    Nenhuma linha encontrada.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div className="bg-emerald-50/50 px-6 py-4 flex items-center justify-end gap-6 border-t border-slate-200/60">
+                                <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">Total:</span>
+                                <span className="text-xl font-bold text-emerald-700">{formatCurrency(pedido.valorTotalEstimado)}</span>
+                            </div>
                         </div>
-                        <div className="bg-emerald-50/50 px-6 py-4 flex items-center justify-end gap-6 border-t border-slate-200/60">
-                            <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">Total:</span>
-                            <span className="text-xl font-bold text-emerald-700">{formatCurrency(pedido.valorTotalEstimado)}</span>
-                        </div>
-                    </div>
+                    )}
                     
                     {/* Observações Display */}
                     {pedido.observacoes && (
@@ -259,6 +353,12 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                                     Recusar
                                 </button>
                             </>
+                        )}
+                        {isAprovado && (
+                            <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold">
+                                <ShieldCheck size={16} />
+                                Aprovado — Pronto para gerar encomendas
+                            </div>
                         )}
                     </div>
                     <button 
