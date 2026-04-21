@@ -163,7 +163,7 @@ export const cancelarPedido = async (req: Request, res: Response): Promise<any> 
 export const aprovarPedido = async (req: Request, res: Response): Promise<any> => {
     try {
         const id = Number(req.params.id);
-        const { userId, role } = req.body;
+        const { userId, role, linhasAprovadas } = req.body;
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
 
@@ -171,7 +171,7 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
             return res.status(403).json({ error: 'Apenas Administradores ou Responsáveis Financeiros podem aprovar pedidos.' });
         }
 
-        const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });
+        const pedido = await prisma.pedidoCompra.findUnique({ where: { id }, include: { linhas: true } });
 
         if (!pedido) {
             return res.status(404).json({ error: 'Pedido de compra não encontrado.' });
@@ -181,17 +181,44 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
             return res.status(400).json({ error: `Não é possível aprovar um pedido no estado: ${pedido.estado}.` });
         }
 
-        const pedidoAtualizado = await prisma.pedidoCompra.update({
-            where: { id },
-            data: { estado: 'APROVADO' },
-            include: {
-                linhas: {
-                    include: {
-                        produto: true,
-                    }
-                },
-                criadoPor: true,
+        if (!linhasAprovadas || !Array.isArray(linhasAprovadas) || linhasAprovadas.length === 0) {
+            return res.status(400).json({ error: 'Deve aprovar pelo menos uma linha com fornecedor selecionado.' });
+        }
+
+        // Executar a "Aprovação" numa Transação de Base de Dados para consistência relacional
+        const pedidoAtualizado = await prisma.$transaction(async (tx) => {
+            const approvedLineIds = linhasAprovadas.map((l: any) => l.id);
+
+            // 1. Eliminar as linhas que o utilizador escolheu "Remover" na Fase 1
+            await tx.linhaPedidoCompra.deleteMany({
+                where: {
+                    pedidoCompraId: id,
+                    id: { notIn: approvedLineIds }
+                }
+            });
+
+            // 2. Atualizar as linhas sobreviventes com o Fornecedor escolhido na Fase 2
+            for (const linha of linhasAprovadas) {
+                await tx.linhaPedidoCompra.update({
+                    where: { id: linha.id },
+                    data: { fornecedorId: linha.fornecedorId }
+                });
             }
+
+            // 3. Modificar o estado final na Tabela PedidoCompra
+            return await tx.pedidoCompra.update({
+                where: { id },
+                data: { estado: 'APROVADO' },
+                include: {
+                    linhas: {
+                        include: {
+                            produto: true,
+                            fornecedor: true
+                        }
+                    },
+                    criadoPor: true,
+                }
+            });
         });
 
         return res.json(mapPedidoToDTO(pedidoAtualizado));

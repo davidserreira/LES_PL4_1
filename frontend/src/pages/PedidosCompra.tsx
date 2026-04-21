@@ -5,6 +5,7 @@ import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 import DetalhesPedidoCompraModal from '../components/DetalhesPedidoCompraModal';
 import RascunhosModal from '../components/RascunhosModal';
+import ModalAprovarPedido from '../components/ModalAprovarPedido';
 
 type PrioridadePedido = 'NORMAL' | 'ALTA' | 'URGENTE';
 
@@ -74,6 +75,7 @@ export default function PedidosCompra() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isRascunhosModalOpen, setIsRascunhosModalOpen] = useState(false);
+    const [isAprovarModalOpen, setIsAprovarModalOpen] = useState(false);
     const [draftsCount, setDraftsCount] = useState(0);
     const [selectedPedido, setSelectedPedido] = useState<PedidoCompra | null>(null);
     const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
@@ -133,26 +135,6 @@ export default function PedidosCompra() {
         }
     };
 
-    const handleAprovar = async (pedidoId: number) => {
-        if (!user || (user.role !== 'RESPONSAVEL_FINANCEIRO' && user.role !== 'ADMINISTRADOR')) return;
-        
-        try {
-            await pedidoCompraService.aprovarPedido(pedidoId, {
-                userId: user.id,
-                role: user.role
-            });
-            
-            setPedidos(pedidos.map(p => 
-                p.id === pedidoId ? { ...p, estado: 'APROVADO' } : p
-            ));
-            showToast('Pedido aprovado com sucesso!', 'success');
-        } catch (err: any) {
-            console.error(err);
-            showToast(err.response?.data?.error || 'Não foi possível aprovar o pedido.', 'error');
-        } finally {
-            setOpenDropdownId(null);
-        }
-    };
 
     const handleRecusar = async (pedidoId: number) => {
         if (!user || (user.role !== 'RESPONSAVEL_FINANCEIRO' && user.role !== 'ADMINISTRADOR')) return;
@@ -424,9 +406,9 @@ export default function PedidosCompra() {
                 isOpen={isDetailsModalOpen}
                 pedido={selectedPedido}
                 userRole={user?.role}
-                onAprovar={(id) => {
-                    handleAprovar(id);
+                onAprovar={() => {
                     setIsDetailsModalOpen(false);
+                    setIsAprovarModalOpen(true);
                 }}
                 onRecusar={(id) => {
                     handleRecusar(id);
@@ -435,6 +417,20 @@ export default function PedidosCompra() {
                 onClose={() => {
                     setIsDetailsModalOpen(false);
                     setSelectedPedido(null);
+                }}
+            />
+
+            <ModalAprovarPedido
+                isOpen={isAprovarModalOpen}
+                pedido={selectedPedido}
+                onClose={(shouldRefresh, msg) => {
+                    setIsAprovarModalOpen(false);
+                    if (shouldRefresh) {
+                        fetchPedidos();
+                        showToast(msg || 'Pedido aprovado com sucesso!', 'success');
+                    } else {
+                        setSelectedPedido(null);
+                    }
                 }}
             />
 
@@ -859,7 +855,11 @@ export default function PedidosCompra() {
                                                 {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'PENDENTE' && (
                                                     <div className="flex items-center gap-1.5 mr-2">
                                                         <button
-                                                            onClick={(e) => { e.stopPropagation(); handleAprovar(p.id); }}
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setSelectedPedido(p);
+                                                                setIsAprovarModalOpen(true); 
+                                                            }}
                                                             className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-lg transition-all"
                                                             title="Aprovar Pedido"
                                                         >
