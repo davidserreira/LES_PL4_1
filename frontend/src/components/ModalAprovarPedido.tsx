@@ -29,6 +29,21 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
         return (soma / avaliacoes.length).toFixed(1);
     };
 
+    // Determina o fornecedor recomendado para um produto: melhor avaliação (se empate, menor prazo)
+    const getRecommendedFornecedor = (fornecedores: any[]): number | null => {
+        if (!fornecedores || fornecedores.length === 0) return null;
+        let best = fornecedores[0];
+        let bestMedia = parseFloat(getMediaAvaliacao(best.avaliacoes) || '0');
+        for (const f of fornecedores) {
+            const media = parseFloat(getMediaAvaliacao(f.avaliacoes) || '0');
+            if (media > bestMedia || (media === bestMedia && (f.prazoMedioEntrega || 99) < (best.prazoMedioEntrega || 99))) {
+                best = f;
+                bestMedia = media;
+            }
+        }
+        return best.id;
+    };
+
     // Fechar dropdown clicando fora
     useEffect(() => {
         const handleClickOutside = () => setOpenDropdownId(null);
@@ -45,20 +60,21 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
             setError(null);
             setLinhasAprovadas([...pedido.linhas]);
             
-            // Pré-selecionar os fornecedores já guardados nas linhas (se existirem)
             const initialSelections: Record<number, number> = {};
             pedido.linhas.forEach((linha: any) => {
                 if (linha.fornecedorId) {
                     initialSelections[linha.id] = linha.fornecedorId;
-                } else if (linha.produto?.fornecedores?.length > 0) {
-                    // Pré-selecionar o primeiro fornecedor disponível se só há um
-                    if (linha.produto.fornecedores.length === 1) {
-                        initialSelections[linha.id] = linha.produto.fornecedores[0].id;
-                    }
+                } else if (linha.produto?.fornecedores?.length === 1) {
+                    initialSelections[linha.id] = linha.produto.fornecedores[0].id;
+                } else if (linha.produto?.fornecedores?.length > 1) {
+                    // Auto-select recommended
+                    const recId = getRecommendedFornecedor(linha.produto.fornecedores);
+                    if (recId) initialSelections[linha.id] = recId;
                 }
             });
             setSelectedFornecedores(initialSelections);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, pedido]);
 
     if (!isOpen || !pedido) return null;
@@ -107,7 +123,7 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                 linhasAprovadas: payloadLinhas
             });
             
-            onClose(true, 'Pedido faturado e estruturado com sucesso nos Fornecedores selecionados!');
+            onClose(true, 'Pedido Aprovado com Sucesso!');
         } catch (err: any) {
             setError(err.response?.data?.error || 'Erro ao processar aprovação.');
         } finally {
@@ -118,6 +134,14 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
     const totalResumo = linhasAprovadas.reduce((acc, linha) => {
         return acc + (linha.quantidade * (linha.produto?.preco || 0));
     }, 0);
+
+    // Total em tempo real do step 2 (mesmo cálculo, mas separado para clareza)
+    const totalStep2 = totalResumo;
+    const allSuppliersSelected = linhasAprovadas.every(l => {
+        const hasFornecedores = (l.produto?.fornecedores?.length || 0) > 0;
+        return !hasFornecedores || !!selectedFornecedores[l.id];
+    });
+    const hasAnyLinhas = linhasAprovadas.length > 0;
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -231,11 +255,18 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-900">Selecionar Fornecedores</h3>
-                                    <p className="text-sm text-slate-500 mt-0.5">Escolha o fornecedor para cada produto. Consulte as condições antes de decidir.</p>
+                                    <p className="text-sm text-slate-500 mt-0.5">Escolha o fornecedor para cada produto. O <span className="font-semibold text-emerald-600">recomendado</span> é pre-selecionado com base na melhor avaliação.</p>
                                 </div>
-                                <span className="shrink-0 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full">
-                                    {linhasAprovadas.length} produto{linhasAprovadas.length !== 1 ? 's' : ''}
-                                </span>
+                                <div className="shrink-0 flex flex-col items-end gap-1">
+                                    <span className="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full">
+                                        {linhasAprovadas.length} produto{linhasAprovadas.length !== 1 ? 's' : ''}
+                                    </span>
+                                    {step === 2 && hasAnyLinhas && (
+                                        <span className="text-xs font-black text-slate-600">
+                                            Total: <span className="text-emerald-700">{formatCurrency(totalStep2)}</span>
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             
                             <div className="space-y-3">
@@ -245,12 +276,23 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                     const selectedMedia = selectedF ? getMediaAvaliacao(selectedF.avaliacoes) : null;
                                     const isOpen = openDropdownId === linha.id;
                                     const semFornecedores = produtoFornecedores.length === 0;
+                                    const recommendedId = getRecommendedFornecedor(produtoFornecedores);
+                                    const unitPrice = linha.produto?.preco || 0;
+                                    const subtotalLinha = linha.quantidade * unitPrice;
 
                                     return (
-                                    <div key={linha.id} className={`rounded-xl border transition-all duration-200 overflow-visible ${isOpen ? 'border-emerald-400 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/10' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
+                                    <div key={linha.id} className={`rounded-xl border transition-all duration-200 overflow-visible ${
+                                        isOpen 
+                                            ? 'border-emerald-400 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/10' 
+                                            : selectedF 
+                                                ? 'border-emerald-200 shadow-sm' 
+                                                : semFornecedores 
+                                                    ? 'border-amber-200' 
+                                                    : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                                    }`}>
                                         {/* Linha do produto */}
                                         <div className="flex items-center gap-4 px-4 pt-4 pb-3">
-                                            <div className="w-9 h-9 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                                            <div className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${selectedF ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-gradient-to-br from-slate-100 to-slate-50 border-slate-200 text-slate-400'}`}>
                                                 <Package size={16} />
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -261,23 +303,29 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                     </span>
                                                     <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span>
                                                     <span className="text-[10px] font-bold text-slate-500">
-                                                        Qtd: <b className="text-slate-700">{linha.quantidade} un</b>
+                                                        {linha.quantidade} un × {formatCurrency(unitPrice)}
                                                     </span>
+                                                    <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span>
+                                                    <span className="text-[10px] font-black text-slate-700">{formatCurrency(subtotalLinha)}</span>
                                                 </div>
                                             </div>
+                                            {/* Confirmation chip when selected */}
                                             {selectedF && !isOpen && (
                                                 <div className="flex items-center gap-2 shrink-0">
                                                     <div className="text-right">
                                                         <span className="text-xs font-bold text-emerald-700 block">{selectedF.nome}</span>
-                                                        {selectedMedia && (
-                                                            <span className="text-[10px] text-amber-500 font-bold flex items-center gap-0.5 justify-end">
-                                                                <Star size={9} className="fill-amber-400" />
-                                                                {selectedMedia}
-                                                            </span>
-                                                        )}
+                                                        <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1 justify-end">
+                                                            {selectedMedia && (
+                                                                <span className="text-amber-500 font-bold flex items-center gap-0.5">
+                                                                    <Star size={9} className="fill-amber-400" />{selectedMedia}
+                                                                </span>
+                                                            )}
+                                                            {selectedMedia && <span className="text-slate-300">·</span>}
+                                                            {Math.floor(selectedF.prazoMedioEntrega || 0)}d
+                                                        </span>
                                                     </div>
-                                                    <div className="w-7 h-7 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center">
-                                                        <Check size={13} className="text-emerald-600" strokeWidth={3} />
+                                                    <div className="w-7 h-7 bg-emerald-500 border border-emerald-600 rounded-full flex items-center justify-center shadow-sm">
+                                                        <Check size={13} className="text-white" strokeWidth={3} />
                                                     </div>
                                                 </div>
                                             )}
@@ -291,7 +339,7 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                             </div>
                                         )}
 
-                                        {/* Trigger do select - só mostra se há fornecedores */}
+                                        {/* Trigger do select */}
                                         {!semFornecedores && (
                                             <div className="px-4 pb-4">
                                                 <div
@@ -300,7 +348,7 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                         isOpen 
                                                             ? 'bg-emerald-50 border border-emerald-400 text-emerald-800' 
                                                             : selectedF 
-                                                                ? 'bg-slate-50 border border-slate-200 hover:border-emerald-300 text-slate-700' 
+                                                                ? 'bg-emerald-50/50 border border-emerald-300 text-emerald-800 hover:border-emerald-400' 
                                                                 : 'bg-white border border-dashed border-slate-300 hover:border-emerald-400 text-slate-400'
                                                     }`}
                                                     onClick={(e) => {
@@ -310,11 +358,16 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                 >
                                                     <div className="flex items-center gap-2 min-w-0">
                                                         <Building2 size={14} className={selectedF ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
-                                                        <span className="truncate">
+                                                        <span className="truncate font-semibold">
                                                             {selectedF ? selectedF.nome : 'Clique para selecionar fornecedor...'}
                                                         </span>
                                                     </div>
-                                                    <ChevronDown size={14} className={`shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-600' : 'text-slate-400'}`} />
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        {selectedF && !isOpen && (
+                                                            <span className="text-[11px] font-black text-emerald-700">{formatCurrency(unitPrice)}/un</span>
+                                                        )}
+                                                        <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-600' : 'text-slate-400'}`} />
+                                                    </div>
                                                 </div>
                                             </div>
                                         )}
@@ -324,14 +377,16 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                 isOpen={isOpen} 
                                                 triggerRef={{ current: triggerRefs.current[linha.id] }}
                                             >
-                                                <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                                <div className="px-4 py-2 border-b border-slate-100 mb-1 flex items-center justify-between">
                                                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornecedores disponíveis</span>
+                                                    <span className="text-[10px] text-slate-400">{produtoFornecedores.length} opção{produtoFornecedores.length !== 1 ? 'ões' : ''}</span>
                                                 </div>
-                                                {produtoFornecedores.map((f: any, i: number) => {
+                                                {produtoFornecedores.map((f: any) => {
                                                     const media = getMediaAvaliacao(f.avaliacoes);
                                                     const mediaVal = media ? parseFloat(media) : 0;
-                                                    const isRecommended = i === 0;
+                                                    const isRecommended = f.id === recommendedId;
                                                     const isSelected = selectedFornecedores[linha.id] === f.id;
+                                                    const fUnitPrice = unitPrice; // preço vem do produto; no futuro pode vir de contrato
                                                     
                                                     return (
                                                         <div 
@@ -346,31 +401,42 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                                     : 'hover:bg-slate-50 border border-transparent hover:border-slate-200'
                                                             }`}
                                                         >
-                                                            <div className="flex items-center justify-between mb-2.5">
+                                                            {/* Row 1: name + badges */}
+                                                            <div className="flex items-center justify-between mb-3">
                                                                 <div className="flex items-center gap-2">
-                                                                    {isSelected && (
-                                                                        <div className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
-                                                                            <Check size={10} className="text-white" strokeWidth={3} />
+                                                                    {isSelected ? (
+                                                                        <div className="w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center shrink-0 shadow-sm">
+                                                                            <Check size={11} className="text-white" strokeWidth={3} />
                                                                         </div>
+                                                                    ) : (
+                                                                        <div className="w-5 h-5 rounded-full border-2 border-slate-200 shrink-0" />
                                                                     )}
                                                                     <span className={`font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-slate-800'}`}>{f.nome}</span>
                                                                 </div>
-                                                                {isRecommended && (
-                                                                    <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
-                                                                        ★ Recomendado
-                                                                    </span>
-                                                                )}
+                                                                <div className="flex items-center gap-1.5">
+                                                                    {isRecommended && (
+                                                                        <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                                                                            ★ Recomendado
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                            <div className="grid grid-cols-3 gap-2">
-                                                                <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+
+                                                            {/* Row 2: metrics + price */}
+                                                            <div className="grid grid-cols-4 gap-2">
+                                                                <div className="bg-white rounded-md px-2 py-2 border border-slate-100 text-center col-span-1">
+                                                                    <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Preço/un</span>
+                                                                    <span className="text-xs font-bold text-slate-800">{formatCurrency(fUnitPrice)}</span>
+                                                                </div>
+                                                                <div className="bg-white rounded-md px-2 py-2 border border-slate-100 text-center col-span-1">
                                                                     <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Entrega</span>
                                                                     <span className="text-xs font-bold text-slate-800">{Math.floor(f.prazoMedioEntrega || 0)}d</span>
                                                                 </div>
-                                                                <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                <div className="bg-white rounded-md px-2 py-2 border border-slate-100 text-center col-span-1">
                                                                     <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Mín.</span>
                                                                     <span className="text-xs font-bold text-slate-800">{formatCurrency(f.valorMinimoEncomenda || 0)}</span>
                                                                 </div>
-                                                                <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                <div className="bg-white rounded-md px-2 py-2 border border-slate-100 text-center col-span-1">
                                                                     <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Aval.</span>
                                                                     <span className={`text-xs font-bold flex items-center justify-center gap-0.5 ${mediaVal >= 4 ? 'text-amber-500' : mediaVal >= 2.5 ? 'text-orange-400' : 'text-slate-400'}`}>
                                                                         <Star size={9} className={mediaVal > 0 ? 'fill-current' : 'fill-slate-300'} />
@@ -388,9 +454,25 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
 
                                 })}
                             </div>
+
+                            {/* Total em tempo real */}
+                            {hasAnyLinhas && (
+                                <div className="flex items-center justify-between bg-gradient-to-r from-slate-50 to-emerald-50/40 border border-slate-200 rounded-xl px-5 py-3.5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm font-bold text-slate-600">Total estimado</span>
+                                        {!allSuppliersSelected && (
+                                            <span className="text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
+                                                Selecione todos os fornecedores para continuar
+                                            </span>
+                                        )}
+                                    </div>
+                                    <span className={`text-xl font-black ${allSuppliersSelected ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                        {formatCurrency(totalStep2)}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     )}
-
 
                     {step === 3 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
@@ -464,7 +546,8 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                         {step < 3 ? (
                             <button 
                                 onClick={handleNext}
-                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2"
+                                disabled={step === 2 && !allSuppliersSelected}
+                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2"
                             >
                                 Salvar e Avançar
                             </button>
