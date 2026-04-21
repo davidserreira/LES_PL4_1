@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Check, Trash2, ArrowLeft, Loader2, Package, Building2 } from 'lucide-react';
+import { X, Check, Trash2, ArrowLeft, Loader2, Package, Building2, ChevronDown, Star } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import { pedidoCompraService } from '../services/pedidoCompraService';
+import { SmartDropdown } from './SmartDropdown';
 
 interface ModalAprovarPedidoProps {
     isOpen: boolean;
@@ -19,8 +20,25 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
     const [linhasAprovadas, setLinhasAprovadas] = useState<any[]>([]);
     const [fornecedores, setFornecedores] = useState<any[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<Record<number, number>>({});
+    const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+    const triggerRefs = useRef<Record<number, HTMLElement | null>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const getMediaAvaliacao = (avaliacoes: any[]) => {
+        if (!avaliacoes || avaliacoes.length === 0) return null;
+        const soma = avaliacoes.reduce((acc, av) => acc + ((av.qualidade + av.pontualidade + av.comunicacao + av.preco + av.conformidade) / 5), 0);
+        return (soma / avaliacoes.length).toFixed(1);
+    };
+
+    // Fechar dropdown clicando fora
+    useEffect(() => {
+        const handleClickOutside = () => setOpenDropdownId(null);
+        if (openDropdownId !== null) {
+            document.addEventListener('click', handleClickOutside);
+        }
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [openDropdownId]);
 
     // Initialize local state when modal opens
     useEffect(() => {
@@ -106,7 +124,7 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl flex flex-col overflow-hidden max-h-[90vh]">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl flex flex-col overflow-hidden max-h-[85vh]">
                 
                 {/* Header Modal */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
@@ -156,7 +174,10 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                 </div>
 
                 {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-white space-y-6">
+                <div 
+                    className="flex-1 overflow-y-auto p-6 bg-white space-y-6"
+                    style={{ scrollbarGutter: 'stable' }}
+                >
                     {error && (
                         <div className="bg-red-50 text-red-700 p-3 rounded-lg border border-red-100 text-sm font-medium">
                             {error}
@@ -216,8 +237,9 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                             </div>
                             
                             <div className="space-y-3">
-                                {linhasAprovadas.map((linha) => (
-                                    <div key={linha.id} className="p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                {linhasAprovadas.map((linha) => {
+                                    return (
+                                    <div key={linha.id} className={`p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 relative transition-all ${openDropdownId === linha.id ? 'z-[60] ring-1 ring-emerald-500/20' : 'z-10 hover:border-slate-300'}`}>
                                         <div className="flex items-center gap-4 flex-1">
                                             <div className="w-10 h-10 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
                                                 <Package size={18} />
@@ -229,21 +251,74 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="flex-1 max-w-sm w-full relative">
-                                            <select 
-                                                value={selectedFornecedores[linha.id] || ''}
-                                                onChange={(e) => setSelectedFornecedores(prev => ({ ...prev, [linha.id]: Number(e.target.value) }))}
-                                                className="w-full pl-4 pr-10 py-2.5 bg-white border border-emerald-300 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm font-medium text-slate-700 appearance-none shadow-sm"
+                                        <div className="flex-1 max-w-sm w-full">
+                                            <div 
+                                                ref={(el) => { triggerRefs.current[linha.id] = el; }}
+                                                className={`w-full pl-4 pr-10 py-2.5 bg-white border rounded-xl cursor-pointer select-none transition-all text-sm font-medium flex items-center justify-between ${openDropdownId === linha.id ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-emerald-300 hover:border-emerald-400'} shadow-sm`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setOpenDropdownId(openDropdownId === linha.id ? null : linha.id);
+                                                }}
                                             >
-                                                <option value="" disabled>Selecionar fornecedor...</option>
-                                                {fornecedores.map(f => (
-                                                    <option key={f.id} value={f.id}>{f.nome}</option>
-                                                ))}
-                                            </select>
-                                            <Building2 size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                                <span className={`truncate ${!selectedFornecedores[linha.id] ? 'text-slate-400' : 'text-slate-700'}`}>
+                                                    {selectedFornecedores[linha.id] 
+                                                        ? fornecedores.find(f => f.id === selectedFornecedores[linha.id])?.nome 
+                                                        : 'Selecione um fornecedor'}
+                                                </span>
+                                                <ChevronDown size={16} className={`text-slate-400 transition-transform absolute right-4 top-1/2 -translate-y-1/2 ${openDropdownId === linha.id ? 'rotate-180' : ''}`} />
+                                            </div>
+
+                                            <SmartDropdown 
+                                                isOpen={openDropdownId === linha.id} 
+                                                triggerRef={{ current: triggerRefs.current[linha.id] }}
+                                            >
+                                                {fornecedores.map((f: any, i: number) => {
+                                                    const media = getMediaAvaliacao(f.avaliacoes);
+                                                    const isRecommended = i === 0; // Mock de motor de recomendação
+                                                    const isSelected = selectedFornecedores[linha.id] === f.id;
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={f.id}
+                                                            onClick={() => {
+                                                                setSelectedFornecedores(prev => ({ ...prev, [linha.id]: f.id }));
+                                                                setOpenDropdownId(null);
+                                                            }}
+                                                            className={`px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-100 last:border-0 ${isSelected ? 'bg-emerald-50/50' : ''}`}
+                                                        >
+                                                            <div className="flex items-center justify-between mb-2">
+                                                                <span className="font-bold text-slate-900 text-sm">{f.nome}</span>
+                                                                {isRecommended && (
+                                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                                                                        Recommended
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center justify-between mt-1">
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Entrega</span>
+                                                                    <span className="text-xs font-bold text-slate-700">{Math.floor(f.prazoMedioEntrega || 0)} dias</span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Val. Mínimo</span>
+                                                                    <span className="text-xs font-bold text-slate-700">{formatCurrency(f.valorMinimoEncomenda || 0)}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Avaliação</span>
+                                                                    <span className={`text-xs font-bold flex items-center gap-1 ${media ? 'text-amber-500' : 'text-slate-400'}`}>
+                                                                        <Star size={10} className={media ? 'fill-amber-500' : 'fill-slate-400'} />
+                                                                        {media || '-'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </SmartDropdown>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

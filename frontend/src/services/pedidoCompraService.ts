@@ -29,7 +29,7 @@ export const pedidoCompraService = {
         const response = await api.patch(`/pedidos/${id}/cancelar`, payload);
         return response.data;
     },
-    aprovarPedido: async (id: number, payload: { userId: number, role: string }) => {
+    aprovarPedido: async (id: number, payload: { userId: number, role: string, linhasAprovadas?: any[] }) => {
         const response = await api.patch(`/pedidos/${id}/aprovar`, payload);
         return response.data;
     },
