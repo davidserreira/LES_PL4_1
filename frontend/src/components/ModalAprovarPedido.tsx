@@ -230,98 +230,159 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                     )}
 
                     {step === 2 && (
-                        <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Selecionar Fornecedores para os Produtos</h3>
-                                <p className="text-sm text-slate-500">Escolha o fornecedor preferencial para encaminhar a compra de cada produto da lista.</p>
+                        <div className="space-y-5 animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className="flex items-start justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Selecionar Fornecedores</h3>
+                                    <p className="text-sm text-slate-500 mt-0.5">Escolha o fornecedor para cada produto. Consulte as condições antes de decidir.</p>
+                                </div>
+                                <span className="shrink-0 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full">
+                                    {linhasAprovadas.length} produto{linhasAprovadas.length !== 1 ? 's' : ''}
+                                </span>
                             </div>
                             
                             <div className="space-y-3">
                                 {linhasAprovadas.map((linha) => {
+                                    const selectedF = fornecedores.find(f => f.id === selectedFornecedores[linha.id]);
+                                    const selectedMedia = selectedF ? getMediaAvaliacao(selectedF.avaliacoes) : null;
+                                    const isOpen = openDropdownId === linha.id;
+
                                     return (
-                                    <div key={linha.id} className={`p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4 relative transition-all ${openDropdownId === linha.id ? 'z-[60] ring-1 ring-emerald-500/20' : 'z-10 hover:border-slate-300'}`}>
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <div className="w-10 h-10 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center text-slate-400 shrink-0">
-                                                <Package size={18} />
+                                    <div key={linha.id} className={`rounded-xl border transition-all duration-200 overflow-visible ${isOpen ? 'border-emerald-400 shadow-lg shadow-emerald-500/10 ring-2 ring-emerald-500/10' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
+                                        {/* Linha do produto */}
+                                        <div className="flex items-center gap-4 px-4 pt-4 pb-3">
+                                            <div className="w-9 h-9 bg-gradient-to-br from-slate-100 to-slate-50 rounded-lg border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
+                                                <Package size={16} />
                                             </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-900">{linha.produto?.nome}</h4>
-                                                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mt-1 block">
-                                                    Quantidade: <b className="text-slate-800">{linha.quantidade} un</b>
-                                                </span>
+                                            <div className="flex-1 min-w-0">
+                                                <h4 className="font-bold text-slate-900 text-sm truncate">{linha.produto?.nome}</h4>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                                        {linha.produto?.categoria || 'Sem categoria'}
+                                                    </span>
+                                                    <span className="w-0.5 h-0.5 rounded-full bg-slate-300"></span>
+                                                    <span className="text-[10px] font-bold text-slate-500">
+                                                        Qtd: <b className="text-slate-700">{linha.quantidade} un</b>
+                                                    </span>
+                                                </div>
                                             </div>
+                                            {selectedF && !isOpen && (
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                    <div className="text-right">
+                                                        <span className="text-xs font-bold text-emerald-700 block">{selectedF.nome}</span>
+                                                        {selectedMedia && (
+                                                            <span className="text-[10px] text-amber-500 font-bold flex items-center gap-0.5 justify-end">
+                                                                <Star size={9} className="fill-amber-400" />
+                                                                {selectedMedia}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="w-7 h-7 bg-emerald-50 border border-emerald-200 rounded-full flex items-center justify-center">
+                                                        <Check size={13} className="text-emerald-600" strokeWidth={3} />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="flex-1 max-w-sm w-full">
-                                            <div 
+                                        
+                                        {/* Trigger do select */}
+                                        <div className="px-4 pb-4">
+                                            <div
                                                 ref={(el) => { triggerRefs.current[linha.id] = el; }}
-                                                className={`w-full pl-4 pr-10 py-2.5 bg-white border rounded-xl cursor-pointer select-none transition-all text-sm font-medium flex items-center justify-between ${openDropdownId === linha.id ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-md' : 'border-emerald-300 hover:border-emerald-400'} shadow-sm`}
+                                                className={`w-full px-3.5 py-2.5 rounded-lg cursor-pointer select-none transition-all text-sm font-medium flex items-center justify-between gap-3 ${
+                                                    isOpen 
+                                                        ? 'bg-emerald-50 border border-emerald-400 text-emerald-800' 
+                                                        : selectedF 
+                                                            ? 'bg-slate-50 border border-slate-200 hover:border-emerald-300 text-slate-700' 
+                                                            : 'bg-white border border-dashed border-slate-300 hover:border-emerald-400 text-slate-400'
+                                                }`}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    setOpenDropdownId(openDropdownId === linha.id ? null : linha.id);
+                                                    setOpenDropdownId(isOpen ? null : linha.id);
                                                 }}
                                             >
-                                                <span className={`truncate ${!selectedFornecedores[linha.id] ? 'text-slate-400' : 'text-slate-700'}`}>
-                                                    {selectedFornecedores[linha.id] 
-                                                        ? fornecedores.find(f => f.id === selectedFornecedores[linha.id])?.nome 
-                                                        : 'Selecione um fornecedor'}
-                                                </span>
-                                                <ChevronDown size={16} className={`text-slate-400 transition-transform absolute right-4 top-1/2 -translate-y-1/2 ${openDropdownId === linha.id ? 'rotate-180' : ''}`} />
+                                                <div className="flex items-center gap-2 min-w-0">
+                                                    <Building2 size={14} className={selectedF ? 'text-emerald-600 shrink-0' : 'text-slate-400 shrink-0'} />
+                                                    <span className="truncate">
+                                                        {selectedF ? selectedF.nome : 'Clique para selecionar fornecedor...'}
+                                                    </span>
+                                                </div>
+                                                <ChevronDown size={14} className={`shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-600' : 'text-slate-400'}`} />
                                             </div>
+                                        </div>
 
-                                            <SmartDropdown 
-                                                isOpen={openDropdownId === linha.id} 
-                                                triggerRef={{ current: triggerRefs.current[linha.id] }}
-                                            >
-                                                {fornecedores.map((f: any, i: number) => {
-                                                    const media = getMediaAvaliacao(f.avaliacoes);
-                                                    const isRecommended = i === 0; // Mock de motor de recomendação
-                                                    const isSelected = selectedFornecedores[linha.id] === f.id;
-                                                    
-                                                    return (
-                                                        <div 
-                                                            key={f.id}
-                                                            onClick={() => {
-                                                                setSelectedFornecedores(prev => ({ ...prev, [linha.id]: f.id }));
-                                                                setOpenDropdownId(null);
-                                                            }}
-                                                            className={`px-4 py-3 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-100 last:border-0 ${isSelected ? 'bg-emerald-50/50' : ''}`}
-                                                        >
-                                                            <div className="flex items-center justify-between mb-2">
-                                                                <span className="font-bold text-slate-900 text-sm">{f.nome}</span>
-                                                                {isRecommended && (
-                                                                    <span className="bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
-                                                                        Recommended
-                                                                    </span>
+                                        <SmartDropdown 
+                                            isOpen={isOpen} 
+                                            triggerRef={{ current: triggerRefs.current[linha.id] }}
+                                        >
+                                            {/* Header do Dropdown */}
+                                            <div className="px-4 py-2 border-b border-slate-100 mb-1">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Fornecedores disponíveis</span>
+                                            </div>
+                                            {fornecedores.map((f: any, i: number) => {
+                                                const media = getMediaAvaliacao(f.avaliacoes);
+                                                const mediaVal = media ? parseFloat(media) : 0;
+                                                const isRecommended = i === 0;
+                                                const isSelected = selectedFornecedores[linha.id] === f.id;
+                                                
+                                                return (
+                                                    <div 
+                                                        key={f.id}
+                                                        onClick={() => {
+                                                            setSelectedFornecedores(prev => ({ ...prev, [linha.id]: f.id }));
+                                                            setOpenDropdownId(null);
+                                                        }}
+                                                        className={`mx-2 mb-1 px-3 py-3 rounded-lg cursor-pointer transition-all duration-150 ${
+                                                            isSelected 
+                                                                ? 'bg-emerald-50 border border-emerald-200' 
+                                                                : 'hover:bg-slate-50 border border-transparent hover:border-slate-200'
+                                                        }`}
+                                                    >
+                                                        {/* Nome + badges */}
+                                                        <div className="flex items-center justify-between mb-2.5">
+                                                            <div className="flex items-center gap-2">
+                                                                {isSelected && (
+                                                                    <div className="w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center shrink-0">
+                                                                        <Check size={10} className="text-white" strokeWidth={3} />
+                                                                    </div>
                                                                 )}
+                                                                <span className={`font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-slate-800'}`}>{f.nome}</span>
                                                             </div>
-                                                            <div className="flex items-center justify-between mt-1">
-                                                                <div>
-                                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Entrega</span>
-                                                                    <span className="text-xs font-bold text-slate-700">{Math.floor(f.prazoMedioEntrega || 0)} dias</span>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Val. Mínimo</span>
-                                                                    <span className="text-xs font-bold text-slate-700">{formatCurrency(f.valorMinimoEncomenda || 0)}</span>
-                                                                </div>
-                                                                <div>
-                                                                    <span className="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Avaliação</span>
-                                                                    <span className={`text-xs font-bold flex items-center gap-1 ${media ? 'text-amber-500' : 'text-slate-400'}`}>
-                                                                        <Star size={10} className={media ? 'fill-amber-500' : 'fill-slate-400'} />
-                                                                        {media || '-'}
-                                                                    </span>
-                                                                </div>
+                                                            {isRecommended && (
+                                                                <span className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
+                                                                    ★ Recomendado
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* Métricas em cards */}
+                                                        <div className="grid grid-cols-3 gap-2">
+                                                            <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Entrega</span>
+                                                                <span className="text-xs font-bold text-slate-800">{Math.floor(f.prazoMedioEntrega || 0)}d</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Mín.</span>
+                                                                <span className="text-xs font-bold text-slate-800">{formatCurrency(f.valorMinimoEncomenda || 0)}</span>
+                                                            </div>
+                                                            <div className="bg-white rounded-md px-2.5 py-2 border border-slate-100 text-center">
+                                                                <span className="text-[9px] uppercase font-black tracking-widest text-slate-400 block mb-0.5">Aval.</span>
+                                                                <span className={`text-xs font-bold flex items-center justify-center gap-0.5 ${mediaVal >= 4 ? 'text-amber-500' : mediaVal >= 2.5 ? 'text-orange-400' : 'text-slate-400'}`}>
+                                                                    <Star size={9} className={mediaVal > 0 ? 'fill-current' : 'fill-slate-300'} />
+                                                                    {media || '—'}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                    );
-                                                })}
-                                            </SmartDropdown>
-                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </SmartDropdown>
                                     </div>
                                     );
                                 })}
                             </div>
                         </div>
                     )}
+
 
                     {step === 3 && (
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
