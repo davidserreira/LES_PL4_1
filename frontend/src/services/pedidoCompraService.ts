@@ -45,6 +45,10 @@ export const pedidoCompraService = {
     updateStatusAdmin: async (id: number, role: string, novoEstado: string) => {
         const response = await api.patch(`/pedidos/${id}/status-admin`, { role, novoEstado });
         return response.data;
+    },
+    reverterPedido: async (id: number) => {
+        const response = await api.patch(`/pedidos/${id}/reverter`);
+        return response.data;
     }
 };
 

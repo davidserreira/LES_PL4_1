@@ -557,3 +557,37 @@ export const updateStatusAdmin = async (req: Request, res: Response): Promise<an
     }
 };
 
+// PATCH /pedidos/:id/reverter — volta à PENDENTE, limpa fornecedores das linhas
+export const reverterPedido = async (req: Request, res: Response): Promise<any> => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    try {
+        const pedido = await prisma.pedidoCompra.findUnique({
+            where: { id },
+            include: { encomendas: true }
+        });
+
+        if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
+        if (pedido.estado !== 'APROVADO') return res.status(400).json({ error: 'Apenas pedidos APROVADOS podem ser revertidos.' });
+        if (pedido.encomendas.length > 0) return res.status(400).json({ error: 'Não é possível reverter um pedido com encomendas geradas.' });
+
+        await prisma.$transaction([
+            // Limpar fornecedorId de todas as linhas
+            prisma.linhaPedidoCompra.updateMany({
+                where: { pedidoCompraId: id },
+                data: { fornecedorId: null }
+            }),
+            // Voltar o pedido a PENDENTE
+            prisma.pedidoCompra.update({
+                where: { id },
+                data: { estado: 'PENDENTE' }
+            })
+        ]);
+
+        return res.json({ message: 'Pedido revertido para PENDENTE com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao reverter pedido:', error);
+        return res.status(500).json({ error: 'Erro interno ao reverter pedido.' });
+    }
+};
