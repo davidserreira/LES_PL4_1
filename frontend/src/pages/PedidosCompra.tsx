@@ -181,6 +181,7 @@ export default function PedidosCompra() {
     const handleReverterPedido = (pedidoId: number) => {
         const ped = pedidos.find(p => p.id === pedidoId) || selectedPedido;
         if (ped) setPedidoToReverter(ped);
+        setIsDetailsModalOpen(false);
     };
 
     const confirmReverter = async () => {
@@ -209,6 +210,7 @@ export default function PedidosCompra() {
 
     const handleEmitirEncomenda = (pedidoId: number) => {
         setPedidoToEmitir(pedidoId);
+        setIsDetailsModalOpen(false);
     };
 
     const confirmEmitir = async () => {
@@ -554,7 +556,7 @@ export default function PedidosCompra() {
                                 onClick={() => setPedidoToEmitir(null)}
                                 className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
                             >
-                                Mudar de ideias
+                                Voltar
                             </button>
                             <button
                                 onClick={() => confirmEmitir()}
@@ -995,6 +997,16 @@ export default function PedidosCompra() {
 
                                                 {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'APROVADO' && (
                                                     <div className="flex items-center gap-1.5 mr-2">
+                                                        <button
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                handleReverterPedido(p.id);
+                                                            }}
+                                                            className="p-1.5 text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100 hover:border-amber-200 rounded-lg transition-all"
+                                                            title="Reverter para Pendente"
+                                                        >
+                                                            <Undo2 size={16} strokeWidth={2.5}/>
+                                                        </button>
                                                         <button
                                                             onClick={(e) => { 
                                                                 e.stopPropagation(); 
