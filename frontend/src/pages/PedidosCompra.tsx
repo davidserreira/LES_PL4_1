@@ -996,26 +996,26 @@ export default function PedidosCompra() {
                                                 )}
 
                                                 {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'APROVADO' && (
-                                                    <div className="flex items-center gap-1.5 mr-2">
-                                                        <button
-                                                            onClick={(e) => { 
-                                                                e.stopPropagation(); 
-                                                                handleReverterPedido(p.id);
-                                                            }}
-                                                            className="p-1.5 text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100 hover:border-amber-200 rounded-lg transition-all"
-                                                            title="Reverter para Pendente"
-                                                        >
-                                                            <Undo2 size={16} strokeWidth={2.5}/>
-                                                        </button>
+                                                    <div className="flex items-center gap-2 mr-2">
                                                         <button
                                                             onClick={(e) => { 
                                                                 e.stopPropagation(); 
                                                                 handleEmitirEncomenda(p.id);
                                                             }}
-                                                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-lg transition-all"
+                                                            className="p-1.5 text-emerald-600 bg-gradient-to-b from-white to-emerald-50 border border-emerald-200 hover:border-emerald-300 hover:from-emerald-50 hover:to-emerald-100 shadow-sm ring-2 ring-emerald-500/10 rounded-lg transition-all"
                                                             title="Emitir Encomenda"
                                                         >
                                                             <PackagePlus size={16} strokeWidth={2.5}/>
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                handleReverterPedido(p.id);
+                                                            }}
+                                                            className="p-1.5 text-amber-600 bg-gradient-to-b from-white to-amber-50 border border-amber-200 hover:border-amber-300 hover:from-amber-50 hover:to-amber-100 shadow-sm ring-2 ring-amber-500/10 rounded-lg transition-all"
+                                                            title="Reverter para Pendente"
+                                                        >
+                                                            <Undo2 size={16} strokeWidth={2.5}/>
                                                         </button>
                                                     </div>
                                                 )}
