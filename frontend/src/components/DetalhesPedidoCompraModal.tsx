@@ -1,7 +1,6 @@
-import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2, Loader2 } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
-import { useState } from 'react';
 
 interface Fornecedor {
     id: number;
@@ -54,8 +53,8 @@ interface DetalhesPedidoModalProps {
     userRole?: string;
     onAprovar?: (pedidoId: number) => void;
     onRecusar?: (pedidoId: number) => void;
-    onEmitirEncomenda?: (pedidoId: number) => Promise<void>;
-    onReverter?: (pedidoId: number) => Promise<void>;
+    onEmitirEncomenda?: (pedidoId: number) => void;
+    onReverter?: (pedidoId: number) => void;
 }
 
 const formatCurrency = (value: number) => {
@@ -109,19 +108,14 @@ const getStatusStyle = (status: string) => {
 export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, userRole, onAprovar, onRecusar, onEmitirEncomenda, onReverter }: DetalhesPedidoModalProps) {
     if (!isOpen || !pedido) return null;
 
-    const [isEmitting, setIsEmitting] = useState(false);
-    const [isReverting, setIsReverting] = useState(false);
-
-    const handleEmitir = async () => {
+    const handleEmitir = () => {
         if (!pedido || !onEmitirEncomenda) return;
-        setIsEmitting(true);
-        try { await onEmitirEncomenda(pedido.id); } finally { setIsEmitting(false); }
+        onEmitirEncomenda(pedido.id);
     };
 
-    const handleReverter = async () => {
+    const handleReverter = () => {
         if (!pedido || !onReverter) return;
-        setIsReverting(true);
-        try { await onReverter(pedido.id); } finally { setIsReverting(false); }
+        onReverter(pedido.id);
     };
 
     const totalProdutos = pedido.linhas?.reduce((acc, l) => acc + l.quantidade, 0) || 0;
@@ -374,10 +368,9 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                         {isAprovado && onReverter && (
                             <button 
                                 onClick={handleReverter}
-                                disabled={isReverting}
                                 className="px-5 py-2.5 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
                             >
-                                {isReverting ? <Loader2 size={15} className="animate-spin" /> : <Undo2 size={15} />}
+                                <Undo2 size={15} />
                                 Reverter
                             </button>
                         )}
@@ -404,10 +397,9 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                         {isAprovado && onEmitirEncomenda && (
                             <button
                                 onClick={handleEmitir}
-                                disabled={isEmitting}
-                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2"
+                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2"
                             >
-                                {isEmitting ? <Loader2 size={15} className="animate-spin" /> : <PackagePlus size={15} />}
+                                <PackagePlus size={15} />
                                 Emitir Encomenda
                             </button>
                         )}
