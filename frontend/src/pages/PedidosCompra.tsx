@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X, PackagePlus, Undo2 } from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
+import { encomendaService } from '../services/encomendaService';
 import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 import DetalhesPedidoCompraModal from '../components/DetalhesPedidoCompraModal';
@@ -81,6 +82,8 @@ export default function PedidosCompra() {
     const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
     const [pedidoToEdit, setPedidoToEdit] = useState<PedidoCompra | null>(null);
     const [pedidoToCancel, setPedidoToCancel] = useState<number | null>(null);
+    const [pedidoToReverter, setPedidoToReverter] = useState<PedidoCompra | null>(null);
+    const [pedidoToEmitir, setPedidoToEmitir] = useState<number | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
 
     const showToast = (message: string, type: 'success' | 'error') => {
@@ -94,9 +97,9 @@ export default function PedidosCompra() {
     });
 
     const canViewHistorico = user?.role === 'RESPONSAVEL_STOCK' || user?.role === 'RESPONSAVEL_FINANCEIRO';
-    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO']), []);
-    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
-    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'RECUSADO', 'CANCELADO'], []);
+    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO']), []);
+    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
+    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO'], []);
 
     useEffect(() => {
         if (canViewHistorico && viewMode === 'HISTORICO' && (filterEstado || '').toUpperCase() === 'PENDENTE') {
@@ -175,6 +178,54 @@ export default function PedidosCompra() {
         }
     };
 
+    const handleReverterPedido = (pedidoId: number) => {
+        const ped = pedidos.find(p => p.id === pedidoId) || selectedPedido;
+        if (ped) setPedidoToReverter(ped);
+    };
+
+    const confirmReverter = async () => {
+        if (!pedidoToReverter) return;
+
+        try {
+            await pedidoCompraService.reverterPedido(pedidoToReverter.id);
+            setPedidos(pedidos.map(p => 
+                p.id === pedidoToReverter.id ? { ...p, estado: 'PENDENTE' } : p
+            ));
+            showToast('Pedido revertido para PENDENTE com sucesso.', 'success');
+            setIsDetailsModalOpen(false);
+            
+            setPedidoToReverter(null);
+            setTimeout(() => {
+                const revertedPedido = { ...pedidoToReverter, estado: 'PENDENTE' };
+                setSelectedPedido(revertedPedido);
+                setIsAprovarModalOpen(true);
+            }, 100);
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Erro ao reverter o pedido.', 'error');
+            setPedidoToReverter(null);
+        }
+    };
+
+    const handleEmitirEncomenda = (pedidoId: number) => {
+        setPedidoToEmitir(pedidoId);
+    };
+
+    const confirmEmitir = async () => {
+        if (!pedidoToEmitir) return;
+        try {
+            await encomendaService.gerarEncomendas(pedidoToEmitir);
+            showToast('Encomendas geradas com sucesso!', 'success');
+            setIsDetailsModalOpen(false);
+            setSelectedPedido(null);
+            fetchPedidos();
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Erro ao emitir encomenda.', 'error');
+        } finally {
+            setPedidoToEmitir(null);
+        }
+    };
 
     const fetchPedidos = () => {
         setLoading(true);
@@ -357,6 +408,8 @@ export default function PedidosCompra() {
                 return 'text-amber-700 bg-amber-50 border-amber-100';
             case 'APROVADO':
                 return 'text-emerald-700 bg-emerald-50 border-emerald-100';
+            case 'PROCESSADO':
+                return 'text-white bg-emerald-500 border-emerald-600 shadow-sm ring-1 ring-emerald-500/50';
             case 'CANCELADO':
             case 'RECUSADO':
                 return 'text-red-700 bg-red-50 border-red-100';
@@ -414,6 +467,8 @@ export default function PedidosCompra() {
                     handleRecusar(id);
                     setIsDetailsModalOpen(false);
                 }}
+                onEmitirEncomenda={handleEmitirEncomenda}
+                onReverter={handleReverterPedido}
                 onClose={() => {
                     setIsDetailsModalOpen(false);
                     setSelectedPedido(null);
@@ -450,7 +505,70 @@ export default function PedidosCompra() {
                 </div>
             )}
 
+            {/* Reverter Modal */}
+            {pedidoToReverter !== null && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+                                <Undo2 size={24} className="text-amber-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Reverter para Pendente</h3>
+                            <p className="text-sm text-slate-500">
+                                Tem a certeza que pretende reverter este pedido para PENDENTE? Isto libertará todos os fornecedores alocados.
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setPedidoToReverter(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={() => confirmReverter()}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
+                            >
+                                Reverter Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Emitir Modal */}
+            {pedidoToEmitir !== null && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
+                                <PackagePlus size={24} className="text-emerald-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Emitir Encomendas</h3>
+                            <p className="text-sm text-slate-500">
+                                Tem a certeza que pretende emitir a(s) encomenda(s) para os fornecedores selecionados?
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setPedidoToEmitir(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                Mudar de ideias
+                            </button>
+                            <button
+                                onClick={() => confirmEmitir()}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
+                            >
+                                Sim, Emitir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Cancel Modal */}
+
             {pedidoToCancel !== null && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
@@ -828,7 +946,7 @@ export default function PedidosCompra() {
                                                             onMouseDown={(e) => e.stopPropagation()}
                                                             className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
                                                         >
-                                                            {['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map((status) => (
+                                                            {['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map((status) => (
                                                                 <button
                                                                     key={status}
                                                                     onClick={() => handleUpdateStatusAdmin(p.id, status)}
@@ -875,6 +993,21 @@ export default function PedidosCompra() {
                                                     </div>
                                                 )}
 
+                                                {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'APROVADO' && (
+                                                    <div className="flex items-center gap-1.5 mr-2">
+                                                        <button
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                handleEmitirEncomenda(p.id);
+                                                            }}
+                                                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-lg transition-all"
+                                                            title="Emitir Encomenda"
+                                                        >
+                                                            <PackagePlus size={16} strokeWidth={2.5}/>
+                                                        </button>
+                                                    </div>
+                                                )}
+
                                                 <button
                                                     onMouseDown={(e) => handleActionMouseDown(p.id, e)}
                                                     className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
@@ -911,6 +1044,7 @@ export default function PedidosCompra() {
                                                             Editar
                                                         </button>
                                                     )}
+
                                                     {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
                                                         p.estado !== 'CANCELADO' ? (
                                                             <button

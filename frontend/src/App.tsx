@@ -7,6 +7,7 @@ import Fornecedores from './pages/Fornecedores';
 import Utilizadores from './pages/Utilizadores';
 import Login from './pages/Login';
 import PedidosCompra from './pages/PedidosCompra';
+import Encomendas from './pages/Encomendas';
 import { Utilizador } from './services/utilizadorService';
 
 function App() {
@@ -42,6 +43,7 @@ function App() {
                             
                             <Route path="/catalogo" element={<Catalogo />} />
                             <Route path="/pedidos" element={<PedidosCompra />} />
+                            <Route path="/encomendas" element={<Encomendas />} />
                             <Route path="/fornecedores" element={<Fornecedores />} />
                             <Route path="/utilizadores" element={<Utilizadores />} />
                             <Route path="*" element={<Navigate to="/" replace />} />

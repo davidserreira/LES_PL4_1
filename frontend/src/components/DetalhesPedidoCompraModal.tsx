@@ -1,6 +1,7 @@
-import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2, Loader2 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
+import { useState } from 'react';
 
 interface Fornecedor {
     id: number;
@@ -53,6 +54,8 @@ interface DetalhesPedidoModalProps {
     userRole?: string;
     onAprovar?: (pedidoId: number) => void;
     onRecusar?: (pedidoId: number) => void;
+    onEmitirEncomenda?: (pedidoId: number) => Promise<void>;
+    onReverter?: (pedidoId: number) => Promise<void>;
 }
 
 const formatCurrency = (value: number) => {
@@ -103,11 +106,28 @@ const getStatusStyle = (status: string) => {
     }
 };
 
-export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, userRole, onAprovar, onRecusar }: DetalhesPedidoModalProps) {
+export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, userRole, onAprovar, onRecusar, onEmitirEncomenda, onReverter }: DetalhesPedidoModalProps) {
     if (!isOpen || !pedido) return null;
+
+    const [isEmitting, setIsEmitting] = useState(false);
+    const [isReverting, setIsReverting] = useState(false);
+
+    const handleEmitir = async () => {
+        if (!pedido || !onEmitirEncomenda) return;
+        setIsEmitting(true);
+        try { await onEmitirEncomenda(pedido.id); } finally { setIsEmitting(false); }
+    };
+
+    const handleReverter = async () => {
+        if (!pedido || !onReverter) return;
+        setIsReverting(true);
+        try { await onReverter(pedido.id); } finally { setIsReverting(false); }
+    };
 
     const totalProdutos = pedido.linhas?.reduce((acc, l) => acc + l.quantidade, 0) || 0;
     const isAprovado = pedido.estado === 'APROVADO';
+    const isProcessado = pedido.estado === 'PROCESSADO';
+    const isLocked = isAprovado || isProcessado;
 
     return createPortal(
         <div 
@@ -121,9 +141,9 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
-                <div className={`flex items-center justify-between px-6 py-4 border-b ${isAprovado ? 'border-emerald-100 bg-gradient-to-r from-emerald-50 to-teal-50' : 'border-slate-100 bg-white'}`}>
+                <div className={`flex items-center justify-between px-6 py-4 border-b ${isLocked ? 'border-emerald-100 bg-gradient-to-r from-emerald-50 to-teal-50' : 'border-slate-100 bg-white'}`}>
                     <div className="flex items-center gap-3">
-                        {isAprovado && (
+                        {isLocked && (
                             <div className="w-9 h-9 bg-emerald-100 border border-emerald-200 rounded-xl flex items-center justify-center">
                                 <ShieldCheck size={18} className="text-emerald-600" />
                             </div>
@@ -139,6 +159,12 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                                 <p className="text-xs text-emerald-600 font-medium mt-0.5 flex items-center gap-1">
                                     <Lock size={10} />
                                     Pedido aprovado e bloqueado — fornecedores alocados definitivamente
+                                </p>
+                            )}
+                            {isProcessado && (
+                                <p className="text-xs text-purple-600 font-medium mt-0.5 flex items-center gap-1">
+                                    <Lock size={10} />
+                                    Pedido processado — encomendas emitidas com sucesso
                                 </p>
                             )}
                         </div>
@@ -196,10 +222,10 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                                         {pedido.estado}
                                     </span>
                                 </div>
-                                {isAprovado && (
+                                {isLocked && (
                                     <div>
                                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border bg-slate-50 text-slate-500 border-slate-200">
-                                            <Lock size={9} /> Bloqueado
+                                            <Lock size={9} /> {isProcessado ? 'Efetuado' : 'Bloqueado'}
                                         </span>
                                     </div>
                                 )}
@@ -207,8 +233,8 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                         </div>
                     </div>
 
-                    {/* Produtos List — APROVADO: vista locked premium */}
-                    {isAprovado ? (
+                    {/* Produtos List — LOCKED: vista locked premium */}
+                    {isLocked ? (
                         <div className="bg-white rounded-xl border border-emerald-200 overflow-hidden shadow-sm">
                             <div className="p-5 border-b border-emerald-100 flex items-center justify-between bg-gradient-to-r from-emerald-50/60 to-teal-50/40">
                                 <div className="flex items-center gap-2">
@@ -337,6 +363,27 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
 
                 {/* Footer */}
                 <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                    {/* Left side */}
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={onClose}
+                            className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors shadow-sm"
+                        >
+                            Fechar
+                        </button>
+                        {isAprovado && onReverter && (
+                            <button 
+                                onClick={handleReverter}
+                                disabled={isReverting}
+                                className="px-5 py-2.5 bg-white border border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {isReverting ? <Loader2 size={15} className="animate-spin" /> : <Undo2 size={15} />}
+                                Reverter
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Right side */}
                     <div className="flex gap-3">
                         {pedido.estado === 'PENDENTE' && userRole && (userRole === 'RESPONSAVEL_FINANCEIRO' || userRole === 'ADMINISTRADOR') && (
                             <>
@@ -354,19 +401,17 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                                 </button>
                             </>
                         )}
-                        {isAprovado && (
-                            <div className="flex items-center gap-2 text-emerald-700 bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl text-sm font-bold">
-                                <ShieldCheck size={16} />
-                                Aprovado — Pronto para gerar encomendas
-                            </div>
+                        {isAprovado && onEmitirEncomenda && (
+                            <button
+                                onClick={handleEmitir}
+                                disabled={isEmitting}
+                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2"
+                            >
+                                {isEmitting ? <Loader2 size={15} className="animate-spin" /> : <PackagePlus size={15} />}
+                                Emitir Encomenda
+                            </button>
                         )}
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors shadow-sm"
-                    >
-                        Fechar
-                    </button>
                 </div>
             </div>
         </div>,
