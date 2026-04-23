@@ -14,6 +14,7 @@ interface SidebarProps {
 const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     const [showLogout, setShowLogout] = useState(false);
     const [comprasOpen, setComprasOpen] = useState(false);
+    const [encomendasBadge, setEncomendasBadge] = useState<number>(0);
     const sidebarRef = useRef<HTMLElement>(null);
     const location = useLocation();
 
@@ -22,6 +23,36 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
         if (location.pathname === '/pedidos' || location.pathname === '/encomendas') {
             setComprasOpen(true);
         }
+    }, [location.pathname]);
+
+    // Badge de encomendas (aparece só após criar encomendas)
+    useEffect(() => {
+        const readBadge = () => {
+            try {
+                const raw = localStorage.getItem('encomendas:badge');
+                if (!raw) return setEncomendasBadge(0);
+                const parsed = JSON.parse(raw);
+                const count = Number(parsed?.count || 0);
+                setEncomendasBadge(Number.isFinite(count) ? count : 0);
+            } catch {
+                setEncomendasBadge(0);
+            }
+        };
+        readBadge();
+        const onEvt = () => readBadge();
+        window.addEventListener('encomendas:badge', onEvt as any);
+        window.addEventListener('storage', onEvt);
+        return () => {
+            window.removeEventListener('encomendas:badge', onEvt as any);
+            window.removeEventListener('storage', onEvt);
+        };
+    }, []);
+
+    // Ao abrir a tab/página de encomendas, o badge desaparece
+    useEffect(() => {
+        if (location.pathname !== '/encomendas') return;
+        localStorage.removeItem('encomendas:badge');
+        setEncomendasBadge(0);
     }, [location.pathname]);
 
     useEffect(() => {
@@ -185,7 +216,14 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                                 } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <ShoppingCart size={22} className="shrink-0" />
+                                    <span className="relative shrink-0">
+                                        <ShoppingCart size={22} />
+                                        {encomendasBadge > 0 && (
+                                            <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 shadow">
+                                                +{encomendasBadge}
+                                            </span>
+                                        )}
+                                    </span>
                                     {!isCollapsed && <span className="font-medium text-sm">Compras</span>}
                                 </div>
                                 {!isCollapsed && (
@@ -225,7 +263,14 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                                                 }`
                                             }
                                         >
-                                            <PackageCheck size={17} className="shrink-0" />
+                                            <span className="relative shrink-0">
+                                                <PackageCheck size={17} />
+                                                {encomendasBadge > 0 && (
+                                                    <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 shadow">
+                                                        +{encomendasBadge}
+                                                    </span>
+                                                )}
+                                            </span>
                                             <span className="font-medium">Encomendas</span>
                                         </NavLink>
                                     </li>

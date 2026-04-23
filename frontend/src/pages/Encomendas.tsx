@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, Building2, ClipboardList, AlertTriangle, ChevronDown, Package } from 'lucide-react';
 import { encomendaService } from '../services/encomendaService';
 import RececaoModal from '../components/RececaoModal';
@@ -22,6 +22,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     const [encomendas, setEncomendas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [highlightPedidoId, setHighlightPedidoId] = useState<number | null>(null);
+    const [highlightEncomendaIds, setHighlightEncomendaIds] = useState<number[]>([]);
     const [selectedEncomenda, setSelectedEncomenda] = useState<any | null>(null);
     const [showRececaoModal, setShowRececaoModal] = useState(false);
     const [openStatusId, setOpenStatusId] = useState<number | null>(null);
@@ -39,6 +41,45 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     useEffect(() => {
         loadEncomendas();
     }, []);
+
+    // Ao entrar na página, limpar o badge da sidebar (mas manter o highlight)
+    useEffect(() => {
+        localStorage.removeItem('encomendas:badge');
+        window.dispatchEvent(new Event('encomendas:badge'));
+    }, []);
+
+    // Ler contexto de highlight (pedido/encomendas criadas) e aplicar efeito temporário
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem('encomendas:highlight');
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            const pid = Number(parsed?.pedidoId);
+            const ids = Array.isArray(parsed?.encomendaIds) ? parsed.encomendaIds.map((n: any) => Number(n)).filter((n: any) => Number.isFinite(n)) : [];
+            setHighlightPedidoId(Number.isFinite(pid) ? pid : null);
+            setHighlightEncomendaIds(ids);
+
+            const clear = () => {
+                setHighlightPedidoId(null);
+                setHighlightEncomendaIds([]);
+                localStorage.removeItem('encomendas:highlight');
+                window.removeEventListener('mousedown', clear);
+                window.removeEventListener('keydown', clear);
+                window.removeEventListener('wheel', clear as any);
+            };
+
+            // Some after a few seconds OR next user input
+            const t = window.setTimeout(clear, 6000);
+            window.addEventListener('mousedown', clear, { once: true });
+            window.addEventListener('keydown', clear, { once: true });
+            window.addEventListener('wheel', clear as any, { once: true, passive: true } as any);
+            return () => window.clearTimeout(t);
+        } catch {
+            // ignore
+        }
+    }, []);
+
+    const highlightedSet = useMemo(() => new Set(highlightEncomendaIds), [highlightEncomendaIds]);
 
     // Fechar dropdown ao clicar fora
     useEffect(() => {
@@ -117,13 +158,27 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 const cfg = ESTADO_CONFIG[enc.estado] || ESTADO_CONFIG.EMITIDA;
                                 const EstadoIcon = cfg.icon;
                                 const isEntregue = enc.estado === 'ENTREGUE';
+                                const isCancelada = enc.estado === 'CANCELADA';
                                 const isEnviada = enc.estado === 'ENVIADA';
                                 const isParcial = enc.estado === 'ENTREGUE_PARCIAL';
                                 const isEmitida = enc.estado === 'EMITIDA';
                                 const podeReceber = isEnviada || isParcial;
+                                const isFromHighlightedPedido =
+                                    (highlightPedidoId != null && Number(enc.pedidoCompraId) === highlightPedidoId) ||
+                                    (highlightPedidoId != null && Number(enc.pedidoCompra?.id) === highlightPedidoId);
+                                const isHighlighted = highlightedSet.has(Number(enc.id)) || (highlightEncomendaIds.length === 0 && isFromHighlightedPedido);
 
                                 return (
-                                    <tr key={enc.id} className={`hover:bg-slate-50/60 transition-colors ${isEntregue ? 'bg-emerald-50/30' : ''}`}>
+                                    <tr
+                                        key={enc.id}
+                                        className={`hover:bg-slate-50/60 transition-colors ${
+                                            isEntregue ? 'bg-emerald-50/30' : ''
+                                        } ${
+                                            isHighlighted
+                                                ? 'bg-gradient-to-r from-emerald-50/90 via-white to-emerald-50/90 border-l-4 border-emerald-400 ring-1 ring-emerald-200 shadow-[0_12px_35px_rgba(16,185,129,0.14)] animate-in fade-in duration-300'
+                                                : ''
+                                        }`}
+                                    >
                                         {/* Código */}
                                         <td className="px-5 py-4">
                                             <span className="font-black text-slate-900 tracking-wide">{enc.codigoFormatado}</span>

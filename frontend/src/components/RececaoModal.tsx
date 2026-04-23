@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, CheckCircle2, Package, AlertCircle, AlertTriangle } from 'lucide-react';
 import { encomendaService } from '../services/encomendaService';
 

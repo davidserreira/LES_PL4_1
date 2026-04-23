@@ -197,7 +197,8 @@ export const atualizarEstado = async (req: Request, res: Response) => {
         // Validação básica de estados (ex: EMITIDA -> ENVIADA -> ENTREGUE)
         const fluxos: Record<string, string[]> = {
             'EMITIDA': ['ENVIADA', 'CANCELADA'],
-            'ENVIADA': ['ENTREGUE', 'CANCELADA'],
+            'ENVIADA': ['ENTREGUE', 'ENTREGUE_PARCIAL', 'CANCELADA'],
+            'ENTREGUE_PARCIAL': ['ENTREGUE', 'CANCELADA'],
             'ENTREGUE': [],
             'CANCELADA': []
         };

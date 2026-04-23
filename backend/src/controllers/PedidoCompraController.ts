@@ -169,10 +169,6 @@ export const cancelarPedido = async (req: Request, res: Response): Promise<any> 
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
 
-        if (!role || (role !== 'ADMINISTRADOR' && role !== 'RESPONSAVEL_STOCK')) {
-            return res.status(403).json({ error: 'Sem permissão para cancelar pedidos de compra.' });
-        }
-
         const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });
 
         if (!pedido) {
@@ -181,6 +177,29 @@ export const cancelarPedido = async (req: Request, res: Response): Promise<any> 
 
         if (pedido.estado === 'CANCELADO') {
             return res.status(400).json({ error: 'Pedido já se encontra cancelado.' });
+        }
+
+        // Regras de cancelamento:
+        // - PROCESSADO: bloqueado e não pode ser cancelado por ninguém
+        // - APROVADO: apenas ADMINISTRADOR
+        // - PENDENTE: ADMINISTRADOR ou RESPONSAVEL_STOCK
+        const estado = (pedido.estado || '').toUpperCase();
+        const userRole = (role || '').toUpperCase();
+
+        if (estado === 'PROCESSADO') {
+            return res.status(400).json({ error: 'Um pedido PROCESSADO está bloqueado e não pode ser cancelado.' });
+        }
+
+        if (estado === 'APROVADO') {
+            if (userRole !== 'ADMINISTRADOR') {
+                return res.status(403).json({ error: 'Apenas Administradores podem cancelar pedidos APROVADOS.' });
+            }
+        } else if (estado === 'PENDENTE') {
+            if (userRole !== 'ADMINISTRADOR' && userRole !== 'RESPONSAVEL_STOCK') {
+                return res.status(403).json({ error: 'Apenas Administradores ou Gestores de Stock podem cancelar pedidos PENDENTES.' });
+            }
+        } else {
+            return res.status(400).json({ error: `Não é possível cancelar um pedido no estado: ${pedido.estado}.` });
         }
 
         const pedidoAtualizado = await prisma.pedidoCompra.update({
