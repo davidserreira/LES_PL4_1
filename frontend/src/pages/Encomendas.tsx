@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, Building2, ClipboardList, AlertTriangle } from 'lucide-react';
+import { PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, Building2, ClipboardList, AlertTriangle, ChevronDown, Package } from 'lucide-react';
 import { encomendaService } from '../services/encomendaService';
+import RececaoModal from '../components/RececaoModal';
+import { Utilizador } from '../services/utilizadorService';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
 const formatDate = (d: string | Date | null) => {
@@ -15,17 +17,48 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: React.
     CANCELADA:{ label: 'Cancelada',color: 'text-red-700 bg-red-50 border-red-200',       icon: XCircle },
 };
 
-export default function Encomendas() {
+export default function Encomendas({ user }: { user: Utilizador }) {
     const [encomendas, setEncomendas] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [selectedEncomenda, setSelectedEncomenda] = useState<any | null>(null);
+    const [showRececaoModal, setShowRececaoModal] = useState(false);
+    const [openStatusId, setOpenStatusId] = useState<number | null>(null);
 
-    useEffect(() => {
+    const isAdmin = user?.role === 'ADMINISTRADOR';
+
+    const loadEncomendas = () => {
+        setLoading(true);
         encomendaService.getAll()
             .then(setEncomendas)
             .catch(() => setError('Erro ao carregar encomendas.'))
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        loadEncomendas();
     }, []);
+
+    // Fechar dropdown ao clicar fora
+    useEffect(() => {
+        const handleClickOutside = () => setOpenStatusId(null);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleMudarEstado = async (id: number, novoEstado: string) => {
+        try {
+            await encomendaService.atualizarEstado(id, novoEstado);
+            loadEncomendas();
+        } catch (err) {
+            alert('Erro ao atualizar estado da encomenda.');
+        }
+    };
+
+    const handleOpenRececao = (enc: any) => {
+        setSelectedEncomenda(enc);
+        setShowRececaoModal(true);
+    };
 
     return (
         <div className="space-y-6">
@@ -69,11 +102,11 @@ export default function Encomendas() {
 
             {/* Table */}
             {!loading && encomendas.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm">
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                {['Código', 'Pedido Origem', 'Fornecedor', 'Itens', 'Total', 'Entrega', 'Estado', 'Emissão'].map(h => (
+                                {['Código', 'Fornecedor', 'Itens', 'Total', 'Entrega', 'Estado', 'Emissão', 'Ações'].map(h => (
                                     <th key={h} className="px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-slate-500">{h}</th>
                                 ))}
                             </tr>
@@ -83,20 +116,18 @@ export default function Encomendas() {
                                 const cfg = ESTADO_CONFIG[enc.estado] || ESTADO_CONFIG.EMITIDA;
                                 const EstadoIcon = cfg.icon;
                                 const isEntregue = enc.estado === 'ENTREGUE';
-                                const isCancelada = enc.estado === 'CANCELADA';
+                                const isEnviada = enc.estado === 'ENVIADA';
+                                const isEmitida = enc.estado === 'EMITIDA';
 
                                 return (
                                     <tr key={enc.id} className={`hover:bg-slate-50/60 transition-colors ${isEntregue ? 'bg-emerald-50/30' : ''}`}>
                                         {/* Código */}
                                         <td className="px-5 py-4">
                                             <span className="font-black text-slate-900 tracking-wide">{enc.codigoFormatado}</span>
-                                        </td>
-                                        {/* Pedido Origem */}
-                                        <td className="px-5 py-4">
-                                            <span className="flex items-center gap-1.5 text-slate-600 font-medium">
-                                                <ClipboardList size={14} className="text-slate-400" />
+                                            <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-400 font-bold uppercase">
+                                                <ClipboardList size={10} />
                                                 {enc.pedidoCompra?.codigoFormatado || `#${enc.pedidoCompraId}`}
-                                            </span>
+                                            </div>
                                         </td>
                                         {/* Fornecedor */}
                                         <td className="px-5 py-4">
@@ -115,9 +146,7 @@ export default function Encomendas() {
                                         </td>
                                         {/* Entrega */}
                                         <td className="px-5 py-4">
-                                            {isCancelada ? (
-                                                <span className="text-slate-400">—</span>
-                                            ) : isEntregue && enc.dataEntregaReal ? (
+                                            {isEntregue && enc.dataEntregaReal ? (
                                                 <span className="flex items-center gap-1.5 text-emerald-700 font-bold">
                                                     <CheckCircle2 size={14} className="shrink-0" />
                                                     {formatDate(enc.dataEntregaReal)}
@@ -128,14 +157,60 @@ export default function Encomendas() {
                                         </td>
                                         {/* Estado */}
                                         <td className="px-5 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full border ${cfg.color}`}>
-                                                <EstadoIcon size={11} />
-                                                {cfg.label}
-                                            </span>
+                                            <div className="relative inline-block">
+                                                {isAdmin && isEmitida ? (
+                                                    <>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenStatusId(openStatusId === enc.id ? null : enc.id);
+                                                            }}
+                                                            className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${cfg.color}`}
+                                                        >
+                                                            <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-70"></span>
+                                                            {cfg.label.toUpperCase()}
+                                                            <ChevronDown size={12} className={`ml-1.5 opacity-50 transition-transform duration-200 ${openStatusId === enc.id ? 'rotate-180' : ''}`} />
+                                                        </button>
+
+                                                        {openStatusId === enc.id && (
+                                                            <div
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
+                                                            >
+                                                                <button
+                                                                    onClick={() => { handleMudarEstado(enc.id, 'ENVIADA'); setOpenStatusId(null); }}
+                                                                    className="w-full text-left px-4 py-2 text-[10px] font-black tracking-wider transition-colors flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+                                                                >
+                                                                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                                                    ENVIADA
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${cfg.color}`}>
+                                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-70"></span>
+                                                        {cfg.label.toUpperCase()}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </td>
+
                                         {/* Emissão */}
-                                        <td className="px-5 py-4 text-slate-500 font-medium">
+                                        <td className="px-5 py-4 text-slate-500 font-medium text-sm">
                                             {formatDate(enc.dataEmissao)}
+                                        </td>
+                                        {/* Ações */}
+                                        <td className="px-5 py-4">
+                                            {isEnviada && (
+                                                <button 
+                                                    onClick={() => handleOpenRececao(enc)}
+                                                    className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
+                                                >
+                                                    <Package size={14} />
+                                                    Receber
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 );
@@ -143,6 +218,17 @@ export default function Encomendas() {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {showRececaoModal && selectedEncomenda && (
+                <RececaoModal
+                    encomenda={selectedEncomenda}
+                    onClose={() => setShowRececaoModal(false)}
+                    onSuccess={() => {
+                        setShowRececaoModal(false);
+                        loadEncomendas();
+                    }}
+                />
             )}
         </div>
     );
