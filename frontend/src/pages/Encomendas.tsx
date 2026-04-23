@@ -106,7 +106,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                     <table className="w-full text-sm text-left">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                {['Código', 'Fornecedor', 'Itens', 'Total', 'Entrega', 'Estado', 'Ações'].map(h => (
+                                {['Código', 'Fornecedor', 'Itens', 'Total', 'Entrega', 'Estado', 'Emissão', 'Ações'].map(h => (
                                     <th key={h} className="px-5 py-3.5 text-[11px] font-black uppercase tracking-wider text-slate-500">{h}</th>
                                 ))}
                             </tr>
@@ -167,38 +167,39 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                             }}
                                                             className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${cfg.color}`}
                                                         >
-                                                            <EstadoIcon size={11} className="mr-1.5" />
-                                                            {cfg.label}
-                                                            <ChevronDown size={11} className={`ml-1.5 opacity-60 transition-transform duration-200 ${openStatusId === enc.id ? 'rotate-180' : ''}`} />
+                                                            <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-70"></span>
+                                                            {cfg.label.toUpperCase()}
+                                                            <ChevronDown size={12} className={`ml-1.5 opacity-50 transition-transform duration-200 ${openStatusId === enc.id ? 'rotate-180' : ''}`} />
                                                         </button>
 
                                                         {openStatusId === enc.id && (
                                                             <div
                                                                 onMouseDown={(e) => e.stopPropagation()}
-                                                                className="absolute left-0 top-full mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200"
+                                                                className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
                                                             >
-                                                                <div className="px-3 py-1 mb-1">
-                                                                    <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Alterar Estado</p>
-                                                                </div>
                                                                 <button
                                                                     onClick={() => { handleMudarEstado(enc.id, 'ENVIADA'); setOpenStatusId(null); }}
-                                                                    className="w-full text-left px-3 py-2 text-[11px] font-bold text-amber-600 hover:bg-amber-50 transition-colors flex items-center gap-2"
+                                                                    className="w-full text-left px-4 py-2 text-[10px] font-black tracking-wider transition-colors flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-blue-600"
                                                                 >
-                                                                    <Truck size={14} />
-                                                                    Marcar como Enviada
+                                                                    <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                                                                    ENVIADA
                                                                 </button>
                                                             </div>
                                                         )}
                                                     </>
                                                 ) : (
-                                                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide px-2.5 py-1.5 rounded-full border ${cfg.color}`}>
-                                                        <EstadoIcon size={11} />
-                                                        {cfg.label}
+                                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${cfg.color}`}>
+                                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-70"></span>
+                                                        {cfg.label.toUpperCase()}
                                                     </span>
                                                 )}
                                             </div>
                                         </td>
 
+                                        {/* Emissão */}
+                                        <td className="px-5 py-4 text-slate-500 font-medium text-sm">
+                                            {formatDate(enc.dataEmissao)}
+                                        </td>
                                         {/* Ações */}
                                         <td className="px-5 py-4">
                                             {isEnviada && (
