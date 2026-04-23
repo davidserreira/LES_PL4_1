@@ -89,8 +89,15 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
                                     <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Recebido:</label>
                                     <input
                                         type="number"
+                                        min={0}
+                                        max={item.quantidadePedida}
                                         value={item.quantidadeRecebida}
-                                        onChange={(e) => updateQuantidade(item.linhaId, e.target.value)}
+                                        onChange={(e) => {
+                                            let val = parseFloat(e.target.value) || 0;
+                                            if (val < 0) val = 0;
+                                            if (val > item.quantidadePedida) val = item.quantidadePedida;
+                                            updateQuantidade(item.linhaId, String(val));
+                                        }}
                                         className="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
                                     />
                                 </div>

@@ -157,50 +157,44 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                         </td>
                                         {/* Estado */}
                                         <td className="px-5 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide px-2.5 py-1 rounded-full border ${cfg.color}`}>
-                                                    <EstadoIcon size={11} />
-                                                    {cfg.label}
-                                                </span>
-                                                
-                                                {isAdmin && isEmitida && (
-                                                    <div className="relative">
-                                                        <button 
+                                            <div className="relative inline-block">
+                                                {isAdmin && isEmitida ? (
+                                                    <>
+                                                        <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
                                                                 setOpenStatusId(openStatusId === enc.id ? null : enc.id);
                                                             }}
-                                                            className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 transition-all"
+                                                            className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${cfg.color}`}
                                                         >
-                                                            <ChevronDown size={14} className={`transition-transform duration-200 ${openStatusId === enc.id ? 'rotate-180' : ''}`} />
+                                                            <EstadoIcon size={11} className="mr-1.5" />
+                                                            {cfg.label}
+                                                            <ChevronDown size={11} className={`ml-1.5 opacity-60 transition-transform duration-200 ${openStatusId === enc.id ? 'rotate-180' : ''}`} />
                                                         </button>
 
                                                         {openStatusId === enc.id && (
-                                                            <div 
+                                                            <div
                                                                 onMouseDown={(e) => e.stopPropagation()}
-                                                                className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200"
+                                                                className="absolute left-0 top-full mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-200"
                                                             >
                                                                 <div className="px-3 py-1 mb-1">
                                                                     <p className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Alterar Estado</p>
                                                                 </div>
-                                                                <button 
-                                                                    onClick={() => handleMudarEstado(enc.id, 'ENVIADA')}
+                                                                <button
+                                                                    onClick={() => { handleMudarEstado(enc.id, 'ENVIADA'); setOpenStatusId(null); }}
                                                                     className="w-full text-left px-3 py-2 text-[11px] font-bold text-amber-600 hover:bg-amber-50 transition-colors flex items-center gap-2"
                                                                 >
                                                                     <Truck size={14} />
                                                                     Marcar como Enviada
                                                                 </button>
-                                                                <div className="h-px bg-slate-100 my-1" />
-                                                                <button 
-                                                                    onClick={() => handleMudarEstado(enc.id, 'CANCELADA')}
-                                                                    className="w-full text-left px-3 py-2 text-[11px] font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
-                                                                >
-                                                                    <XCircle size={14} />
-                                                                    Cancelar Encomenda
-                                                                </button>
                                                             </div>
                                                         )}
-                                                    </div>
+                                                    </>
+                                                ) : (
+                                                    <span className={`inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide px-2.5 py-1.5 rounded-full border ${cfg.color}`}>
+                                                        <EstadoIcon size={11} />
+                                                        {cfg.label}
+                                                    </span>
                                                 )}
                                             </div>
                                         </td>
