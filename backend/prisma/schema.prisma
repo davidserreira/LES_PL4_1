@@ -161,7 +161,7 @@ model LinhaEncomenda {
   produtoId     Int
   produto       Produto   @relation(fields: [produtoId], references: [id])
 
-  quantidade    Float
-  precoUnitario Float
-  valorTotal    Float
+  quantidade          Float
+  precoUnitario       Float
+  valorTotal          Float
 }

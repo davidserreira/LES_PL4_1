@@ -1,10 +1,18 @@
 import { Router } from 'express';
-import { gerarEncomendas, getAllEncomendas, getEncomendaById } from '../controllers/EncomendaController';
+import { 
+    gerarEncomendas, 
+    getAllEncomendas, 
+    getEncomendaById, 
+    atualizarEstado, 
+    receberEncomenda 
+} from '../controllers/EncomendaController';
 
 const router = Router();
 
 router.post('/gerar/:pedidoId', gerarEncomendas);
 router.get('/', getAllEncomendas);
 router.get('/:id', getEncomendaById);
+router.patch('/:id/estado', atualizarEstado);
+router.patch('/:id/receber', receberEncomenda);
 
 export default router;

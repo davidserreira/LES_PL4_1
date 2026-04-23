@@ -181,3 +181,86 @@ export const getEncomendaById = async (req: Request, res: Response) => {
         return res.status(500).json({ error: 'Erro interno.' });
     }
 };
+
+// PATCH /encomendas/:id/estado
+export const atualizarEstado = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { estado } = req.body;
+
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+    if (!estado) return res.status(400).json({ error: 'Estado não fornecido.' });
+
+    try {
+        const encomenda = await prisma.encomenda.findUnique({ where: { id } });
+        if (!encomenda) return res.status(404).json({ error: 'Encomenda não encontrada.' });
+
+        // Validação básica de estados (ex: EMITIDA -> ENVIADA -> ENTREGUE)
+        const fluxos: Record<string, string[]> = {
+            'EMITIDA': ['ENVIADA', 'CANCELADA'],
+            'ENVIADA': ['ENTREGUE', 'CANCELADA'],
+            'ENTREGUE': [],
+            'CANCELADA': []
+        };
+
+        if (!fluxos[encomenda.estado].includes(estado)) {
+            return res.status(400).json({ 
+                error: `Transição de estado inválida de ${encomenda.estado} para ${estado}.` 
+            });
+        }
+
+        const updated = await prisma.encomenda.update({
+            where: { id },
+            data: { estado }
+        });
+
+        return res.json(updated);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Erro ao atualizar estado.' });
+    }
+};
+
+// PATCH /encomendas/:id/receber
+export const receberEncomenda = async (req: Request, res: Response) => {
+    const id = Number(req.params.id);
+    const { itens } = req.body; 
+
+    if (isNaN(id)) return res.status(400).json({ error: 'ID de encomenda inválido.' });
+    if (!Array.isArray(itens)) return res.status(400).json({ error: 'Lista de itens inválida.' });
+
+    try {
+        console.log(`[RECECAO] Processando encomenda #${id}`, itens);
+
+        const encomenda = await prisma.encomenda.findUnique({
+            where: { id },
+            include: { linhas: true }
+        });
+
+        if (!encomenda) return res.status(404).json({ error: 'Encomenda não encontrada.' });
+        
+        // Permitir receber se estiver ENVIADA ou EMITIDA (flexibilidade)
+        if (encomenda.estado === 'ENTREGUE') {
+            return res.status(400).json({ error: 'Esta encomenda já foi entregue.' });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            // Atualizar estado da encomenda para ENTREGUE
+            await tx.encomenda.update({
+                where: { id },
+                data: {
+                    estado: 'ENTREGUE',
+                    dataEntregaReal: new Date()
+                }
+            });
+        });
+
+        console.log(`[RECECAO] Encomenda #${id} finalizada com sucesso.`);
+        return res.json({ message: 'Receção registada com sucesso!' });
+    } catch (err: any) {
+        console.error('[RECECAO] Erro fatal:', err);
+        return res.status(500).json({ 
+            error: 'Erro interno ao registar receção.',
+            details: err.message 
+        });
+    }
+};
