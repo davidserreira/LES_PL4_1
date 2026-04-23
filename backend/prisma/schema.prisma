@@ -130,6 +130,7 @@ model LinhaPedidoCompra {
 enum EstadoEncomenda {
   EMITIDA
   ENVIADA
+  ENTREGUE_PARCIAL
   ENTREGUE
   CANCELADA
 }
@@ -162,6 +163,7 @@ model LinhaEncomenda {
   produto       Produto   @relation(fields: [produtoId], references: [id])
 
   quantidade          Float
+  quantidadeRecebida  Float   @default(0)
   precoUnitario       Float
   valorTotal          Float
 }

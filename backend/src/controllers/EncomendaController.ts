@@ -223,7 +223,7 @@ export const atualizarEstado = async (req: Request, res: Response) => {
 // PATCH /encomendas/:id/receber
 export const receberEncomenda = async (req: Request, res: Response) => {
     const id = Number(req.params.id);
-    const { itens } = req.body; 
+    const { itens } = req.body;
 
     if (isNaN(id)) return res.status(400).json({ error: 'ID de encomenda inválido.' });
     if (!Array.isArray(itens)) return res.status(400).json({ error: 'Lista de itens inválida.' });
@@ -237,54 +237,79 @@ export const receberEncomenda = async (req: Request, res: Response) => {
         });
 
         if (!encomenda) return res.status(404).json({ error: 'Encomenda não encontrada.' });
-        
-        // Permitir receber se estiver ENVIADA ou EMITIDA (flexibilidade)
+
         if (encomenda.estado === 'ENTREGUE') {
-            return res.status(400).json({ error: 'Esta encomenda já foi entregue.' });
+            return res.status(400).json({ error: 'Esta encomenda já foi totalmente entregue.' });
+        }
+
+        if (encomenda.estado !== 'ENVIADA' && encomenda.estado !== 'ENTREGUE_PARCIAL') {
+            return res.status(400).json({ error: 'A encomenda tem de estar em estado ENVIADA ou ENTREGUE_PARCIAL para ser recebida.' });
         }
 
         await prisma.$transaction(async (tx) => {
-            // Incrementar o stock de cada produto com a quantidade recebida
             for (const item of itens) {
                 const linhaId = Number(item.linhaId);
-                const qtdRecebida = Number(item.quantidadeRecebida);
+                const qtdNovaRecebida = Number(item.quantidadeRecebida);
 
-                if (isNaN(linhaId) || isNaN(qtdRecebida) || qtdRecebida <= 0) continue;
+                if (isNaN(linhaId) || isNaN(qtdNovaRecebida) || qtdNovaRecebida <= 0) continue;
 
-                // Obter o produtoId da linha da encomenda
+                // Buscar a linha atual para saber o acumulado e o produtoId
                 const linha = await tx.linhaEncomenda.findUnique({
                     where: { id: linhaId },
-                    select: { produtoId: true, quantidade: true }
+                    select: { produtoId: true, quantidade: true, quantidadeRecebida: true }
                 });
 
                 if (!linha) continue;
 
-                // Incrementar o stock do produto com a quantidade efetivamente recebida
-                await tx.produto.update({
-                    where: { id: linha.produtoId },
-                    data: { stock: { increment: qtdRecebida } }
+                // Calcular novo acumulado (não ultrapassar o total pedido)
+                const novoAcumulado = Math.min(
+                    linha.quantidadeRecebida + qtdNovaRecebida,
+                    linha.quantidade
+                );
+                const qtdEfetiva = novoAcumulado - linha.quantidadeRecebida;
+
+                if (qtdEfetiva <= 0) continue;
+
+                // Atualizar quantidadeRecebida acumulada na linha
+                await tx.linhaEncomenda.update({
+                    where: { id: linhaId },
+                    data: { quantidadeRecebida: novoAcumulado }
                 });
 
-                console.log(`[RECECAO] Produto #${linha.produtoId} stock +${qtdRecebida}`);
+                // Incrementar stock do produto apenas com a quantidade nova desta receção
+                await tx.produto.update({
+                    where: { id: linha.produtoId },
+                    data: { stock: { increment: qtdEfetiva } }
+                });
+
+                console.log(`[RECECAO] Produto #${linha.produtoId} stock +${qtdEfetiva} (acumulado: ${novoAcumulado}/${linha.quantidade})`);
             }
 
-            // Atualizar estado da encomenda para ENTREGUE
+            // Reler todas as linhas atualizadas para avaliar se está completa
+            const linhasAtualizadas = await tx.linhaEncomenda.findMany({
+                where: { encomendaId: id }
+            });
+
+            const todasCompletas = linhasAtualizadas.every(l => l.quantidadeRecebida >= l.quantidade);
+            const novoEstado = todasCompletas ? 'ENTREGUE' : 'ENTREGUE_PARCIAL';
+
             await tx.encomenda.update({
                 where: { id },
                 data: {
-                    estado: 'ENTREGUE',
-                    dataEntregaReal: new Date()
+                    estado: novoEstado,
+                    dataEntregaReal: todasCompletas ? new Date() : null
                 }
             });
+
+            console.log(`[RECECAO] Encomenda #${id} → ${novoEstado}`);
         });
 
-        console.log(`[RECECAO] Encomenda #${id} finalizada com sucesso.`);
         return res.json({ message: 'Receção registada com sucesso!' });
     } catch (err: any) {
         console.error('[RECECAO] Erro fatal:', err);
-        return res.status(500).json({ 
+        return res.status(500).json({
             error: 'Erro interno ao registar receção.',
-            details: err.message 
+            details: err.message
         });
     }
 };

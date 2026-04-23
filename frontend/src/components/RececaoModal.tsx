@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { X, CheckCircle2, Package, AlertCircle } from 'lucide-react';
+import { X, CheckCircle2, Package, AlertCircle, AlertTriangle } from 'lucide-react';
 import { encomendaService } from '../services/encomendaService';
 
 interface Linha {
     id: number;
     produto: { nome: string };
     quantidade: number;
+    quantidadeRecebida: number;
 }
 
 interface Encomenda {
@@ -22,15 +23,23 @@ interface RececaoModalProps {
 
 export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoModalProps) {
     const [itens, setItens] = useState(
-        encomenda.linhas.map(l => ({
-            linhaId: l.id,
-            nome: l.produto.nome,
-            quantidadePedida: l.quantidade,
-            quantidadeRecebida: l.quantidade
-        }))
+        encomenda.linhas.map(l => {
+            const porReceber = Math.max(0, l.quantidade - (l.quantidadeRecebida || 0));
+            return {
+                linhaId: l.id,
+                nome: l.produto.nome,
+                quantidadePedida: l.quantidade,
+                jaRecebido: l.quantidadeRecebida || 0,
+                porReceber,
+                quantidadeRecebida: porReceber // pré-preenchido com o restante
+            };
+        })
     );
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Calcular se vai ser total ou parcial
+    const seraTotal = itens.every(it => it.jaRecebido + it.quantidadeRecebida >= it.quantidadePedida);
 
     const handleConfirmar = async () => {
         setLoading(true);
@@ -46,8 +55,13 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
     };
 
     const updateQuantidade = (linhaId: number, value: string) => {
-        const val = parseFloat(value) || 0;
-        setItens(prev => prev.map(it => it.linhaId === linhaId ? { ...it, quantidadeRecebida: val } : it));
+        setItens(prev => prev.map(it => {
+            if (it.linhaId !== linhaId) return it;
+            let val = parseFloat(value) || 0;
+            if (val < 0) val = 0;
+            if (val > it.porReceber) val = it.porReceber;
+            return { ...it, quantidadeRecebida: val };
+        }));
     };
 
     return (
@@ -78,27 +92,46 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
                         </div>
                     )}
 
+                    {/* Preview total/parcial */}
+                    <div className={`mb-5 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-semibold border ${seraTotal ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+                        {seraTotal
+                            ? <><CheckCircle2 size={16} /> Esta receção irá <strong>completar</strong> a encomenda.</>
+                            : <><AlertTriangle size={16} /> Esta receção será <strong>parcial</strong> — ainda haverá itens por receber.</>
+                        }
+                    </div>
+
                     <div className="space-y-4">
                         {itens.map((item) => (
-                            <div key={item.linhaId} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                                <div className="flex-1">
-                                    <p className="font-bold text-slate-800">{item.nome}</p>
-                                    <p className="text-xs text-slate-500 mt-0.5">Quantidade Pedida: <span className="font-semibold text-slate-700">{item.quantidadePedida}</span></p>
+                            <div key={item.linhaId} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="flex-1">
+                                        <p className="font-bold text-slate-800">{item.nome}</p>
+                                        <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-500">
+                                            <span>Pedido: <span className="font-bold text-slate-700">{item.quantidadePedida}</span></span>
+                                            {item.jaRecebido > 0 && (
+                                                <span className="text-emerald-600 font-bold">Já recebido: {item.jaRecebido}</span>
+                                            )}
+                                            <span className="text-amber-600 font-bold">Por receber: {item.porReceber}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider whitespace-nowrap">Agora:</label>
+                                        <input
+                                            type="number"
+                                            min={0}
+                                            max={item.porReceber}
+                                            value={item.quantidadeRecebida}
+                                            onChange={(e) => updateQuantidade(item.linhaId, e.target.value)}
+                                            disabled={item.porReceber === 0}
+                                            className="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Recebido:</label>
-                                    <input
-                                        type="number"
-                                        min={0}
-                                        max={item.quantidadePedida}
-                                        value={item.quantidadeRecebida}
-                                        onChange={(e) => {
-                                            let val = parseFloat(e.target.value) || 0;
-                                            if (val < 0) val = 0;
-                                            if (val > item.quantidadePedida) val = item.quantidadePedida;
-                                            updateQuantidade(item.linhaId, String(val));
-                                        }}
-                                        className="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all"
+                                {/* Progress bar */}
+                                <div className="mt-3 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div
+                                        className="h-full bg-emerald-500 rounded-full transition-all"
+                                        style={{ width: `${Math.min(100, ((item.jaRecebido + item.quantidadeRecebida) / item.quantidadePedida) * 100)}%` }}
                                     />
                                 </div>
                             </div>
@@ -108,10 +141,7 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
 
                 {/* Footer */}
                 <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200/50 rounded-xl transition-all"
-                    >
+                    <button onClick={onClose} className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200/50 rounded-xl transition-all">
                         Cancelar
                     </button>
                     <button
@@ -131,3 +161,4 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
         </div>
     );
 }
+
