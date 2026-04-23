@@ -244,6 +244,30 @@ export const receberEncomenda = async (req: Request, res: Response) => {
         }
 
         await prisma.$transaction(async (tx) => {
+            // Incrementar o stock de cada produto com a quantidade recebida
+            for (const item of itens) {
+                const linhaId = Number(item.linhaId);
+                const qtdRecebida = Number(item.quantidadeRecebida);
+
+                if (isNaN(linhaId) || isNaN(qtdRecebida) || qtdRecebida <= 0) continue;
+
+                // Obter o produtoId da linha da encomenda
+                const linha = await tx.linhaEncomenda.findUnique({
+                    where: { id: linhaId },
+                    select: { produtoId: true, quantidade: true }
+                });
+
+                if (!linha) continue;
+
+                // Incrementar o stock do produto com a quantidade efetivamente recebida
+                await tx.produto.update({
+                    where: { id: linha.produtoId },
+                    data: { stock: { increment: qtdRecebida } }
+                });
+
+                console.log(`[RECECAO] Produto #${linha.produtoId} stock +${qtdRecebida}`);
+            }
+
             // Atualizar estado da encomenda para ENTREGUE
             await tx.encomenda.update({
                 where: { id },
