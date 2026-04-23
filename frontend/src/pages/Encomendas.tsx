@@ -11,10 +11,11 @@ const formatDate = (d: string | Date | null) => {
 };
 
 const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-    EMITIDA:  { label: 'Emitida',  color: 'text-blue-700 bg-blue-50 border-blue-200',    icon: Clock },
-    ENVIADA:  { label: 'Enviada',  color: 'text-amber-700 bg-amber-50 border-amber-200', icon: Truck },
-    ENTREGUE: { label: 'Entregue', color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle2 },
-    CANCELADA:{ label: 'Cancelada',color: 'text-red-700 bg-red-50 border-red-200',       icon: XCircle },
+    EMITIDA:          { label: 'Emitida',          color: 'text-blue-700 bg-blue-50 border-blue-200',      icon: Clock },
+    ENVIADA:          { label: 'Enviada',          color: 'text-amber-700 bg-amber-50 border-amber-200',   icon: Truck },
+    ENTREGUE_PARCIAL: { label: 'Parcial',          color: 'text-orange-700 bg-orange-50 border-orange-200', icon: Package },
+    ENTREGUE:         { label: 'Entregue',         color: 'text-emerald-700 bg-emerald-50 border-emerald-200', icon: CheckCircle2 },
+    CANCELADA:        { label: 'Cancelada',        color: 'text-red-700 bg-red-50 border-red-200',         icon: XCircle },
 };
 
 export default function Encomendas({ user }: { user: Utilizador }) {
@@ -117,7 +118,9 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 const EstadoIcon = cfg.icon;
                                 const isEntregue = enc.estado === 'ENTREGUE';
                                 const isEnviada = enc.estado === 'ENVIADA';
+                                const isParcial = enc.estado === 'ENTREGUE_PARCIAL';
                                 const isEmitida = enc.estado === 'EMITIDA';
+                                const podeReceber = isEnviada || isParcial;
 
                                 return (
                                     <tr key={enc.id} className={`hover:bg-slate-50/60 transition-colors ${isEntregue ? 'bg-emerald-50/30' : ''}`}>
@@ -202,13 +205,13 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                         </td>
                                         {/* Ações */}
                                         <td className="px-5 py-4">
-                                            {isEnviada && (
+                                            {podeReceber && (
                                                 <button 
                                                     onClick={() => handleOpenRececao(enc)}
                                                     className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
                                                 >
                                                     <Package size={14} />
-                                                    Receber
+                                                    {isParcial ? 'Receber Restante' : 'Receber'}
                                                 </button>
                                             )}
                                         </td>
