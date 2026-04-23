@@ -116,7 +116,7 @@ export default function PedidosCompra() {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
-    const canViewHistorico = user?.role === 'RESPONSAVEL_STOCK' || user?.role === 'RESPONSAVEL_FINANCEIRO';
+    const canViewHistorico = user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'ADMINISTRADOR';
     const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO']), []);
     const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
     const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO'], []);
@@ -154,8 +154,8 @@ export default function PedidosCompra() {
         }
 
         if (estado === 'APROVADO') {
-            if (user.role !== 'ADMINISTRADOR') {
-                showToast('Apenas Administradores podem cancelar pedidos APROVADOS.', 'error');
+            if (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') {
+                showToast('Apenas Administradores ou Gestores Financeiros podem cancelar pedidos APROVADOS.', 'error');
                 return;
             }
         } else if (estado === 'PENDENTE') {
@@ -1301,14 +1301,14 @@ export default function PedidosCompra() {
                                                                     estadoUpper !== 'CANCELADO' ? (
                                                                         <button
                                                                             disabled={
-                                                                                (estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR') ||
+                                                                                (estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') ||
                                                                                 (!['PENDENTE', 'APROVADO'].includes(estadoUpper)) ||
-                                                                                (estadoUpper !== 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
+                                                                                (estadoUpper === 'PENDENTE' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
                                                                             }
                                                                             onClick={() => handleCancelar(p.id)}
-                                                                            className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${(estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR') ||
+                                                                            className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${(estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') ||
                                                                                     (!['PENDENTE', 'APROVADO'].includes(estadoUpper)) ||
-                                                                                    (estadoUpper !== 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
+                                                                                    (estadoUpper === 'PENDENTE' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
                                                                                     ? 'text-slate-400 cursor-not-allowed'
                                                                                     : 'text-red-600 hover:bg-red-50'
                                                                                 }`}
