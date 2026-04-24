@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
     Plus, Package, AlertTriangle, CheckCircle2, X, AlertCircle, 
     Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal, Check,
-    MoreVertical, Pencil, MousePointer2
+    MoreVertical, Pencil, MousePointer2, History
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
@@ -10,6 +10,7 @@ import EditarProdutoModal from '../components/EditarProdutoModal';
 import PedidoAutomaticoModal from '../components/PedidoAutomaticoModal';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 import DetalhesProdutoModal from '../components/DetalhesProdutoModal';
+import HistoricoStockModal from '../components/HistoricoStockModal';
 
 interface Produto {
     id: number;
@@ -58,6 +59,7 @@ const Catalogo = () => {
     // Header 3-dot actions menu (Adicionar Produto)
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
     const actionsMenuRef = useRef<HTMLDivElement>(null);
+    const [isHistoricoModalOpen, setIsHistoricoModalOpen] = useState(false);
 
     // Per-row 3-dot menu
     const [openRowMenuId, setOpenRowMenuId] = useState<number | null>(null);
@@ -290,7 +292,7 @@ const Catalogo = () => {
                                         <MoreHorizontal size={20} />
                                     </button>
                                     {isActionsMenuOpen && (
-                                        <div className="absolute top-[calc(100%+8px)] right-0 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-30 py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                        <div className="absolute top-[calc(100%+8px)] right-0 w-60 bg-white border border-slate-200 rounded-xl shadow-xl z-30 py-1.5 animate-in fade-in zoom-in-95 duration-150">
                                             <button
                                                 onClick={() => { setIsActionsMenuOpen(false); setIsModalOpen(true); }}
                                                 className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
@@ -301,6 +303,19 @@ const Catalogo = () => {
                                                 <div>
                                                     <p className="font-semibold text-slate-800">Adicionar Produto</p>
                                                     <p className="text-[11px] text-slate-400 font-medium">Novo item no stock</p>
+                                                </div>
+                                            </button>
+                                            <div className="my-1 border-t border-slate-100" />
+                                            <button
+                                                onClick={() => { setIsActionsMenuOpen(false); setIsHistoricoModalOpen(true); }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left"
+                                            >
+                                                <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                                                    <History size={16} />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-slate-800">Consultar Histórico</p>
+                                                    <p className="text-[11px] text-slate-400 font-medium">Entradas de stock recebidas</p>
                                                 </div>
                                             </button>
                                         </div>
@@ -696,6 +711,11 @@ const Catalogo = () => {
                 isOpen={!!productToView}
                 onClose={() => setProductToView(null)}
                 produto={productToView!}
+            />
+
+            <HistoricoStockModal
+                isOpen={isHistoricoModalOpen}
+                onClose={() => setIsHistoricoModalOpen(false)}
             />
         </div>
     );

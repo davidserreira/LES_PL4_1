@@ -340,3 +340,42 @@ export const receberEncomenda = async (req: Request, res: Response) => {
         });
     }
 };
+
+
+// GET /encomendas/historico
+export const getHistoricoStock = async (req: Request, res: Response) => {
+    try {
+        const linhas = await prisma.linhaEncomenda.findMany({
+            where: {
+                quantidadeRecebida: { gt: 0 }
+            },
+            include: {
+                produto: {
+                    select: { id: true, nome: true, categoria: true, preco: true }
+                },
+                encomenda: {
+                    select: {
+                        id: true,
+                        codigoFormatado: true,
+                        estado: true,
+                        dataEmissao: true,
+                        dataEntregaPrevista: true,
+                        dataEntregaReal: true,
+                        fornecedor: {
+                            select: { id: true, nome: true }
+                        }
+                    }
+                }
+            },
+            orderBy: [
+                { encomenda: { dataEmissao: 'desc' } },
+                { id: 'asc' }
+            ]
+        });
+
+        return res.json(linhas);
+    } catch (err: any) {
+        console.error('[HISTORICO] Erro:', err);
+        return res.status(500).json({ error: 'Erro ao obter histórico de stock.', details: err.message });
+    }
+};
