@@ -42,6 +42,7 @@ interface DetalhesEncomendaModalProps {
     encomenda: Encomenda | null;
     onUpdateEstado: (id: number, novoEstado: string) => void;
     onReceber: (enc: Encomenda) => void;
+    isAdmin?: boolean;
 }
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(v || 0);
@@ -58,7 +59,7 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: any }>
     CANCELADA:        { label: 'Cancelada',        color: 'text-red-700 bg-red-50 border-red-200',         icon: XCircle },
 };
 
-export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onUpdateEstado, onReceber }: DetalhesEncomendaModalProps) {
+export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onUpdateEstado, onReceber, isAdmin }: DetalhesEncomendaModalProps) {
     if (!isOpen || !encomenda) return null;
 
     const cfg = ESTADO_CONFIG[encomenda.estado] || ESTADO_CONFIG.EMITIDA;
@@ -221,7 +222,7 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                     </button>
                     
                     <div className="flex items-center gap-3">
-                        {!isFinalizada && (
+                        {isAdmin && !isFinalizada && (
                             <button 
                                 onClick={() => onUpdateEstado(encomenda.id, 'CANCELADA')}
                                 className="px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-all"
@@ -230,7 +231,7 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                             </button>
                         )}
 
-                        {isEmitida && (
+                        {isAdmin && isEmitida && (
                             <button 
                                 onClick={() => onUpdateEstado(encomenda.id, 'ENVIADA')}
                                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
@@ -239,14 +240,18 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                             </button>
                         )}
 
-                        {(isEnviada || isParcial) && (
-                            <button 
-                                onClick={() => onReceber(encomenda)}
-                                className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-                            >
-                                <Package size={16} /> {isParcial ? 'Receber Restante' : 'Registar Receção'}
-                            </button>
-                        )}
+                        <button 
+                            onClick={() => !isFinalizada && onReceber(encomenda)}
+                            disabled={isFinalizada}
+                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                                isFinalizada
+                                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95'
+                            }`}
+                        >
+                            <Package size={16} /> 
+                            {isParcial ? 'Receber Restante' : isFinalizada ? 'Receção Concluída' : 'Registar Receção'}
+                        </button>
                     </div>
                 </div>
             </div>

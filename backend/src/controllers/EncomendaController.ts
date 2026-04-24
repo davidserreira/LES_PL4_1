@@ -269,8 +269,8 @@ export const receberEncomenda = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Esta encomenda já foi totalmente entregue.' });
         }
 
-        if (encomenda.estado !== 'ENVIADA' && encomenda.estado !== 'ENTREGUE_PARCIAL') {
-            return res.status(400).json({ error: 'A encomenda tem de estar em estado ENVIADA ou ENTREGUE_PARCIAL para ser recebida.' });
+        if (encomenda.estado !== 'ENVIADA' && encomenda.estado !== 'ENTREGUE_PARCIAL' && encomenda.estado !== 'EMITIDA') {
+            return res.status(400).json({ error: 'A encomenda tem de estar em estado EMITIDA, ENVIADA ou ENTREGUE_PARCIAL para ser recebida.' });
         }
 
         await prisma.$transaction(async (tx) => {

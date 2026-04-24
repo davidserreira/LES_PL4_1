@@ -383,7 +383,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                     const isEnviada = enc.estado === 'ENVIADA';
                                     const isParcial = enc.estado === 'ENTREGUE_PARCIAL';
                                     const isEmitida = enc.estado === 'EMITIDA';
-                                    const podeReceber = isEnviada || isParcial;
+                                    const isFinalizada = enc.estado === 'ENTREGUE' || enc.estado === 'CANCELADA';
+                                    const podeReceber = !isFinalizada;
                                     
                                     const isFromHighlightedPedido =
                                         (highlightPedidoId != null && Number(enc.pedidoCompraId) === highlightPedidoId) ||
@@ -448,22 +449,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                                                     <button 
-                                                        onClick={() => handleOpenDetails(enc)}
-                                                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                        title="Ver Detalhes"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!isFinalizada) handleOpenRececao(enc);
+                                                        }}
+                                                        disabled={isFinalizada}
+                                                        className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border ${
+                                                            isFinalizada 
+                                                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60' 
+                                                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20'
+                                                        }`}
+                                                        title={isFinalizada ? 'Encomenda finalizada' : 'Registar receção'}
                                                     >
-                                                        <Eye size={16} />
+                                                        <Package size={14} />
+                                                        {isParcial ? 'Receber Restante' : 'Receber Encomenda'}
                                                     </button>
-                                                    
-                                                    {podeReceber && (
-                                                        <button 
-                                                            onClick={() => handleOpenRececao(enc)}
-                                                            className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm shadow-emerald-600/20 transition-all hover:scale-105 active:scale-95"
-                                                        >
-                                                            <Package size={14} />
-                                                            {isParcial ? 'Receber Restante' : 'Receber'}
-                                                        </button>
-                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -499,6 +499,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                         setShowDetailsModal(false);
                         handleOpenRececao(enc);
                     }}
+                    isAdmin={isAdmin}
                 />
             )}
         </div>
