@@ -56,4 +56,58 @@
     .animate-shake {
         animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
     }
+
+    @keyframes login-drift {
+        0%,
+        100% {
+            transform: translate(0, 0) scale(1);
+        }
+
+        50% {
+            transform: translate(4%, -5%) scale(1.06);
+        }
+    }
+
+    @keyframes login-drift-reverse {
+        0%,
+        100% {
+            transform: translate(0, 0) scale(1);
+        }
+
+        50% {
+            transform: translate(-5%, 4%) scale(1.04);
+        }
+    }
+
+    @keyframes login-shield-glow {
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgb(16 185 129 / 0.25);
+        }
+
+        50% {
+            box-shadow: 0 0 24px 2px rgb(16 185 129 / 0.2);
+        }
+    }
+
+    .animate-login-drift {
+        animation: login-drift 22s ease-in-out infinite;
+    }
+
+    .animate-login-drift-reverse {
+        animation: login-drift-reverse 28s ease-in-out infinite;
+    }
+
+    .animate-login-shield-glow {
+        animation: login-shield-glow 4s ease-in-out infinite;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+
+        .animate-login-drift,
+        .animate-login-drift-reverse,
+        .animate-login-shield-glow {
+            animation: none;
+        }
+    }
 }

@@ -6,74 +6,128 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  ADMINISTRADOR
-  RESPONSAVEL_STOCK
-  RESPONSAVEL_FINANCEIRO
-}
-
 model Utilizador {
-  id       Int    @id @default(autoincrement())
-  username String @unique
-  password String @default("123456") // Para simplicidade neste estágio
-  role     Role   @default(RESPONSAVEL_STOCK)
-
-  pedidos PedidoCompra[]
+  id         Int            @id @default(autoincrement())
+  password   String         @default("123456")
+  role       Role           @default(RESPONSAVEL_STOCK)
+  username   String         @unique
+  ativo      Boolean        @default(true)
   avaliacoes Avaliacao[]
+  pedidos    PedidoCompra[]
 }
 
 model Produto {
-  id          Int      @id @default(autoincrement())
-  nome        String
-  stock       Float    @default(0)
-  stockMinimo Float    @default(0) // US1.4 - Definir Stock Mínimo
-  preco       Float    @default(0)
-  categoria   String?
-  descricao   String?
-  criadoEm    DateTime @default(now())
-
-  linhasPedido LinhaPedidoCompra[]
-  fornecedores Fornecedor[] // US1.9 - Associar Fornecedor a Produto
+  id              Int                 @id @default(autoincrement())
+  nome            String
+  criadoEm        DateTime            @default(now())
+  stock           Float               @default(0)
+  stockMinimo     Float               @default(0)
+  categoria       String?
+  descricao       String?
+  preco           Float               @default(0)
+  linhasEncomenda LinhaEncomenda[]
+  linhasPedido    LinhaPedidoCompra[]
+  fornecedores    Fornecedor[]        @relation("FornecedorToProduto")
 }
 
 model Fornecedor {
-  id          Int      @id @default(autoincrement())
-  nome        String
-  nif         String   @unique
-  contacto    String
-  email       String   @unique
-  estado      Boolean  @default(true)
-  categoria   String
-  observacoes String?  @db.Text
-  criadoEm    DateTime @default(now())
-
-  // Condições Comerciais / Compra
-  valorMinimoEncomenda Float?
-  prazoMedioEntrega    Int?
+  id                   Int                 @id @default(autoincrement())
+  nome                 String
+  nif                  String              @unique
+  contacto             String
+  categoria            String
+  criadoEm             DateTime            @default(now())
+  email                String              @unique
+  estado               Boolean             @default(true)
+  observacoes          String?
   custoTransporte      Float?
-  metodoPagamento      String?
   diasEntrega          String?
-
-  produtos   Produto[] // US1.9 - Associar a Produto
-  avaliacoes Avaliacao[] // US1.8 - Avaliar Fornecedor
+  metodoPagamento      String?
+  prazoMedioEntrega    Int?
+  valorMinimoEncomenda Float?
+  avaliacoes           Avaliacao[]
+  encomendas           Encomenda[]
+  linhasPedido         LinhaPedidoCompra[]
+  produtos             Produto[]           @relation("FornecedorToProduto")
 }
 
 model Avaliacao {
   id           Int        @id @default(autoincrement())
   fornecedorId Int
-  fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id])
+  comentario   String?
+  dataCriacao  DateTime   @default(now())
+  comunicacao  Int        @default(3)
+  conformidade Int        @default(3)
+  pontualidade Int        @default(3)
+  preco        Int        @default(3)
+  qualidade    Int        @default(3)
   utilizadorId Int
+  fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id])
   utilizador   Utilizador @relation(fields: [utilizadorId], references: [id])
 
-  qualidade    Int      @default(3) // 1-5
-  pontualidade Int      @default(3) // 1-5
-  comunicacao  Int      @default(3) // 1-5
-  preco        Int      @default(3) // 1-5
-  conformidade Int      @default(3) // 1-5
-  comentario   String?
-  dataCriacao  DateTime @default(now())
-
   @@unique([fornecedorId, utilizadorId])
+}
+
+model PedidoCompra {
+  id                 Int                 @id @default(autoincrement())
+  estado             String              @default("PENDENTE")
+  atualizadoEm       DateTime            @updatedAt
+  criadoEm           DateTime            @default(now())
+  criadoPorId        Int?
+  valorTotalEstimado Float               @default(0)
+  prioridade         PrioridadePedido    @default(NORMAL)
+  tipo               TipoPedido          @default(MANUAL)
+  observacoes        String?
+  encomendas         Encomenda[]
+  linhas             LinhaPedidoCompra[]
+  criadoPor          Utilizador?         @relation(fields: [criadoPorId], references: [id])
+}
+
+model LinhaPedidoCompra {
+  id             Int          @id @default(autoincrement())
+  pedidoCompraId Int
+  produtoId      Int
+  quantidade     Float
+  precoUnitario  Float
+  valorTotal     Float
+  fornecedorId   Int?
+  fornecedor     Fornecedor?  @relation(fields: [fornecedorId], references: [id])
+  pedidoCompra   PedidoCompra @relation(fields: [pedidoCompraId], references: [id])
+  produto        Produto      @relation(fields: [produtoId], references: [id])
+}
+
+model Encomenda {
+  id                  Int              @id @default(autoincrement())
+  codigoFormatado     String           @unique
+  estado              EstadoEncomenda  @default(EMITIDA)
+  dataEmissao         DateTime         @default(now())
+  dataEntregaPrevista DateTime?
+  dataEntregaReal     DateTime?
+  valorTotal          Float            @default(0)
+  observacoes         String?
+  fornecedorId        Int
+  pedidoCompraId      Int
+  fornecedor          Fornecedor       @relation(fields: [fornecedorId], references: [id])
+  pedidoCompra        PedidoCompra     @relation(fields: [pedidoCompraId], references: [id])
+  linhas              LinhaEncomenda[]
+}
+
+model LinhaEncomenda {
+  id            Int       @id @default(autoincrement())
+  encomendaId   Int
+  produtoId     Int
+  quantidade          Float
+  quantidadeRecebida  Float   @default(0)
+  precoUnitario       Float
+  valorTotal          Float
+  encomenda     Encomenda @relation(fields: [encomendaId], references: [id])
+  produto       Produto   @relation(fields: [produtoId], references: [id])
+}
+
+enum Role {
+  ADMINISTRADOR
+  RESPONSAVEL_STOCK
+  RESPONSAVEL_FINANCEIRO
 }
 
 enum TipoPedido {
@@ -87,32 +141,10 @@ enum PrioridadePedido {
   URGENTE
 }
 
-model PedidoCompra {
-  id                 Int              @id @default(autoincrement())
-  estado             String           @default("PENDENTE")
-  prioridade         PrioridadePedido @default(NORMAL)
-  tipo               TipoPedido       @default(MANUAL)
-  valorTotalEstimado Float            @default(0)
-  observacoes        String?          @db.Text
-
-  criadoPorId Int?
-  criadoPor   Utilizador? @relation(fields: [criadoPorId], references: [id])
-
-  criadoEm     DateTime @default(now())
-  atualizadoEm DateTime @updatedAt
-
-  linhas LinhaPedidoCompra[]
-}
-
-model LinhaPedidoCompra {
-  id             Int          @id @default(autoincrement())
-  pedidoCompraId Int
-  pedidoCompra   PedidoCompra @relation(fields: [pedidoCompraId], references: [id])
-
-  produtoId Int
-  produto   Produto @relation(fields: [produtoId], references: [id])
-
-  quantidade    Float
-  precoUnitario Float
-  valorTotal    Float
+enum EstadoEncomenda {
+  EMITIDA
+  ENVIADA
+  ENTREGUE_PARCIAL
+  ENTREGUE
+  CANCELADA
 }

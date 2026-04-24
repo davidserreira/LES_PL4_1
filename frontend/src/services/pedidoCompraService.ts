@@ -9,6 +9,11 @@ export const pedidoCompraService = {
         const response = await api.get('/pedidos');
         return response.data;
     },
+    getById: async (id: number) => {
+        const response = await api.get(`/pedidos/${id}`);
+        return response.data;
+    },
+
     getRascunhos: async () => {
         const response = await api.get('/pedidos/rascunhos');
         return response.data;
@@ -29,7 +34,7 @@ export const pedidoCompraService = {
         const response = await api.patch(`/pedidos/${id}/cancelar`, payload);
         return response.data;
     },
-    aprovarPedido: async (id: number, payload: { userId: number, role: string }) => {
+    aprovarPedido: async (id: number, payload: { userId: number, role: string, linhasAprovadas?: any[] }) => {
         const response = await api.patch(`/pedidos/${id}/aprovar`, payload);
         return response.data;
     },
@@ -39,6 +44,10 @@ export const pedidoCompraService = {
     },
     updateStatusAdmin: async (id: number, role: string, novoEstado: string) => {
         const response = await api.patch(`/pedidos/${id}/status-admin`, { role, novoEstado });
+        return response.data;
+    },
+    reverterPedido: async (id: number) => {
+        const response = await api.patch(`/pedidos/${id}/reverter`);
         return response.data;
     }
 };

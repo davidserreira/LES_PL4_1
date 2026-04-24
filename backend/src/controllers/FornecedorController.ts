@@ -37,7 +37,8 @@ export const getFornecedores = async (req: Request, res: Response) => {
             include: {
                 produtos: {
                     select: { id: true, nome: true, categoria: true, stock: true }
-                }
+                },
+                avaliacoes: true
             },
             orderBy: { nome: 'asc' }
         });

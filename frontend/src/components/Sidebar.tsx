@@ -1,7 +1,7 @@
 
 import { useEffect, useState, useRef } from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList, PackageCheck, ChevronDown, ShoppingCart } from 'lucide-react';
 import { Utilizador } from '../services/utilizadorService';
 
 interface SidebarProps {
@@ -13,7 +13,47 @@ interface SidebarProps {
 
 const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     const [showLogout, setShowLogout] = useState(false);
+    const [comprasOpen, setComprasOpen] = useState(false);
+    const [encomendasBadge, setEncomendasBadge] = useState<number>(0);
     const sidebarRef = useRef<HTMLElement>(null);
+    const location = useLocation();
+
+    // Auto-open "Compras" group if on a compras sub-route
+    useEffect(() => {
+        if (location.pathname === '/pedidos' || location.pathname === '/encomendas') {
+            setComprasOpen(true);
+        }
+    }, [location.pathname]);
+
+    // Badge de encomendas (aparece só após criar encomendas)
+    useEffect(() => {
+        const readBadge = () => {
+            try {
+                const raw = localStorage.getItem('encomendas:badge');
+                if (!raw) return setEncomendasBadge(0);
+                const parsed = JSON.parse(raw);
+                const count = Number(parsed?.count || 0);
+                setEncomendasBadge(Number.isFinite(count) ? count : 0);
+            } catch {
+                setEncomendasBadge(0);
+            }
+        };
+        readBadge();
+        const onEvt = () => readBadge();
+        window.addEventListener('encomendas:badge', onEvt as any);
+        window.addEventListener('storage', onEvt);
+        return () => {
+            window.removeEventListener('encomendas:badge', onEvt as any);
+            window.removeEventListener('storage', onEvt);
+        };
+    }, []);
+
+    // Ao abrir a tab/página de encomendas, o badge desaparece
+    useEffect(() => {
+        if (location.pathname !== '/encomendas') return;
+        localStorage.removeItem('encomendas:badge');
+        setEncomendasBadge(0);
+    }, [location.pathname]);
 
     useEffect(() => {
         const handleClick = (event: MouseEvent) => {
@@ -27,7 +67,6 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                 setShowLogout(false);
             }
 
-            // Close sidebar if clicked outside and not collapsed
             if (sidebarRef.current && !sidebarRef.current.contains(target) && !isCollapsed) {
                 onToggle();
             }
@@ -46,15 +85,24 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
         }
     };
 
+    const comprasRoles = ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'];
+    const showCompras = comprasRoles.includes(user.role);
+    const isComprasActive = location.pathname === '/pedidos' || location.pathname === '/encomendas';
+
     const menuItems = [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
         { to: '/catalogo', label: 'Stock', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
         { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
-        { to: '/pedidos', label: 'Pedidos de Compra', icon: ClipboardList, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
         { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },
     ];
 
     const filteredItems = menuItems.filter(item => item.roles.includes(user.role));
+
+    const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+        `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
+            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+        } ${isCollapsed ? 'justify-center' : ''}`;
 
     return (
         <aside ref={sidebarRef} className={`bg-slate-900 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50`}>
@@ -141,17 +189,8 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                         <li key={item.to}>
                             <NavLink
                                 to={item.to}
-                                onClick={() => {
-                                    if (isCollapsed) {
-                                        onToggle();
-                                    }
-                                }}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
-                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-                                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                    } ${isCollapsed ? 'justify-center' : ''}`
-                                }
+                                onClick={() => { if (isCollapsed) onToggle(); }}
+                                className={navLinkClass}
                                 title={isCollapsed ? item.label : ""}
                             >
                                 <item.icon size={22} className="shrink-0" />
@@ -159,6 +198,86 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                             </NavLink>
                         </li>
                     ))}
+
+                    {/* Grupo Compras */}
+                    {showCompras && (
+                        <li>
+                            {/* Group header */}
+                            <button
+                                onClick={() => {
+                                    if (isCollapsed) { onToggle(); setComprasOpen(true); }
+                                    else setComprasOpen(prev => !prev);
+                                }}
+                                title={isCollapsed ? 'Compras' : ''}
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                                    isComprasActive && !comprasOpen
+                                        ? 'bg-emerald-600 text-white'
+                                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <span className="relative shrink-0">
+                                        <ShoppingCart size={22} />
+                                        {encomendasBadge > 0 && (
+                                            <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 shadow">
+                                                +{encomendasBadge}
+                                            </span>
+                                        )}
+                                    </span>
+                                    {!isCollapsed && <span className="font-medium text-sm">Compras</span>}
+                                </div>
+                                {!isCollapsed && (
+                                    <ChevronDown
+                                        size={16}
+                                        className={`transition-transform duration-200 ${comprasOpen ? 'rotate-180' : ''}`}
+                                    />
+                                )}
+                            </button>
+
+                            {/* Sub-items */}
+                            {!isCollapsed && comprasOpen && (
+                                <ul className="mt-1 ml-4 pl-3 border-l border-slate-700 space-y-1">
+                                    <li>
+                                        <NavLink
+                                            to="/pedidos"
+                                            onClick={() => { if (isCollapsed) onToggle(); }}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isActive
+                                                    ? 'bg-emerald-600/80 text-white'
+                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                                }`
+                                            }
+                                        >
+                                            <ClipboardList size={17} className="shrink-0" />
+                                            <span className="font-medium">Pedidos</span>
+                                        </NavLink>
+                                    </li>
+                                    <li>
+                                        <NavLink
+                                            to="/encomendas"
+                                            onClick={() => { if (isCollapsed) onToggle(); }}
+                                            className={({ isActive }) =>
+                                                `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isActive
+                                                    ? 'bg-emerald-600/80 text-white'
+                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                                }`
+                                            }
+                                        >
+                                            <span className="relative shrink-0">
+                                                <PackageCheck size={17} />
+                                                {encomendasBadge > 0 && (
+                                                    <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 shadow">
+                                                        +{encomendasBadge}
+                                                    </span>
+                                                )}
+                                            </span>
+                                            <span className="font-medium">Encomendas</span>
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            )}
+                        </li>
+                    )}
                 </ul>
             </nav>
 

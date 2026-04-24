@@ -105,7 +105,16 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
             include: {
                 linhas: {
                     include: {
-                        produto: true,
+                        produto: {
+                            include: {
+                                fornecedores: {
+                                    include: { avaliacoes: true }
+                                }
+                            }
+                        },
+                        fornecedor: {
+                            include: { avaliacoes: true }
+                        }
                     }
                 },
                 criadoPor: true,
@@ -119,16 +128,46 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
     }
 };
 
+export const getPedidoById = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const id = Number(req.params.id);
+        if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
+
+        const pedido = await prisma.pedidoCompra.findUnique({
+            where: { id },
+            include: {
+                linhas: {
+                    include: {
+                        produto: {
+                            include: {
+                                fornecedores: {
+                                    include: { avaliacoes: true }
+                                }
+                            }
+                        },
+                        fornecedor: {
+                            include: { avaliacoes: true }
+                        }
+                    }
+                },
+                criadoPor: true,
+            }
+        });
+
+        if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
+        return res.json(mapPedidoToDTO(pedido));
+    } catch (error) {
+        console.error('Erro ao obter Pedido de Compra:', error);
+        return res.status(500).json({ error: 'Erro interno ao obter pedido de compra.' });
+    }
+};
+
 export const cancelarPedido = async (req: Request, res: Response): Promise<any> => {
     try {
         const id = Number(req.params.id);
         const { userId, role } = req.body;
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
-
-        if (!role || (role !== 'ADMINISTRADOR' && role !== 'RESPONSAVEL_STOCK')) {
-            return res.status(403).json({ error: 'Sem permissão para cancelar pedidos de compra.' });
-        }
 
         const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });
 
@@ -138,6 +177,29 @@ export const cancelarPedido = async (req: Request, res: Response): Promise<any> 
 
         if (pedido.estado === 'CANCELADO') {
             return res.status(400).json({ error: 'Pedido já se encontra cancelado.' });
+        }
+
+        // Regras de cancelamento:
+        // - PROCESSADO: bloqueado e não pode ser cancelado por ninguém
+        // - APROVADO: apenas ADMINISTRADOR
+        // - PENDENTE: ADMINISTRADOR ou RESPONSAVEL_STOCK
+        const estado = (pedido.estado || '').toUpperCase();
+        const userRole = (role || '').toUpperCase();
+
+        if (estado === 'PROCESSADO') {
+            return res.status(400).json({ error: 'Um pedido PROCESSADO está bloqueado e não pode ser cancelado.' });
+        }
+
+        if (estado === 'APROVADO') {
+            if (userRole !== 'ADMINISTRADOR') {
+                return res.status(403).json({ error: 'Apenas Administradores podem cancelar pedidos APROVADOS.' });
+            }
+        } else if (estado === 'PENDENTE') {
+            if (userRole !== 'ADMINISTRADOR' && userRole !== 'RESPONSAVEL_STOCK') {
+                return res.status(403).json({ error: 'Apenas Administradores ou Gestores de Stock podem cancelar pedidos PENDENTES.' });
+            }
+        } else {
+            return res.status(400).json({ error: `Não é possível cancelar um pedido no estado: ${pedido.estado}.` });
         }
 
         const pedidoAtualizado = await prisma.pedidoCompra.update({
@@ -163,7 +225,7 @@ export const cancelarPedido = async (req: Request, res: Response): Promise<any> 
 export const aprovarPedido = async (req: Request, res: Response): Promise<any> => {
     try {
         const id = Number(req.params.id);
-        const { userId, role } = req.body;
+        const { userId, role, linhasAprovadas } = req.body;
 
         if (!id) return res.status(400).json({ error: 'ID do pedido inválido.' });
 
@@ -171,7 +233,7 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
             return res.status(403).json({ error: 'Apenas Administradores ou Responsáveis Financeiros podem aprovar pedidos.' });
         }
 
-        const pedido = await prisma.pedidoCompra.findUnique({ where: { id } });
+        const pedido = await prisma.pedidoCompra.findUnique({ where: { id }, include: { linhas: true } });
 
         if (!pedido) {
             return res.status(404).json({ error: 'Pedido de compra não encontrado.' });
@@ -181,17 +243,59 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
             return res.status(400).json({ error: `Não é possível aprovar um pedido no estado: ${pedido.estado}.` });
         }
 
-        const pedidoAtualizado = await prisma.pedidoCompra.update({
-            where: { id },
-            data: { estado: 'APROVADO' },
-            include: {
-                linhas: {
-                    include: {
-                        produto: true,
-                    }
-                },
-                criadoPor: true,
+        if (!linhasAprovadas || !Array.isArray(linhasAprovadas) || linhasAprovadas.length === 0) {
+            return res.status(400).json({ error: 'Deve aprovar pelo menos uma linha com fornecedor selecionado.' });
+        }
+
+        // Validar que cada fornecedor pertence efetivamente ao produto daquela linha (regra crítica)
+        for (const linhaAprovada of linhasAprovadas) {
+            const linhaDB = await prisma.linhaPedidoCompra.findUnique({
+                where: { id: linhaAprovada.id },
+                include: { produto: { include: { fornecedores: true } } }
+            });
+            if (!linhaDB) {
+                throw new Error(`Linha ${linhaAprovada.id} não encontrada.`);
             }
+            const fornecedorValido = linhaDB.produto.fornecedores.some((f: any) => f.id === linhaAprovada.fornecedorId);
+            if (!fornecedorValido) {
+                throw new Error(`Fornecedor ${linhaAprovada.fornecedorId} não está associado ao produto da linha ${linhaAprovada.id}.`);
+            }
+        }
+
+        // Executar a "Aprovação" numa Transação de Base de Dados para consistência relacional
+        const pedidoAtualizado = await prisma.$transaction(async (tx) => {
+            const approvedLineIds = linhasAprovadas.map((l: any) => l.id);
+
+            // 1. Eliminar as linhas que o utilizador escolheu "Remover" na Fase 1
+            await tx.linhaPedidoCompra.deleteMany({
+                where: {
+                    pedidoCompraId: id,
+                    id: { notIn: approvedLineIds }
+                }
+            });
+
+            // 2. Atualizar as linhas sobreviventes com o Fornecedor escolhido na Fase 2
+            for (const linha of linhasAprovadas) {
+                await tx.linhaPedidoCompra.update({
+                    where: { id: linha.id },
+                    data: { fornecedorId: linha.fornecedorId }
+                });
+            }
+
+            // 3. Modificar o estado final na Tabela PedidoCompra
+            return await tx.pedidoCompra.update({
+                where: { id },
+                data: { estado: 'APROVADO' },
+                include: {
+                    linhas: {
+                        include: {
+                            produto: true,
+                            fornecedor: true
+                        }
+                    },
+                    criadoPor: true,
+                }
+            });
         });
 
         return res.json(mapPedidoToDTO(pedidoAtualizado));
@@ -472,3 +576,37 @@ export const updateStatusAdmin = async (req: Request, res: Response): Promise<an
     }
 };
 
+// PATCH /pedidos/:id/reverter — volta à PENDENTE, limpa fornecedores das linhas
+export const reverterPedido = async (req: Request, res: Response): Promise<any> => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    try {
+        const pedido = await prisma.pedidoCompra.findUnique({
+            where: { id },
+            include: { encomendas: true }
+        });
+
+        if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
+        if (pedido.estado !== 'APROVADO') return res.status(400).json({ error: 'Apenas pedidos APROVADOS podem ser revertidos.' });
+        if (pedido.encomendas.length > 0) return res.status(400).json({ error: 'Não é possível reverter um pedido com encomendas geradas.' });
+
+        await prisma.$transaction([
+            // Limpar fornecedorId de todas as linhas
+            prisma.linhaPedidoCompra.updateMany({
+                where: { pedidoCompraId: id },
+                data: { fornecedorId: null }
+            }),
+            // Voltar o pedido a PENDENTE
+            prisma.pedidoCompra.update({
+                where: { id },
+                data: { estado: 'PENDENTE' }
+            })
+        ]);
+
+        return res.json({ message: 'Pedido revertido para PENDENTE com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao reverter pedido:', error);
+        return res.status(500).json({ error: 'Erro interno ao reverter pedido.' });
+    }
+};

@@ -1,10 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Plus, Loader2, MoreVertical, Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, ChevronDown, ClipboardList, AlertTriangle, Clock, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import {
+    Plus,
+    Loader2,
+    MoreVertical,
+    Search,
+    Filter,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    ChevronDown,
+    ClipboardList,
+    AlertTriangle,
+    Clock,
+    CheckCircle2,
+    AlertCircle,
+    X,
+    PackagePlus,
+    Undo2
+} from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
+import { encomendaService } from '../services/encomendaService';
 import type { Utilizador } from '../services/utilizadorService';
 import CriarPedidoCompraModal from '../components/CriarPedidoCompraModal';
 import DetalhesPedidoCompraModal from '../components/DetalhesPedidoCompraModal';
 import RascunhosModal from '../components/RascunhosModal';
+import ModalAprovarPedido from '../components/ModalAprovarPedido';
 
 type PrioridadePedido = 'NORMAL' | 'ALTA' | 'URGENTE';
 
@@ -41,8 +62,6 @@ const formatDate = (value: string | Date) => {
     }
 };
 
-// Função formatPedidoCode apagada - o backend envia codigoFormatado
-
 const getRoleLabel = (role: Utilizador['role']) => {
     switch (role) {
         case 'ADMINISTRADOR':
@@ -57,11 +76,14 @@ const getRoleLabel = (role: Utilizador['role']) => {
 };
 
 export default function PedidosCompra() {
+    const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [pedidos, setPedidos] = useState<PedidoCompra[]>([]);
 
     const [viewMode, setViewMode] = useState<'LISTA' | 'HISTORICO'>('LISTA');
+    type QuickFilter = 'TODOS' | 'GERAL' | 'ATIVOS' | 'URGENTES' | 'RECUSADOS';
+    const [quickFilter, setQuickFilter] = useState<QuickFilter>('TODOS');
     const [searchQuery, setSearchQuery] = useState('');
     const [filterTipo, setFilterTipo] = useState('Todos');
     const [filterEstado, setFilterEstado] = useState('Todos');
@@ -74,11 +96,14 @@ export default function PedidosCompra() {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isRascunhosModalOpen, setIsRascunhosModalOpen] = useState(false);
+    const [isAprovarModalOpen, setIsAprovarModalOpen] = useState(false);
     const [draftsCount, setDraftsCount] = useState(0);
     const [selectedPedido, setSelectedPedido] = useState<PedidoCompra | null>(null);
     const [editingDraftId, setEditingDraftId] = useState<number | null>(null);
     const [pedidoToEdit, setPedidoToEdit] = useState<PedidoCompra | null>(null);
     const [pedidoToCancel, setPedidoToCancel] = useState<number | null>(null);
+    const [pedidoToReverter, setPedidoToReverter] = useState<PedidoCompra | null>(null);
+    const [pedidoToEmitir, setPedidoToEmitir] = useState<number | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
 
     const showToast = (message: string, type: 'success' | 'error') => {
@@ -91,10 +116,11 @@ export default function PedidosCompra() {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
-    const canViewHistorico = user?.role === 'RESPONSAVEL_STOCK' || user?.role === 'RESPONSAVEL_FINANCEIRO';
-    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO']), []);
-    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
-    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'RECUSADO', 'CANCELADO'], []);
+    const canViewHistorico = user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'ADMINISTRADOR';
+    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO']), []);
+    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
+    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO'], []);
+    const geralStatuses = useMemo(() => new Set(['PENDENTE', 'APROVADO', 'RECUSADO', 'PROCESSADO']), []);
 
     useEffect(() => {
         if (canViewHistorico && viewMode === 'HISTORICO' && (filterEstado || '').toUpperCase() === 'PENDENTE') {
@@ -102,26 +128,57 @@ export default function PedidosCompra() {
         }
     }, [canViewHistorico, viewMode, filterEstado]);
 
+    useEffect(() => {
+        const role = user?.role;
+        if (role === 'RESPONSAVEL_FINANCEIRO' || role === 'RESPONSAVEL_STOCK') {
+            if (quickFilter === 'TODOS') setQuickFilter('GERAL');
+        } else {
+            if (quickFilter === 'GERAL' || quickFilter === 'RECUSADOS') setQuickFilter('TODOS');
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user?.role]);
+
     const handleCancelar = (pedidoId: number) => {
-        if (!user || (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')) {
-            showToast('Apenas Administradores ou Gestores de Stock podem cancelar pedidos.', 'error');
+        if (!user) return;
+        const ped = pedidos.find(p => p.id === pedidoId);
+        const estado = (ped?.estado || '').toUpperCase();
+
+        if (estado === 'PROCESSADO') {
+            showToast('Um pedido PROCESSADO está bloqueado e não pode ser cancelado.', 'error');
             return;
         }
+
+        if (estado !== 'PENDENTE' && estado !== 'APROVADO') {
+            showToast(`Não é possível cancelar um pedido no estado: ${ped?.estado || '—'}.`, 'error');
+            return;
+        }
+
+        if (estado === 'APROVADO') {
+            if (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') {
+                showToast('Apenas Administradores ou Gestores Financeiros podem cancelar pedidos APROVADOS.', 'error');
+                return;
+            }
+        } else if (estado === 'PENDENTE') {
+            if (user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK') {
+                showToast('Apenas Administradores ou Gestores de Stock podem cancelar pedidos PENDENTES.', 'error');
+                return;
+            }
+        }
+
         setPedidoToCancel(pedidoId);
         setOpenDropdownId(null);
     };
 
     const confirmCancelar = async () => {
         if (!pedidoToCancel || !user) return;
-        
+
         try {
             await pedidoCompraService.cancelarPedido(pedidoToCancel, {
                 userId: user.id,
                 role: user.role
             });
-            
-            // Update local state without fetching all again
-            setPedidos(pedidos.map(p => 
+
+            setPedidos(pedidos.map(p =>
                 p.id === pedidoToCancel ? { ...p, estado: 'CANCELADO' } : p
             ));
             showToast('Pedido cancelado com sucesso!', 'success');
@@ -133,37 +190,16 @@ export default function PedidosCompra() {
         }
     };
 
-    const handleAprovar = async (pedidoId: number) => {
-        if (!user || (user.role !== 'RESPONSAVEL_FINANCEIRO' && user.role !== 'ADMINISTRADOR')) return;
-        
-        try {
-            await pedidoCompraService.aprovarPedido(pedidoId, {
-                userId: user.id,
-                role: user.role
-            });
-            
-            setPedidos(pedidos.map(p => 
-                p.id === pedidoId ? { ...p, estado: 'APROVADO' } : p
-            ));
-            showToast('Pedido aprovado com sucesso!', 'success');
-        } catch (err: any) {
-            console.error(err);
-            showToast(err.response?.data?.error || 'Não foi possível aprovar o pedido.', 'error');
-        } finally {
-            setOpenDropdownId(null);
-        }
-    };
-
     const handleRecusar = async (pedidoId: number) => {
         if (!user || (user.role !== 'RESPONSAVEL_FINANCEIRO' && user.role !== 'ADMINISTRADOR')) return;
-        
+
         try {
             await pedidoCompraService.recusarPedido(pedidoId, {
                 userId: user.id,
                 role: user.role
             });
-            
-            setPedidos(pedidos.map(p => 
+
+            setPedidos(pedidos.map(p =>
                 p.id === pedidoId ? { ...p, estado: 'RECUSADO' } : p
             ));
             showToast('Pedido recusado.', 'success');
@@ -180,8 +216,8 @@ export default function PedidosCompra() {
 
         try {
             await pedidoCompraService.updateStatusAdmin(pedidoId, user.role, novoEstado);
-            
-            setPedidos(pedidos.map(p => 
+
+            setPedidos(pedidos.map(p =>
                 p.id === pedidoId ? { ...p, estado: novoEstado } : p
             ));
             showToast('Estado do pedido atualizado com sucesso!', 'success');
@@ -193,10 +229,83 @@ export default function PedidosCompra() {
         }
     };
 
+    const handleReverterPedido = (pedidoId: number) => {
+        const ped = pedidos.find(p => p.id === pedidoId) || selectedPedido;
+        if (ped) setPedidoToReverter(ped);
+        setIsDetailsModalOpen(false);
+    };
+
+    const confirmReverter = async () => {
+        if (!pedidoToReverter) return;
+
+        try {
+            await pedidoCompraService.reverterPedido(pedidoToReverter.id);
+            setPedidos(pedidos.map(p =>
+                p.id === pedidoToReverter.id ? { ...p, estado: 'PENDENTE' } : p
+            ));
+            showToast('Pedido revertido para PENDENTE com sucesso.', 'success');
+            setIsDetailsModalOpen(false);
+
+            setPedidoToReverter(null);
+            setTimeout(() => {
+                const revertedPedido = { ...pedidoToReverter, estado: 'PENDENTE' };
+                setSelectedPedido(revertedPedido);
+                setIsAprovarModalOpen(true);
+            }, 100);
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Erro ao reverter o pedido.', 'error');
+            setPedidoToReverter(null);
+        }
+    };
+
+    const handleEmitirEncomenda = (pedidoId: number) => {
+        setPedidoToEmitir(pedidoId);
+        setIsDetailsModalOpen(false);
+    };
+
+    const confirmEmitir = async () => {
+        if (!pedidoToEmitir) return;
+        try {
+            const criadas = await encomendaService.gerarEncomendas(pedidoToEmitir);
+            const encomendaIds = Array.isArray(criadas) ? criadas.map((e: any) => e.id).filter(Boolean) : [];
+            const payload = {
+                pedidoId: pedidoToEmitir,
+                encomendaIds,
+                badgeCount: Array.isArray(criadas) ? criadas.length : encomendaIds.length,
+                createdAt: Date.now(),
+            };
+
+            localStorage.setItem('encomendas:highlight', JSON.stringify(payload));
+            localStorage.setItem('encomendas:badge', JSON.stringify({
+                count: payload.badgeCount,
+                pedidoId: payload.pedidoId,
+                createdAt: payload.createdAt
+            }));
+            window.dispatchEvent(new Event('encomendas:badge'));
+
+            showToast('Encomendas geradas com sucesso!', 'success');
+            setIsDetailsModalOpen(false);
+            setSelectedPedido(null);
+            fetchPedidos();
+        } catch (err: any) {
+            console.error(err);
+            showToast(err.response?.data?.error || 'Erro ao emitir encomenda.', 'error');
+        } finally {
+            setPedidoToEmitir(null);
+        }
+    };
+
+    const goToEncomendasFromPedido = (pedidoId: number) => {
+        const payload = { pedidoId, encomendaIds: [], badgeCount: 0, createdAt: Date.now() };
+        localStorage.setItem('encomendas:highlight', JSON.stringify(payload));
+        navigate('/encomendas');
+    };
 
     const fetchPedidos = () => {
         setLoading(true);
         setError(null);
+
         pedidoCompraService.getAll()
             .then((data: PedidoCompra[]) => setPedidos(data.filter(p => p.estado !== 'RASCUNHO')))
             .catch((e) => {
@@ -204,13 +313,14 @@ export default function PedidosCompra() {
                 setError('Erro ao carregar pedidos de compra.');
             })
             .finally(() => setLoading(false));
-            
+
         if (user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK')) {
             pedidoCompraService.getRascunhos()
                 .then((drafts: any[]) => {
                     const myDrafts = drafts.filter(d => d.criadoPorId === user.id);
                     setDraftsCount(myDrafts.length);
-                }).catch(console.error);
+                })
+                .catch(console.error);
         }
     };
 
@@ -218,6 +328,7 @@ export default function PedidosCompra() {
         let cancelled = false;
         setLoading(true);
         setError(null);
+
         pedidoCompraService.getAll()
             .then((data: PedidoCompra[]) => {
                 if (!cancelled) setPedidos(data.filter(p => p.estado !== 'RASCUNHO'));
@@ -237,7 +348,8 @@ export default function PedidosCompra() {
                         const myDrafts = drafts.filter(d => d.criadoPorId === user.id);
                         setDraftsCount(myDrafts.length);
                     }
-                }).catch(console.error);
+                })
+                .catch(console.error);
         }
 
         return () => {
@@ -245,12 +357,9 @@ export default function PedidosCompra() {
         };
     }, []);
 
-    // Dropdown state for operations
     const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
     const [openStatusAdminId, setOpenStatusAdminId] = useState<number | null>(null);
 
-
-    // Close dropdown on click outside
     useEffect(() => {
         const handleClickOutside = () => {
             setOpenDropdownId(null);
@@ -271,13 +380,38 @@ export default function PedidosCompra() {
     const filteredPedidos = useMemo(() => {
         let result = pedidos;
 
-        if (canViewHistorico) {
+        const role = user?.role;
+        const status = (p: PedidoCompra) => (p.estado || '').toUpperCase();
+
+        if (role === 'RESPONSAVEL_STOCK' || role === 'RESPONSAVEL_FINANCEIRO') {
             if (viewMode === 'HISTORICO') {
-                result = result.filter(p => historicoStatuses.has((p.estado || '').toUpperCase()));
+                result = result.filter(p => historicoStatuses.has(status(p)));
             } else {
-                // Para Gestor de Stock/Financeiro, a lista principal mostra apenas pendentes.
-                result = result.filter(p => (p.estado || '').toUpperCase() === 'PENDENTE');
+                result = result.filter(p => geralStatuses.has(status(p)));
             }
+        } else if (role === 'ADMINISTRADOR') {
+            // Admin vê tudo
+        } else if (canViewHistorico) {
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(p => historicoStatuses.has(status(p)));
+            }
+        }
+
+        const isAtivo = (p: PedidoCompra) => {
+            const est = (p.estado || '').toUpperCase();
+            return est === 'PENDENTE' || est === 'APROVADO';
+        };
+
+        if (quickFilter === 'ATIVOS') {
+            result = result.filter(isAtivo);
+        }
+
+        if (quickFilter === 'URGENTES') {
+            result = result.filter(p => isAtivo(p) && (p.prioridade || '').toUpperCase() === 'URGENTE');
+        }
+
+        if (quickFilter === 'RECUSADOS') {
+            result = result.filter(p => (p.estado || '').toUpperCase() === 'RECUSADO');
         }
 
         if (searchQuery) {
@@ -288,8 +422,11 @@ export default function PedidosCompra() {
                     formatDate(p.criadoEm),
                     p.criadoPor?.username,
                     getRoleLabel(p.criadoPor?.role as any)
-                ].filter(Boolean).join(' ').toLowerCase();
-                
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+
                 return searchString.includes(query);
             });
         }
@@ -303,11 +440,15 @@ export default function PedidosCompra() {
         }
 
         if (filterPrioridade !== 'Todas') {
-            result = result.filter(p => (p.prioridade || '').toUpperCase() === filterPrioridade.toUpperCase() && p.estado !== 'CANCELADO');
+            result = result.filter(p =>
+                (p.prioridade || '').toUpperCase() === filterPrioridade.toUpperCase() &&
+                p.estado !== 'CANCELADO'
+            );
         }
 
         result = [...result].sort((a, b) => {
             let valA, valB;
+
             if (sortField === 'valorTotalEstimado') {
                 valA = a.valorTotalEstimado || 0;
                 valB = b.valorTotalEstimado || 0;
@@ -325,7 +466,7 @@ export default function PedidosCompra() {
                 const strB = b.criadoPor?.username || '';
                 return sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
             } else if (sortField === 'prioridade') {
-                const prioMap = { 'URGENTE': 3, 'ALTA': 2, 'NORMAL': 1, 'BAIXA': 0 };
+                const prioMap = { URGENTE: 3, ALTA: 2, NORMAL: 1, BAIXA: 0 };
                 const numA = a.estado === 'CANCELADO' ? -1 : prioMap[a.prioridade as keyof typeof prioMap] || 0;
                 const numB = b.estado === 'CANCELADO' ? -1 : prioMap[b.prioridade as keyof typeof prioMap] || 0;
                 return sortOrder === 'asc' ? numA - numB : numB - numA;
@@ -334,11 +475,24 @@ export default function PedidosCompra() {
                 const strB = b.estado || '';
                 return sortOrder === 'asc' ? strA.localeCompare(strB) : strB.localeCompare(strA);
             }
+
             return 0;
         });
 
         return result;
-    }, [pedidos, canViewHistorico, viewMode, historicoStatuses, searchQuery, filterEstado, filterTipo, filterPrioridade, sortField, sortOrder]);
+    }, [
+        pedidos,
+        canViewHistorico,
+        viewMode,
+        historicoStatuses,
+        quickFilter,
+        searchQuery,
+        filterEstado,
+        filterTipo,
+        filterPrioridade,
+        sortField,
+        sortOrder
+    ]);
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -350,8 +504,12 @@ export default function PedidosCompra() {
     };
 
     const SortIcon = ({ field }: { field: SortField }) => {
-        if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-400" />;
-        return sortOrder === 'asc' ? <ArrowUp size={14} className="text-emerald-600" /> : <ArrowDown size={14} className="text-emerald-600" />;
+        if (sortField !== field) {
+            return <ArrowUpDown size={14} className="text-slate-300 group-hover:text-slate-400" />;
+        }
+        return sortOrder === 'asc'
+            ? <ArrowUp size={14} className="text-emerald-600" />
+            : <ArrowDown size={14} className="text-emerald-600" />;
     };
 
     const getPriorityStyle = (priority: string) => {
@@ -375,13 +533,13 @@ export default function PedidosCompra() {
                 return 'text-amber-700 bg-amber-50 border-amber-100';
             case 'APROVADO':
                 return 'text-emerald-700 bg-emerald-50 border-emerald-100';
+            case 'PROCESSADO':
+                return 'text-white bg-emerald-500 border-emerald-600 shadow-sm ring-1 ring-emerald-500/50';
             case 'CANCELADO':
             case 'RECUSADO':
                 return 'text-red-700 bg-red-50 border-red-100';
-
             case 'ENTREGUE':
                 return 'text-blue-700 bg-blue-50 border-blue-100';
-
             default:
                 return 'text-slate-700 bg-slate-50 border-slate-200';
         }
@@ -389,8 +547,8 @@ export default function PedidosCompra() {
 
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in duration-300 relative">
-            <CriarPedidoCompraModal 
-                isOpen={isCreateModalOpen} 
+            <CriarPedidoCompraModal
+                isOpen={isCreateModalOpen}
                 draftId={editingDraftId}
                 pedidoToEdit={pedidoToEdit}
                 onClose={(shouldRefresh, msg) => {
@@ -401,7 +559,7 @@ export default function PedidosCompra() {
                         fetchPedidos();
                         showToast(msg || 'Pedido processado com sucesso!', 'success');
                     }
-                }} 
+                }}
             />
 
             <RascunhosModal
@@ -424,28 +582,45 @@ export default function PedidosCompra() {
                 isOpen={isDetailsModalOpen}
                 pedido={selectedPedido}
                 userRole={user?.role}
-                onAprovar={(id) => {
-                    handleAprovar(id);
+                onAprovar={() => {
                     setIsDetailsModalOpen(false);
+                    setIsAprovarModalOpen(true);
                 }}
                 onRecusar={(id) => {
                     handleRecusar(id);
                     setIsDetailsModalOpen(false);
                 }}
+                onEmitirEncomenda={handleEmitirEncomenda}
+                onReverter={handleReverterPedido}
                 onClose={() => {
                     setIsDetailsModalOpen(false);
                     setSelectedPedido(null);
                 }}
             />
 
-            {/* Toast Notification */}
+            <ModalAprovarPedido
+                isOpen={isAprovarModalOpen}
+                pedido={selectedPedido}
+                onClose={(shouldRefresh, msg) => {
+                    setIsAprovarModalOpen(false);
+                    if (shouldRefresh) {
+                        fetchPedidos();
+                        showToast(msg || 'Pedido aprovado com sucesso!', 'success');
+                    } else {
+                        setSelectedPedido(null);
+                    }
+                }}
+            />
+
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
                             ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
                             : 'bg-red-50 border-red-100 text-red-800'
                         }`}>
-                        {toast.type === 'success' ? <CheckCircle2 size={20} className="text-emerald-500" /> : <AlertCircle size={20} className="text-red-500" />}
+                        {toast.type === 'success'
+                            ? <CheckCircle2 size={20} className="text-emerald-500" />
+                            : <AlertCircle size={20} className="text-red-500" />}
                         <span className="text-sm font-bold">{toast.message}</span>
                         <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70 transition-opacity">
                             <X size={16} />
@@ -454,7 +629,66 @@ export default function PedidosCompra() {
                 </div>
             )}
 
-            {/* Cancel Modal */}
+            {pedidoToReverter !== null && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+                                <Undo2 size={24} className="text-amber-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Reverter para Pendente</h3>
+                            <p className="text-sm text-slate-500">
+                                Tem a certeza que pretende reverter este pedido para PENDENTE? Isto libertará todos os fornecedores alocados.
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setPedidoToReverter(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={() => confirmReverter()}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-amber-500 focus:ring-offset-1"
+                            >
+                                Reverter Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {pedidoToEmitir !== null && (
+                <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-6">
+                            <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center mb-4">
+                                <PackagePlus size={24} className="text-emerald-600" />
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Emitir Encomendas</h3>
+                            <p className="text-sm text-slate-500">
+                                Tem a certeza que pretende emitir a(s) encomenda(s) para os fornecedores selecionados?
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setPedidoToEmitir(null)}
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={() => confirmEmitir()}
+                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
+                            >
+                                Sim, Emitir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {pedidoToCancel !== null && (
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
@@ -485,10 +719,7 @@ export default function PedidosCompra() {
                 </div>
             )}
 
-            {/* ── Bloco sticky integrado (Command Center) ── */}
             <div className="shrink-0 bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all flex flex-col gap-4 mb-4 z-40">
-                
-                {/* Linha 1: Título e Botões */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight text-slate-900">Pedidos de Compra</h1>
@@ -523,52 +754,75 @@ export default function PedidosCompra() {
                     </div>
                 </div>
 
-                {/* Linha 2: Dashboard Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <button 
-                        onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
-                        className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterTipo === 'Todos' && filterEstado === 'Todos' && filterPrioridade === 'Todas' && !searchQuery ? 'bg-blue-50/70 border-blue-200 ring-2 ring-blue-500/20' : 'bg-white border-slate-200 hover:border-blue-100 hover:shadow-md'}`}
-                    >
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Total</p>
-                            <h3 className="text-xl font-black text-slate-800 leading-none">{pedidos.length}</h3>
-                        </div>
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                            <ClipboardList size={16} />
-                        </div>
-                    </button>
-                    
-                    <button 
-                        onClick={() => { setFilterPrioridade('URGENTE'); setSearchQuery(''); }}
-                        className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'URGENTE' ? 'bg-red-50/70 border-red-200 ring-2 ring-red-500/20' : 'bg-white border-slate-200 hover:border-red-100 hover:shadow-md'}`}
-                    >
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Urgentes</p>
-                            <h3 className="text-xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'URGENTE' && p.estado !== 'CANCELADO').length}</h3>
-                        </div>
-                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center shrink-0">
-                            <AlertTriangle size={16} />
-                        </div>
-                    </button>
+                    {(() => {
+                        const role = user?.role;
+                        const status = (p: PedidoCompra) => (p.estado || '').toUpperCase();
+                        const isAtivo = (p: PedidoCompra) => ['PENDENTE', 'APROVADO'].includes(status(p));
+                        const countGeral = pedidos.filter(p => ['PENDENTE', 'APROVADO', 'RECUSADO', 'PROCESSADO'].includes(status(p))).length;
+                        const countAtivos = pedidos.filter(isAtivo).length;
+                        const countUrgentes = pedidos.filter(p => isAtivo(p) && (p.prioridade || '').toUpperCase() === 'URGENTE').length;
+                        const countRecusados = pedidos.filter(p => status(p) === 'RECUSADO').length;
 
-                    <button 
-                        onClick={() => { setFilterPrioridade('ALTA'); setSearchQuery(''); }}
-                        className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${filterPrioridade === 'ALTA' ? 'bg-amber-50/70 border-amber-200 ring-2 ring-amber-500/20' : 'bg-white border-slate-200 hover:border-amber-100 hover:shadow-md'}`}
-                    >
-                        <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Alta Prioridade</p>
-                            <h3 className="text-xl font-black text-slate-800 leading-none">{pedidos.filter(p => p.prioridade === 'ALTA' && p.estado !== 'CANCELADO').length}</h3>
-                        </div>
-                        <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                            <Clock size={16} />
-                        </div>
-                    </button>
+                        const cards: Array<{
+                            key: QuickFilter;
+                            label: string;
+                            count: number;
+                            ring: string;
+                            border: string;
+                            iconBg: string;
+                            iconColor: string;
+                            Icon: any;
+                        }> =
+                            role === 'RESPONSAVEL_FINANCEIRO'
+                                ? [
+                                    { key: 'GERAL', label: 'Geral', count: countGeral, ring: 'ring-blue-500/20', border: 'border-blue-200', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', Icon: ClipboardList },
+                                    { key: 'ATIVOS', label: 'Ativos', count: countAtivos, ring: 'ring-emerald-500/20', border: 'border-emerald-200', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', Icon: Clock },
+                                    { key: 'URGENTES', label: 'Urgentes', count: countUrgentes, ring: 'ring-red-500/20', border: 'border-red-200', iconBg: 'bg-red-50', iconColor: 'text-red-600', Icon: AlertTriangle },
+                                ]
+                                : role === 'RESPONSAVEL_STOCK'
+                                    ? [
+                                        { key: 'GERAL', label: 'Geral', count: countGeral, ring: 'ring-blue-500/20', border: 'border-blue-200', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', Icon: ClipboardList },
+                                        { key: 'ATIVOS', label: 'Ativos', count: countAtivos, ring: 'ring-emerald-500/20', border: 'border-emerald-200', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', Icon: Clock },
+                                        { key: 'RECUSADOS', label: 'Recusados', count: countRecusados, ring: 'ring-red-500/20', border: 'border-red-200', iconBg: 'bg-red-50', iconColor: 'text-red-600', Icon: X },
+                                    ]
+                                    : [
+                                        { key: 'TODOS', label: 'Total', count: pedidos.length, ring: 'ring-blue-500/20', border: 'border-blue-200', iconBg: 'bg-blue-50', iconColor: 'text-blue-600', Icon: ClipboardList },
+                                        { key: 'ATIVOS', label: 'Ativos', count: countAtivos, ring: 'ring-emerald-500/20', border: 'border-emerald-200', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600', Icon: Clock },
+                                        { key: 'URGENTES', label: 'Urgentes', count: countUrgentes, ring: 'ring-red-500/20', border: 'border-red-200', iconBg: 'bg-red-50', iconColor: 'text-red-600', Icon: AlertTriangle },
+                                    ];
+
+                        const defaultKey: QuickFilter =
+                            role === 'RESPONSAVEL_FINANCEIRO' || role === 'RESPONSAVEL_STOCK' ? 'GERAL' : 'TODOS';
+
+                        return cards.map((c) => (
+                            <button
+                                key={c.key}
+                                onClick={() => {
+                                    setQuickFilter(c.key);
+                                    setFilterTipo('Todos');
+                                    setFilterEstado('Todos');
+                                    setFilterPrioridade('Todas');
+                                    setSearchQuery('');
+                                }}
+                                className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${quickFilter === c.key || (quickFilter === 'TODOS' && c.key === defaultKey)
+                                        ? `bg-white ${c.border} ring-2 ${c.ring}`
+                                        : 'bg-white border-slate-200 hover:shadow-md'
+                                    }`}
+                            >
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{c.label}</p>
+                                    <h3 className="text-xl font-black text-slate-800 leading-none">{c.count}</h3>
+                                </div>
+                                <div className={`w-8 h-8 rounded-lg ${c.iconBg} ${c.iconColor} flex items-center justify-center shrink-0`}>
+                                    <c.Icon size={16} />
+                                </div>
+                            </button>
+                        ));
+                    })()}
                 </div>
 
-                {/* Linha 3: 2 Blocks Separados (Pesquisa + Filtros) */}
                 <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
-                    
-                    {/* Search Bar Container */}
                     {pedidos.length > 0 && (
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm relative z-10 flex-grow">
                             <div className="relative w-full max-w-md">
@@ -587,147 +841,204 @@ export default function PedidosCompra() {
                         </div>
                     )}
 
-                {/* Filtros Container */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
-                    <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
-                        <Filter size={16} />
-                        Filtros
-                    </div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                        <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
+                            <Filter size={16} />
+                            Filtros
+                        </div>
 
-                    {/* Vista: Lista / Histórico */}
-                    {canViewHistorico && (
-                        <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto">
+                        {canViewHistorico && (
+                            <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto">
+                                <button
+                                    onClick={() => {
+                                        setViewMode('LISTA');
+                                        setFilterEstado('Todos');
+                                    }}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA'
+                                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                >
+                                    Lista
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setViewMode('HISTORICO');
+                                        setFilterEstado('Todos');
+                                    }}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO'
+                                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
+                                            : 'text-slate-600 hover:text-slate-900'
+                                        }`}
+                                >
+                                    Histórico
+                                </button>
+                            </div>
+                        )}
+
+                        {canViewHistorico && <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>}
+
+                        <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto overflow-x-auto custom-scrollbar">
                             <button
-                                onClick={() => {
-                                    setViewMode('LISTA');
-                                    setFilterEstado('Todos');
-                                }}
-                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                onClick={() => setFilterTipo('Todos')}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'Todos'
+                                        ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                    }`}
                             >
-                                Lista
+                                Todos
                             </button>
                             <button
-                                onClick={() => {
-                                    setViewMode('HISTORICO');
-                                    setFilterEstado('Todos');
-                                }}
-                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                onClick={() => setFilterTipo('MANUAL')}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'MANUAL'
+                                        ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                    }`}
                             >
-                                Histórico
+                                Manuais
+                            </button>
+                            <button
+                                onClick={() => setFilterTipo('AUTOMATICO')}
+                                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'AUTOMATICO'
+                                        ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50'
+                                        : 'text-slate-600 hover:text-slate-900'
+                                    }`}
+                            >
+                                Automáticos
                             </button>
                         </div>
-                    )}
 
-                    {canViewHistorico && <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>}
+                        <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
 
-                    {/* Tipo de Pedido Segmented Tabs */}
-                    <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto overflow-x-auto custom-scrollbar">
-                        <button
-                            onClick={() => setFilterTipo('Todos')}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'Todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                        >
-                            Todos
-                        </button>
-                        <button
-                            onClick={() => setFilterTipo('MANUAL')}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'MANUAL' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                        >
-                            Manuais
-                        </button>
-                        <button
-                            onClick={() => setFilterTipo('AUTOMATICO')}
-                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'AUTOMATICO' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
-                        >
-                            Automáticos
-                        </button>
-                    </div>
+                        <div className="flex w-full sm:w-auto gap-2">
+                            {(!canViewHistorico || viewMode === 'HISTORICO') && (
+                                <div className="relative flex-1 sm:min-w-[150px]">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsFilterPrioridadeOpen(false);
+                                            setIsFilterEstadoOpen(!isFilterEstadoOpen);
+                                        }}
+                                        className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos'
+                                                ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                                : 'border-slate-200 text-slate-700 hover:border-slate-300'
+                                            }`}
+                                    >
+                                        <span className="truncate">{filterEstado === 'Todos' ? 'Estado' : filterEstado}</span>
+                                        <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
+                                    </button>
 
-                    <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+                                    {isFilterEstadoOpen && (
+                                        <div
+                                            onMouseDown={(e) => e.stopPropagation()}
+                                            className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                        >
+                                            <button
+                                                onClick={() => {
+                                                    setFilterEstado('Todos');
+                                                    setIsFilterEstadoOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos'
+                                                        ? 'bg-blue-50 text-blue-700 font-bold'
+                                                        : 'text-slate-700 hover:bg-slate-50'
+                                                    }`}
+                                            >
+                                                Todos os estados
+                                            </button>
+                                            {(canViewHistorico && viewMode === 'HISTORICO' ? historicoEstadoOptions : estadoOptions).map(est => (
+                                                <button
+                                                    key={est}
+                                                    onClick={() => {
+                                                        setFilterEstado(est);
+                                                        setIsFilterEstadoOpen(false);
+                                                    }}
+                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est
+                                                            ? 'bg-blue-50 text-blue-700 font-bold'
+                                                            : 'text-slate-700 hover:bg-slate-50'
+                                                        }`}
+                                                >
+                                                    {est}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
-                    <div className="flex w-full sm:w-auto gap-2">
-                        {/* Dropdown Estado */}
-                        {(!canViewHistorico || viewMode === 'HISTORICO') && (
                             <div className="relative flex-1 sm:min-w-[150px]">
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setIsFilterPrioridadeOpen(false); setIsFilterEstadoOpen(!isFilterEstadoOpen); }}
-                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsFilterEstadoOpen(false);
+                                        setIsFilterPrioridadeOpen(!isFilterPrioridadeOpen);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterPrioridade !== 'Todas'
+                                            ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                            : 'border-slate-200 text-slate-700 hover:border-slate-300'
+                                        }`}
                                 >
-                                    <span className="truncate">{filterEstado === 'Todos' ? 'Estado' : filterEstado}</span>
-                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
+                                    <span className="truncate">{filterPrioridade === 'Todas' ? 'Prioridade' : filterPrioridade}</span>
+                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterPrioridadeOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
-                                {isFilterEstadoOpen && (
-                                    <div 
-                                        onMouseDown={(e) => e.stopPropagation()} 
+                                {isFilterPrioridadeOpen && (
+                                    <div
+                                        onMouseDown={(e) => e.stopPropagation()}
                                         className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
                                     >
                                         <button
-                                            onClick={() => { setFilterEstado('Todos'); setIsFilterEstadoOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                            onClick={() => {
+                                                setFilterPrioridade('Todas');
+                                                setIsFilterPrioridadeOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === 'Todas'
+                                                    ? 'bg-blue-50 text-blue-700 font-bold'
+                                                    : 'text-slate-700 hover:bg-slate-50'
+                                                }`}
                                         >
-                                            Todos os estados
+                                            Todas as prioridades
                                         </button>
-                                        {(canViewHistorico && viewMode === 'HISTORICO' ? historicoEstadoOptions : estadoOptions).map(est => (
+                                        {['NORMAL', 'ALTA', 'URGENTE'].map(prio => (
                                             <button
-                                                key={est}
-                                                onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                key={prio}
+                                                onClick={() => {
+                                                    setFilterPrioridade(prio);
+                                                    setIsFilterPrioridadeOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === prio
+                                                        ? 'bg-blue-50 text-blue-700 font-bold'
+                                                        : 'text-slate-700 hover:bg-slate-50'
+                                                    }`}
                                             >
-                                                {est}
+                                                {prio}
                                             </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                        )}
-
-                        {/* Dropdown Prioridade */}
-                        <div className="relative flex-1 sm:min-w-[150px]">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setIsFilterEstadoOpen(false); setIsFilterPrioridadeOpen(!isFilterPrioridadeOpen); }}
-                                className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterPrioridade !== 'Todas' ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
-                            >
-                                <span className="truncate">{filterPrioridade === 'Todas' ? 'Prioridade' : filterPrioridade}</span>
-                                <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterPrioridadeOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {isFilterPrioridadeOpen && (
-                                <div 
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
-                                >
-                                    <button
-                                        onClick={() => { setFilterPrioridade('Todas'); setIsFilterPrioridadeOpen(false); }}
-                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === 'Todas' ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                    >
-                                        Todas as prioridades
-                                    </button>
-                                    {['NORMAL', 'ALTA', 'URGENTE'].map(prio => (
-                                        <button
-                                            key={prio}
-                                            onClick={() => { setFilterPrioridade(prio); setIsFilterPrioridadeOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === prio ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
-                                        >
-                                            {prio}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
                         </div>
-                    </div>
 
-                    {/* Clear Filters */}
-                    {(filterTipo !== 'Todos' || filterEstado !== 'Todos' || filterPrioridade !== 'Todas' || searchQuery !== '') && (
-                        <button
-                            onClick={() => { setFilterTipo('Todos'); setFilterEstado('Todos'); setFilterPrioridade('Todas'); setSearchQuery(''); }}
-                            className="p-1.5 ml-auto text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center shrink-0"
-                            title="Limpar filtros"
-                        >
-                            <X size={18} strokeWidth={2.5} />
-                        </button>
-                    )}
+                        {(quickFilter !== (user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'RESPONSAVEL_STOCK' ? 'GERAL' : 'TODOS')
+                            || filterTipo !== 'Todos'
+                            || filterEstado !== 'Todos'
+                            || filterPrioridade !== 'Todas'
+                            || searchQuery !== '') && (
+                                <button
+                                    onClick={() => {
+                                        setQuickFilter(user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'RESPONSAVEL_STOCK' ? 'GERAL' : 'TODOS');
+                                        setFilterTipo('Todos');
+                                        setFilterEstado('Todos');
+                                        setFilterPrioridade('Todas');
+                                        setSearchQuery('');
+                                    }}
+                                    className="p-1.5 ml-auto text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                                    title="Limpar filtros"
+                                >
+                                    <X size={18} strokeWidth={2.5} />
+                                </button>
+                            )}
+                    </div>
                 </div>
-            </div>
             </div>
 
             {loading ? (
@@ -747,37 +1058,37 @@ export default function PedidosCompra() {
                         <table className="w-full text-left relative">
                             <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
                                 <tr>
-                                    <th 
+                                    <th
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('id')}
                                     >
                                         <div className="flex items-center gap-2">ID <SortIcon field="id" /></div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('criadoEm')}
                                     >
                                         <div className="flex items-center gap-2">Data <SortIcon field="criadoEm" /></div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('criador')}
                                     >
                                         <div className="flex items-center gap-2">Emitido por <SortIcon field="criador" /></div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('prioridade')}
                                     >
                                         <div className="flex items-center gap-2">Prioridade <SortIcon field="prioridade" /></div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('valorTotalEstimado')}
                                     >
                                         <div className="flex items-center justify-end gap-2"><SortIcon field="valorTotalEstimado" /> Total</div>
                                     </th>
-                                    <th 
+                                    <th
                                         className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
                                         onClick={() => handleSort('estado')}
                                     >
@@ -786,154 +1097,241 @@ export default function PedidosCompra() {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {filteredPedidos.map((p) => (
-                                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-6 py-3 font-bold text-slate-900">
-                                            <div>{p.codigoFormatado}</div>
-                                            <div className="text-[10px] text-slate-400 font-medium bg-slate-100 inline-block px-1.5 rounded mt-0.5">{p.tipo}</div>
-                                        </td>
-                                        <td className="px-6 py-3 text-slate-600 font-medium">{formatDate(p.criadoEm)}</td>
-                                        <td className="px-6 py-3 text-slate-600 font-medium">
-                                            {p.criadoPor?.username
-                                                ? `${p.criadoPor.username} (${getRoleLabel(p.criadoPor.role)})`
-                                                : '—'}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {p.estado === 'CANCELADO' ? (
-                                                <span className="inline-flex items-center justify-center min-w-[60px] py-1 rounded-full text-[10px] font-black border text-slate-400 bg-slate-100 border-slate-200">
-                                                    —
-                                                </span>
-                                            ) : (
-                                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${getPriorityStyle(p.prioridade)}`}>
-                                                    {p.prioridade}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-bold text-slate-900">{formatCurrency(p.valorTotalEstimado || 0)}</td>
-                                        <td className="px-6 py-4 relative">
-                                            {user?.role === 'ADMINISTRADOR' ? (
-                                                <div className="relative inline-block">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setOpenStatusAdminId(openStatusAdminId === p.id ? null : p.id);
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${getStatusStyle(p.estado || '')}`}
-                                                    >
-                                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
-                                                        {p.estado || 'PENDENTE'}
-                                                        <ChevronDown size={12} className="ml-1.5 opacity-50" />
-                                                    </button>
+                            <tbody>
+                                {filteredPedidos.map((p) => {
+                                    const estadoUpper = (p.estado || '').toUpperCase();
+                                    const isProcessado = estadoUpper === 'PROCESSADO';
 
-                                                    {openStatusAdminId === p.id && (
-                                                        <div
-                                                            onMouseDown={(e) => e.stopPropagation()}
-                                                            className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
-                                                        >
-                                                            {['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map((status) => (
-                                                                <button
-                                                                    key={status}
-                                                                    onClick={() => handleUpdateStatusAdmin(p.id, status)}
-                                                                    className={`w-full text-left px-4 py-2 text-[10px] font-black tracking-wider transition-colors flex items-center gap-2 ${p.estado === status ? 'bg-slate-50 text-slate-400 cursor-default' : 'text-slate-700 hover:bg-slate-50 hover:text-blue-600'}`}
-                                                                    disabled={p.estado === status}
-                                                                >
-                                                                    <span className={`w-2 h-2 rounded-full ${getStatusStyle(status).split(' ')[0].replace('text-', 'bg-')}`}></span>
-                                                                    {status}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
-                                                    <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
-                                                    {p.estado || 'PENDENTE'}
-                                                </span>
-                                            )}
-                                        </td>
-
-                                        <td className="px-6 py-4 relative">
-                                            <div className="flex items-center justify-end gap-2 pr-2">
-                                                {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && p.estado === 'PENDENTE' && (
-                                                    <div className="flex items-center gap-1.5 mr-2">
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleAprovar(p.id); }}
-                                                            className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-lg transition-all"
-                                                            title="Aprovar Pedido"
-                                                        >
-                                                            <CheckCircle2 size={16} strokeWidth={2.5}/>
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleRecusar(p.id); }}
-                                                            className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 hover:border-red-200 rounded-lg transition-all"
-                                                            title="Recusar Pedido"
-                                                        >
-                                                            <X size={16} strokeWidth={2.5}/>
-                                                        </button>
-                                                    </div>
+                                    return (
+                                        <tr
+                                            key={p.id}
+                                            onClick={() => {
+                                                if (!isProcessado) return;
+                                                setSelectedPedido(p);
+                                                setIsDetailsModalOpen(true);
+                                            }}
+                                            className={`hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-b-0 ${isProcessado ? 'cursor-pointer' : ''
+                                                }`}
+                                        >
+                                            <td className="px-6 py-3 font-bold text-slate-900">
+                                                <div>{p.codigoFormatado}</div>
+                                                <div className="text-[10px] text-slate-400 font-medium bg-slate-100 inline-block px-1.5 rounded mt-0.5">{p.tipo}</div>
+                                            </td>
+                                            <td className="px-6 py-3 text-slate-600 font-medium">{formatDate(p.criadoEm)}</td>
+                                            <td className="px-6 py-3 text-slate-600 font-medium">
+                                                {p.criadoPor?.username
+                                                    ? `${p.criadoPor.username} (${getRoleLabel(p.criadoPor.role)})`
+                                                    : '—'}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {estadoUpper === 'CANCELADO' ? (
+                                                    <span className="inline-flex items-center justify-center min-w-[60px] py-1 rounded-full text-[10px] font-black border text-slate-400 bg-slate-100 border-slate-200">
+                                                        —
+                                                    </span>
+                                                ) : (
+                                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${getPriorityStyle(p.prioridade)}`}>
+                                                        {p.prioridade}
+                                                    </span>
                                                 )}
-
-                                                <button
-                                                    onMouseDown={(e) => handleActionMouseDown(p.id, e)}
-                                                    className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors group-hover:block"
-                                                >
-                                                    <MoreVertical size={18} />
-                                                </button>
-                                            </div>
-
-                                            {/* Dropdown Menu */}
-                                            {openDropdownId === p.id && (
-                                                <div
-                                                    onMouseDown={(e) => e.stopPropagation()}
-                                                    className="absolute right-8 top-[75%] w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-100"
-                                                >
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedPedido(p);
-                                                            setIsDetailsModalOpen(true);
-                                                            setOpenDropdownId(null);
-                                                        }}
-                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
-                                                    >
-                                                        Ver Detalhes
-                                                    </button>
-                                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && p.estado === 'PENDENTE' && (
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-bold text-slate-900">
+                                                {formatCurrency(p.valorTotalEstimado || 0)}
+                                            </td>
+                                            <td className="px-6 py-4 relative">
+                                                {user?.role === 'ADMINISTRADOR' ? (
+                                                    <div className="relative inline-block">
                                                         <button
-                                                            onClick={() => {
-                                                                setPedidoToEdit(p);
-                                                                setIsCreateModalOpen(true);
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setOpenStatusAdminId(openStatusAdminId === p.id ? null : p.id);
                                                                 setOpenDropdownId(null);
                                                             }}
-                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                            className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${getStatusStyle(p.estado || '')}`}
                                                         >
-                                                            Editar
+                                                            <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
+                                                            {p.estado || 'PENDENTE'}
+                                                            <ChevronDown size={12} className="ml-1.5 opacity-50" />
                                                         </button>
-                                                    )}
-                                                    {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && (
-                                                        p.estado !== 'CANCELADO' ? (
-                                                            <button
-                                                                onClick={() => handleCancelar(p.id)}
-                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+
+                                                        {openStatusAdminId === p.id && (
+                                                            <div
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
                                                             >
-                                                                Cancelar
-                                                            </button>
-                                                        ) : (
+                                                                {['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map((status) => (
+                                                                    <button
+                                                                        key={status}
+                                                                        onClick={() => handleUpdateStatusAdmin(p.id, status)}
+                                                                        className={`w-full text-left px-4 py-2 text-[10px] font-black tracking-wider transition-colors flex items-center gap-2 ${p.estado === status
+                                                                                ? 'bg-slate-50 text-slate-400 cursor-default'
+                                                                                : 'text-slate-700 hover:bg-slate-50 hover:text-blue-600'
+                                                                            }`}
+                                                                        disabled={p.estado === status}
+                                                                    >
+                                                                        <span className={`w-2 h-2 rounded-full ${getStatusStyle(status).split(' ')[0].replace('text-', 'bg-')}`}></span>
+                                                                        {status}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border ${getStatusStyle(p.estado || '')}`}>
+                                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
+                                                        {p.estado || 'PENDENTE'}
+                                                    </span>
+                                                )}
+                                            </td>
+
+                                            {/* ── Actions cell ── */}
+                                            <td className="px-4 py-4 relative">
+                                                <div className="flex items-center justify-end gap-2">
+
+                                                    {/* Approve / Refuse — PENDENTE */}
+                                                    {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && estadoUpper === 'PENDENTE' && (
+                                                        <div className="flex items-center gap-1.5">
                                                             <button
-                                                                disabled
-                                                                className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSelectedPedido(p);
+                                                                    setIsAprovarModalOpen(true);
+                                                                }}
+                                                                className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 hover:border-emerald-200 rounded-lg transition-all"
+                                                                title="Aprovar Pedido"
                                                             >
-                                                                Cancelar
+                                                                <CheckCircle2 size={16} strokeWidth={2.5} />
                                                             </button>
-                                                        )
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleRecusar(p.id);
+                                                                }}
+                                                                className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 hover:border-red-200 rounded-lg transition-all"
+                                                                title="Recusar Pedido"
+                                                            >
+                                                                <X size={16} strokeWidth={2.5} />
+                                                            </button>
+                                                        </div>
                                                     )}
 
+                                                    {/* Emit / Revert — APROVADO */}
+                                                    {user && (user.role === 'RESPONSAVEL_FINANCEIRO' || user.role === 'ADMINISTRADOR') && estadoUpper === 'APROVADO' && (
+                                                        <div className="flex items-center gap-1.5">
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleEmitirEncomenda(p.id);
+                                                                }}
+                                                                className="p-1.5 text-emerald-600 bg-gradient-to-b from-white to-emerald-50 border border-emerald-200 hover:border-emerald-300 hover:from-emerald-50 hover:to-emerald-100 shadow-sm ring-2 ring-emerald-500/10 rounded-lg transition-all"
+                                                                title="Emitir Encomenda"
+                                                            >
+                                                                <PackagePlus size={16} strokeWidth={2.5} />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleReverterPedido(p.id);
+                                                                }}
+                                                                className="p-1.5 text-amber-600 bg-gradient-to-b from-white to-amber-50 border border-amber-200 hover:border-amber-300 hover:from-amber-50 hover:to-amber-100 shadow-sm ring-2 ring-amber-500/10 rounded-lg transition-all"
+                                                                title="Reverter para Pendente"
+                                                            >
+                                                                <Undo2 size={16} strokeWidth={2.5} />
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Encomendas shortcut — PROCESSADO (inline, not absolute) */}
+                                                    {isProcessado && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                goToEncomendasFromPedido(p.id);
+                                                            }}
+                                                            className="px-3 py-1.5 text-[11px] font-black tracking-wide text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-md shadow-emerald-600/20 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 whitespace-nowrap"
+                                                            title="Ver encomendas deste pedido"
+                                                        >
+                                                            Encomendas
+                                                        </button>
+                                                    )}
+
+                                                    {/* Three-dots menu — always visible */}
+                                                    <div className="relative">
+                                                        <button
+                                                            onMouseDown={(e) => handleActionMouseDown(p.id, e)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                                            title="Mais ações"
+                                                        >
+                                                            <MoreVertical size={18} />
+                                                        </button>
+
+                                                        {openDropdownId === p.id && (
+                                                            <div
+                                                                onMouseDown={(e) => e.stopPropagation()}
+                                                                className="absolute right-0 top-[calc(100%+4px)] w-44 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2 duration-100"
+                                                            >
+                                                                {/* Ver Detalhes — always shown */}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedPedido(p);
+                                                                        setIsDetailsModalOpen(true);
+                                                                        setOpenDropdownId(null);
+                                                                    }}
+                                                                    className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                                >
+                                                                    Ver Detalhes
+                                                                </button>
+
+                                                                {/* Editar — only for PENDENTE */}
+                                                                {user && (user.role === 'ADMINISTRADOR' || user.role === 'RESPONSAVEL_STOCK') && estadoUpper === 'PENDENTE' && (
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setPedidoToEdit(p);
+                                                                            setIsCreateModalOpen(true);
+                                                                            setOpenDropdownId(null);
+                                                                        }}
+                                                                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                                                    >
+                                                                        Editar
+                                                                    </button>
+                                                                )}
+
+                                                                {/* Cancelar — only when applicable, never for PROCESSADO */}
+                                                                {user && !isProcessado && (
+                                                                    estadoUpper !== 'CANCELADO' ? (
+                                                                        <button
+                                                                            disabled={
+                                                                                (estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') ||
+                                                                                (!['PENDENTE', 'APROVADO'].includes(estadoUpper)) ||
+                                                                                (estadoUpper === 'PENDENTE' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
+                                                                            }
+                                                                            onClick={() => handleCancelar(p.id)}
+                                                                            className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${(estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') ||
+                                                                                    (!['PENDENTE', 'APROVADO'].includes(estadoUpper)) ||
+                                                                                    (estadoUpper === 'PENDENTE' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
+                                                                                    ? 'text-slate-400 cursor-not-allowed'
+                                                                                    : 'text-red-600 hover:bg-red-50'
+                                                                                }`}
+                                                                        >
+                                                                            Cancelar
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            disabled
+                                                                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-400 cursor-not-allowed transition-colors"
+                                                                        >
+                                                                            Cancelar
+                                                                        </button>
+                                                                    )
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -942,4 +1340,3 @@ export default function PedidosCompra() {
         </div>
     );
 }
-

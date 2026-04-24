@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, Clock, Truck, HandCoins, CalendarDays, Edit, DollarSign, FileText, Database, Package } from 'lucide-react';
+import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, Clock, Truck, HandCoins, CalendarDays, Edit, DollarSign, FileText, Database, Package, Pill } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
@@ -489,12 +489,12 @@ const Fornecedores = () => {
                                     <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody className="">
                                 {sortedFornecedores.map((fornecedor) => (
                                     <tr 
                                         key={fornecedor.id} 
                                         onClick={() => setDetalhesFornecedor(fornecedor)}
-                                        className="hover:bg-slate-50/80 transition-all group cursor-pointer"
+                                        className="hover:bg-slate-50/80 transition-all group cursor-pointer border-b border-slate-100 last:border-b-0"
                                     >
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
@@ -773,28 +773,91 @@ const Fornecedores = () => {
                                     </div>
 
                                     {/* Produtos Fornecidos */}
-                                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                                        <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                            <Package size={14} /> Produtos Fornecidos
-                                        </h3>
+                                    <div className="relative overflow-hidden rounded-2xl border border-indigo-100/90 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 p-4 shadow-sm ring-1 ring-indigo-500/[0.06]">
+                                        <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-indigo-400/10 blur-2xl" />
+                                        <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-violet-400/10 blur-2xl" />
+                                        <div className="relative flex flex-wrap items-center justify-between gap-3">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900/70 flex items-center gap-2">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-indigo-100 text-indigo-600">
+                                                    <Pill size={16} strokeWidth={2} />
+                                                </span>
+                                                Medicamentos e produtos
+                                            </h3>
+                                            {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 && (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur-sm">
+                                                    <Package size={12} className="text-indigo-500" />
+                                                    {detalhesFornecedor.produtos.length}{' '}
+                                                    {detalhesFornecedor.produtos.length === 1 ? 'artigo' : 'artigos'}
+                                                </span>
+                                            )}
+                                        </div>
                                         {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 ? (
-                                            <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
-                                                {detalhesFornecedor.produtos.map(prod => (
-                                                    <div key={prod.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 transition-colors">
-                                                        <div>
-                                                            <div className="text-sm font-bold text-slate-900 leading-tight">{prod.nome}</div>
-                                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{prod.categoria || 'Sem Categoria'}</div>
+                                            <div className="relative mt-4 grid max-h-[min(22rem,50vh)] grid-cols-1 gap-3 overflow-y-auto custom-scrollbar pr-1 sm:grid-cols-2">
+                                                {detalhesFornecedor.produtos.map((prod, index) => {
+                                                    const stockNum = Number(prod.stock);
+                                                    const accentClasses = [
+                                                        'from-teal-500/[0.12] to-cyan-500/[0.06] ring-teal-200/60',
+                                                        'from-violet-500/[0.12] to-indigo-500/[0.06] ring-violet-200/60',
+                                                        'from-emerald-500/[0.12] to-teal-500/[0.06] ring-emerald-200/60',
+                                                    ];
+                                                    const accent = accentClasses[index % accentClasses.length];
+                                                    const stockLow = stockNum <= 0;
+                                                    return (
+                                                        <div
+                                                            key={prod.id}
+                                                            className="group relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-3.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200/80 hover:shadow-md"
+                                                        >
+                                                            <div
+                                                                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent} opacity-90`}
+                                                                aria-hidden
+                                                            />
+                                                            <div className="relative flex gap-3">
+                                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/95 text-indigo-600 shadow-inner ring-1 ring-slate-100 transition-transform duration-200 group-hover:scale-105">
+                                                                    <Pill size={22} strokeWidth={1.5} />
+                                                                </div>
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-sm font-bold leading-snug text-slate-900 line-clamp-2">
+                                                                        {prod.nome}
+                                                                    </p>
+                                                                    <span className="mt-1.5 inline-flex max-w-full truncate rounded-md bg-slate-900/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 ring-1 ring-slate-200/60">
+                                                                        {prod.categoria || 'Sem categoria'}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div className="relative mt-3 flex items-center justify-between gap-2 border-t border-slate-200/60 pt-2.5">
+                                                                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                                                                    Inventário
+                                                                </span>
+                                                                <span
+                                                                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider tabular-nums shadow-sm ring-1 ${
+                                                                        stockLow
+                                                                            ? 'bg-amber-50 text-amber-800 ring-amber-200/80'
+                                                                            : 'bg-emerald-50 text-emerald-800 ring-emerald-200/80'
+                                                                    }`}
+                                                                >
+                                                                    {stockLow ? (
+                                                                        <AlertCircle size={12} className="shrink-0 text-amber-600" />
+                                                                    ) : (
+                                                                        <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
+                                                                    )}
+                                                                    {stockLow ? 'Sem stock' : `${stockNum} un.`}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div className="text-[10px] font-black text-emerald-600 bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-md uppercase tracking-wider">
-                                                            Stock: {prod.stock}
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         ) : (
-                                            <div className="flex flex-col items-center justify-center py-6 text-slate-400">
-                                                <Package size={32} strokeWidth={1} className="mb-2 text-slate-300" />
-                                                <p className="text-sm">Este fornecedor não fornece produtos de inventário.</p>
+                                            <div className="relative mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-indigo-200/70 bg-white/50 py-10 text-center">
+                                                <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-300 ring-4 ring-indigo-100/80">
+                                                    <Package size={28} strokeWidth={1.25} />
+                                                </div>
+                                                <p className="max-w-xs text-sm font-medium text-slate-600">
+                                                    Ainda não há medicamentos ou produtos associados a este fornecedor.
+                                                </p>
+                                                <p className="mt-1 max-w-xs text-xs text-slate-400">
+                                                    Edite o fornecedor para ligar artigos do inventário.
+                                                </p>
                                             </div>
                                         )}
                                     </div>

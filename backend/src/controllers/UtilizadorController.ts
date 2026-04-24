@@ -30,13 +30,14 @@ export class UtilizadorController {
     }
 
     static async criar(req: Request, res: Response) {
-        const { username, password, role } = req.body;
+        const { username, password, role, ativo } = req.body;
         try {
             const novoUtilizador = await prisma.utilizador.create({
                 data: {
                     username,
                     password: password || '123456',
-                    role
+                    role,
+                    ativo: ativo !== undefined ? ativo : true
                 }
             });
             res.status(201).json(novoUtilizador);
@@ -51,18 +52,22 @@ export class UtilizadorController {
 
     static async atualizar(req: Request, res: Response) {
         const { id } = req.params;
-        const { username, password, role } = req.body;
+        const { username, password, role, ativo } = req.body;
+        
+        const data: any = {};
+        if (username !== undefined) data.username = username;
+        if (password !== undefined) data.password = password;
+        if (role !== undefined) data.role = role;
+        if (ativo !== undefined) data.ativo = ativo;
+
         try {
             const utilizadorAtualizado = await prisma.utilizador.update({
                 where: { id: Number(id) },
-                data: {
-                    username,
-                    password: password !== undefined ? password : undefined,
-                    role
-                }
+                data
             });
             res.json(utilizadorAtualizado);
         } catch (error) {
+            console.error('Erro ao atualizar utilizador:', error);
             res.status(500).json({ error: 'Erro ao atualizar utilizador' });
         }
     }
@@ -87,6 +92,10 @@ export class UtilizadorController {
 
             if (!utilizador || utilizador.password !== password) {
                 return res.status(401).json({ error: 'Credenciais inválidas' });
+            }
+
+            if (!utilizador.ativo) {
+                return res.status(403).json({ error: 'A sua conta encontra-se inativa. Por favor contacte o administrador.' });
             }
 
             // For now, returning the user object without the password
