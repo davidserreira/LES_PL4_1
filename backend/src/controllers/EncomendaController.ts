@@ -209,9 +209,35 @@ export const atualizarEstado = async (req: Request, res: Response) => {
             });
         }
 
-        const updated = await prisma.encomenda.update({
-            where: { id },
-            data: { estado }
+        const updated = await prisma.$transaction(async (tx) => {
+            // Se passar para ENTREGUE, garantir que o stock é atualizado para o que falta
+            if (estado === 'ENTREGUE') {
+                const linhas = await tx.linhaEncomenda.findMany({
+                    where: { encomendaId: id }
+                });
+
+                for (const linha of linhas) {
+                    const falta = linha.quantidade - linha.quantidadeRecebida;
+                    if (falta > 0) {
+                        await tx.produto.update({
+                            where: { id: linha.produtoId },
+                            data: { stock: { increment: falta } }
+                        });
+                        await tx.linhaEncomenda.update({
+                            where: { id: linha.id },
+                            data: { quantidadeRecebida: linha.quantidade }
+                        });
+                    }
+                }
+            }
+
+            return await tx.encomenda.update({
+                where: { id },
+                data: { 
+                    estado,
+                    dataEntregaReal: estado === 'ENTREGUE' ? new Date() : undefined
+                }
+            });
         });
 
         return res.json(updated);
