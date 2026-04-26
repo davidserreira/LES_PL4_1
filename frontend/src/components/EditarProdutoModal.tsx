@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     X, Database, AlertCircle, CheckCircle2,
     DollarSign, Tag, FileText, Edit2, Loader2,
-    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle
+    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle, Star
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { fornecedorService } from '../services/fornecedorService';
@@ -16,6 +16,7 @@ interface Produto {
     categoria?: string;
     descricao?: string;
     fornecedores?: { id: number; nome: string }[];
+    fornecedorPreferencial?: { id: number; nome: string } | null;
     linhasPedido?: {
         pedidoCompra: {
             id: number;
@@ -58,6 +59,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
     // Fornecedores State
     const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean }[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
+    const [fornecedorPreferencialId, setFornecedorPreferencialId] = useState<number | null>(null);
     const [isFornecedoresOpen, setIsFornecedoresOpen] = useState(false);
 
     // Deletion visual state
@@ -77,6 +79,16 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
         }
     }, [isOpen]);
 
+    // Update preferential supplier automatically
+    useEffect(() => {
+        if (fornecedorPreferencialId && !selectedFornecedores.includes(fornecedorPreferencialId)) {
+            setFornecedorPreferencialId(null);
+        }
+        if (selectedFornecedores.length === 1) {
+            setFornecedorPreferencialId(selectedFornecedores[0]);
+        }
+    }, [selectedFornecedores, fornecedorPreferencialId]);
+
     useEffect(() => {
         if (isOpen && produto) {
             setNome(produto.nome);
@@ -91,6 +103,12 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 setSelectedFornecedores(produto.fornecedores.map(f => f.id));
             } else {
                 setSelectedFornecedores([]);
+            }
+            
+            if (produto.fornecedorPreferencial) {
+                setFornecedorPreferencialId(produto.fornecedorPreferencial.id);
+            } else {
+                setFornecedorPreferencialId(null);
             }
             
             setIsClosing(false);
@@ -154,6 +172,11 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             return;
         }
 
+        if (selectedFornecedores.length > 1 && !fornecedorPreferencialId) {
+            setError('Deve selecionar um fornecedor preferencial (estrela) quando existem múltiplos fornecedores associados.');
+            return;
+        }
+
         setError(null);
         setLoading(true);
         try {
@@ -165,6 +188,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 categoria: categoria || undefined,
                 descricao: descricao || undefined,
                 fornecedorIds: selectedFornecedores, // Can be empty array if all are removed
+                fornecedorPreferencialId: fornecedorPreferencialId || undefined,
             });
             onSuccess();
             handleClose();
@@ -330,7 +354,12 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
                         {/* Suppliers Select */}
                         <div className="space-y-1.5 relative" ref={fornecedoresRef}>
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Fornecedores Vinculados (Opcional)</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-slate-700 ml-0.5">Fornecedores Vinculados (Opcional)</label>
+                                {selectedFornecedores.length > 1 && (
+                                    <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-bold">Requer Preferencial ★</span>
+                                )}
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setIsFornecedoresOpen(!isFornecedoresOpen)}
@@ -367,9 +396,22 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                                     <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 group-hover:border-emerald-400'}`}>
                                                         {isSelected && <Check size={12} strokeWidth={3} />}
                                                     </div>
-                                                    <span className={`truncate ${isSelected ? 'text-slate-900 font-medium' : 'text-slate-600'}`}>
+                                                    <span className={`truncate flex-1 ${isSelected ? 'text-slate-900 font-medium' : 'text-slate-600'}`}>
                                                         {fornecedor.nome}
                                                     </span>
+                                                    {isSelected && selectedFornecedores.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setFornecedorPreferencialId(fornecedor.id);
+                                                            }}
+                                                            className={`p-1 rounded-md transition-colors shrink-0 ${fornecedorPreferencialId === fornecedor.id ? 'text-amber-500 bg-amber-50' : 'text-slate-300 hover:text-amber-400 hover:bg-slate-100'}`}
+                                                            title={fornecedorPreferencialId === fornecedor.id ? 'Fornecedor Preferencial' : 'Marcar como Preferencial'}
+                                                        >
+                                                            <Star size={16} className={fornecedorPreferencialId === fornecedor.id ? 'fill-current' : ''} />
+                                                        </button>
+                                                    )}
                                                 </button>
                                             );
                                         })

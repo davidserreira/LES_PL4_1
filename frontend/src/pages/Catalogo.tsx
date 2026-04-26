@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
     Plus, Package, AlertTriangle, CheckCircle2, X, AlertCircle, 
     Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal, Check,
-    MoreVertical, Pencil, MousePointer2, History
+    MoreVertical, Pencil, MousePointer2, History, Star
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
@@ -22,6 +22,7 @@ interface Produto {
     descricao?: string;
     criadoEm: string;
     fornecedores?: { id: number; nome: string }[];
+    fornecedorPreferencial?: { id: number; nome: string } | null;
     linhasPedido?: {
         pedidoCompra: {
             id: number;
@@ -522,9 +523,18 @@ const Catalogo = () => {
                                                                 <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px] block">{produto.descricao}</span>
                                                             )}
                                                             {produto.fornecedores && produto.fornecedores.length > 0 && (
-                                                                <span className="text-[10px] text-emerald-600 font-bold block mt-1">
-                                                                    Fornecedores: {produto.fornecedores.map(f => f.nome).join(', ')}
-                                                                </span>
+                                                                <div className="text-[10px] text-emerald-600 font-bold mt-1 flex flex-wrap gap-1 items-center">
+                                                                    <span className="text-slate-500">Fornecedores:</span>
+                                                                    {produto.fornecedores.map((f, i) => {
+                                                                        const isPreferencial = produto.fornecedorPreferencial?.id === f.id;
+                                                                        return (
+                                                                            <span key={f.id} className={`inline-flex items-center gap-0.5 ${isPreferencial ? 'text-amber-500 font-black' : 'text-emerald-600'}`}>
+                                                                                {isPreferencial && <Star size={10} className="fill-current" />}
+                                                                                {f.nome}{i < produto.fornecedores!.length - 1 ? <span className="text-slate-300 font-normal ml-0.5">, </span> : ''}
+                                                                            </span>
+                                                                        );
+                                                                    })}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </div>
