@@ -105,6 +105,22 @@ export default function PedidosCompra() {
     const [pedidoToReverter, setPedidoToReverter] = useState<PedidoCompra | null>(null);
     const [pedidoToEmitir, setPedidoToEmitir] = useState<number | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
+    const [reorderLinhas, setReorderLinhas] = useState<{ produtoId: number; quantidade: number }[] | null>(null);
+
+    // Ler reorder do localStorage ao entrar na página (vindo das Encomendas canceladas)
+    useEffect(() => {
+        const raw = localStorage.getItem('pedido:reorder');
+        if (raw) {
+            try {
+                const linhas = JSON.parse(raw);
+                if (Array.isArray(linhas) && linhas.length > 0) {
+                    setReorderLinhas(linhas);
+                    setIsCreateModalOpen(true);
+                }
+            } catch { /* ignore */ }
+            localStorage.removeItem('pedido:reorder');
+        }
+    }, []);
 
     const showToast = (message: string, type: 'success' | 'error') => {
         setToast({ message, type });
@@ -551,10 +567,12 @@ export default function PedidosCompra() {
                 isOpen={isCreateModalOpen}
                 draftId={editingDraftId}
                 pedidoToEdit={pedidoToEdit}
+                initialLinhas={reorderLinhas ?? undefined}
                 onClose={(shouldRefresh, msg) => {
                     setIsCreateModalOpen(false);
                     setEditingDraftId(null);
                     setPedidoToEdit(null);
+                    setReorderLinhas(null);
                     if (shouldRefresh) {
                         fetchPedidos();
                         showToast(msg || 'Pedido processado com sucesso!', 'success');

@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { 
     X, Package, Truck, CheckCircle2, Clock, Calendar, Building2, 
-    ClipboardList, AlertTriangle, ChevronRight, Euro, XCircle, Tag, Eye
+    ClipboardList, Euro, XCircle, FileText, ShieldAlert, RotateCcw
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -42,6 +43,7 @@ interface DetalhesEncomendaModalProps {
     encomenda: Encomenda | null;
     onUpdateEstado: (id: number, novoEstado: string) => void;
     onReceber: (enc: Encomenda) => void;
+    onReordenar?: (linhas: { produtoId: number; quantidade: number }[]) => void;
     isAdmin?: boolean;
 }
 
@@ -59,7 +61,9 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: any }>
     CANCELADA:        { label: 'Cancelada',        color: 'text-red-700 bg-red-50 border-red-200',         icon: XCircle },
 };
 
-export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onUpdateEstado, onReceber, isAdmin }: DetalhesEncomendaModalProps) {
+export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onUpdateEstado, onReceber, onReordenar, isAdmin }: DetalhesEncomendaModalProps) {
+    const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+
     if (!isOpen || !encomenda) return null;
 
     const cfg = ESTADO_CONFIG[encomenda.estado] || ESTADO_CONFIG.EMITIDA;
@@ -69,6 +73,11 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
     const isEnviada = encomenda.estado === 'ENVIADA';
     const isParcial = encomenda.estado === 'ENTREGUE_PARCIAL';
     const isFinalizada = encomenda.estado === 'ENTREGUE' || encomenda.estado === 'CANCELADA';
+
+    const handleConfirmCancel = () => {
+        setShowConfirmCancel(false);
+        onUpdateEstado(encomenda.id, 'CANCELADA');
+    };
 
     return createPortal(
         <div 
@@ -224,10 +233,10 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                     <div className="flex items-center gap-3">
                         {isAdmin && !isFinalizada && (
                             <button 
-                                onClick={() => onUpdateEstado(encomenda.id, 'CANCELADA')}
-                                className="px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                onClick={() => setShowConfirmCancel(true)}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-all"
                             >
-                                Cancelar
+                                <XCircle size={15} /> Cancelar Encomenda
                             </button>
                         )}
 
@@ -240,21 +249,69 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                             </button>
                         )}
 
-                        <button 
-                            onClick={() => !isFinalizada && onReceber(encomenda)}
-                            disabled={isFinalizada}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                                isFinalizada
-                                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                    : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95'
-                            }`}
-                        >
-                            <Package size={16} /> 
-                            {isParcial ? 'Receber Restante' : isFinalizada ? 'Receção Concluída' : 'Registar Receção'}
-                        </button>
+                        {(isEnviada || isParcial) && (
+                            <button 
+                                onClick={() => onReceber(encomenda)}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95"
+                            >
+                                <Package size={16} /> 
+                                {isParcial ? 'Receber Restante' : 'Registar Receção'}
+                            </button>
+                        )}
+
+                        {onReordenar && (
+                            <button
+                                onClick={() => onReordenar(
+                                    encomenda.linhas.map(l => ({ produtoId: l.produto.id ?? (l as any).produtoId, quantidade: l.quantidade }))
+                                )}
+                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 active:scale-95"
+                            >
+                                <RotateCcw size={15} /> Repetir Encomenda
+                            </button>
+                        )}
+
+                        {isFinalizada && encomenda.estado === 'ENTREGUE' && (
+                            <span className="text-sm font-bold text-slate-400 italic">
+                                Receção concluída
+                            </span>
+                        )}
                     </div>
                 </div>
             </div>
+
+            {/* Confirm Cancel Dialog */}
+            {showConfirmCancel && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm rounded-2xl animate-in fade-in duration-150">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 mx-6 max-w-sm w-full animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                <ShieldAlert size={20} className="text-red-600" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900">Cancelar Encomenda?</h3>
+                                <p className="text-xs text-slate-500 mt-0.5">Esta ação é irreversível.</p>
+                            </div>
+                        </div>
+                        <p className="text-sm text-slate-600 mb-5">
+                            Tens a certeza que pretendes cancelar a encomenda <span className="font-black text-slate-900">{encomenda.codigoFormatado}</span>? O estado não poderá ser revertido.
+                        </p>
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => setShowConfirmCancel(false)}
+                                className="px-4 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={handleConfirmCancel}
+                                className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-lg shadow-red-500/20 transition-all active:scale-95"
+                            >
+                                <XCircle size={15} /> Confirmar Cancelamento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>,
         document.body
     );

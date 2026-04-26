@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
     PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, 
     Building2, ClipboardList, AlertTriangle, ChevronDown, Package,
-    Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Euro,
-    Eye
+    Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Euro, RotateCcw, ShieldAlert
 } from 'lucide-react';
 import { encomendaService } from '../services/encomendaService';
 import RececaoModal from '../components/RececaoModal';
@@ -34,6 +34,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     const [selectedEncomenda, setSelectedEncomenda] = useState<any | null>(null);
     const [showRececaoModal, setShowRececaoModal] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
+    const [cancelConfirmId, setCancelConfirmId] = useState<number | null>(null);
 
     // Filtros e Pesquisa
     const [searchQuery, setSearchQuery] = useState('');
@@ -158,6 +159,16 @@ export default function Encomendas({ user }: { user: Utilizador }) {
         }
     };
 
+    const handleCancelarEncomenda = async (id: number) => {
+        try {
+            await encomendaService.atualizarEstado(id, 'CANCELADA');
+            setCancelConfirmId(null);
+            loadEncomendas();
+        } catch (err) {
+            alert('Erro ao cancelar encomenda.');
+        }
+    };
+
     const handleOpenRececao = (enc: any) => {
         setSelectedEncomenda(enc);
         setShowRececaoModal(true);
@@ -166,6 +177,14 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     const handleOpenDetails = (enc: any) => {
         setSelectedEncomenda(enc);
         setShowDetailsModal(true);
+    };
+
+    const navigate = useNavigate();
+    const handleReordenar = (linhas: { produtoId: number; quantidade: number }[]) => {
+        localStorage.setItem('pedido:reorder', JSON.stringify(linhas));
+        setShowDetailsModal(false);
+        setSelectedEncomenda(null);
+        navigate('/pedidos');
     };
 
     const handleSort = (field: SortField) => {
@@ -384,7 +403,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                     const isParcial = enc.estado === 'ENTREGUE_PARCIAL';
                                     const isEmitida = enc.estado === 'EMITIDA';
                                     const isFinalizada = enc.estado === 'ENTREGUE' || enc.estado === 'CANCELADA';
-                                    const podeReceber = !isFinalizada;
+                                    const podeReceber = isEnviada || isParcial;
                                     
                                     const isFromHighlightedPedido =
                                         (highlightPedidoId != null && Number(enc.pedidoCompraId) === highlightPedidoId) ||
@@ -448,21 +467,73 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                             </td>
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                                    <button 
+                                                    {isEmitida && isAdmin && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
+                                                            className="px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Cancelar encomenda"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    )}
+                                                    {isEmitida && isAdmin && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleMudarEstado(enc.id, 'ENVIADA');
+                                                            }}
+                                                            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
+                                                            title="Marcar como Enviada"
+                                                        >
+                                                            <Truck size={14} />
+                                                            Marcar Enviada
+                                                        </button>
+                                                    )}
+                                                    {isEmitida && !isAdmin && (
+                                                        <span className="text-[11px] text-slate-400 font-bold italic">Aguarda envio</span>
+                                                    )}
+                                                    {isEnviada && isAdmin && (
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
+                                                            className="px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Cancelar encomenda"
+                                                        >
+                                                            Cancelar
+                                                        </button>
+                                                    )}
+                                                    {podeReceber && (
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenRececao(enc);
+                                                            }}
+                                                            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
+                                                            title="Registar receção"
+                                                        >
+                                                            <Package size={14} />
+                                                            {isParcial ? 'Receber Restante' : 'Receber Encomenda'}
+                                                        </button>
+                                                    )}
+                                                    {isFinalizada && (
+                                                        <span className="text-[11px] text-slate-400 font-bold italic">
+                                                            {enc.estado === 'ENTREGUE' ? 'Concluída' : 'Cancelada'}
+                                                        </span>
+                                                    )}
+                                                    <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            if (!isFinalizada) handleOpenRececao(enc);
+                                                            handleReordenar(
+                                                                (enc.linhas || []).map((l: any) => ({
+                                                                    produtoId: l.produtoId ?? l.produto?.id,
+                                                                    quantidade: l.quantidade
+                                                                }))
+                                                            );
                                                         }}
-                                                        disabled={isFinalizada}
-                                                        className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border ${
-                                                            isFinalizada 
-                                                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60' 
-                                                                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20'
-                                                        }`}
-                                                        title={isFinalizada ? 'Encomenda finalizada' : 'Registar receção'}
+                                                        className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 text-slate-500 hover:bg-slate-100 hover:border-slate-300 hover:text-slate-700"
+                                                        title="Repetir encomenda"
                                                     >
-                                                        <Package size={14} />
-                                                        {isParcial ? 'Receber Restante' : 'Receber Encomenda'}
+                                                        <RotateCcw size={13} />
+                                                        Repetir
                                                     </button>
                                                 </div>
                                             </td>
@@ -474,6 +545,45 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                     </div>
                 )}
             </div>
+
+            {/* Modal de Confirmação de Cancelamento */}
+            {cancelConfirmId !== null && (() => {
+                const enc = encomendas.find(e => e.id === cancelConfirmId);
+                return (
+                    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center shrink-0">
+                                    <ShieldAlert size={20} className="text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-base font-black text-slate-900">Cancelar Encomenda?</h3>
+                                    <p className="text-xs text-slate-500 mt-0.5">Esta ação é irreversível.</p>
+                                </div>
+                            </div>
+                            <p className="text-sm text-slate-600 mb-5">
+                                Tens a certeza que pretendes cancelar a encomenda{' '}
+                                <span className="font-black text-slate-900">{enc?.codigoFormatado}</span>?
+                                O estado não poderá ser revertido.
+                            </p>
+                            <div className="flex items-center justify-end gap-3">
+                                <button
+                                    onClick={() => setCancelConfirmId(null)}
+                                    className="px-4 py-2 text-sm font-bold text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+                                >
+                                    Voltar
+                                </button>
+                                <button
+                                    onClick={() => handleCancelarEncomenda(cancelConfirmId)}
+                                    className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-lg shadow-red-500/20 transition-all active:scale-95"
+                                >
+                                    <XCircle size={15} /> Confirmar Cancelamento
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {showRececaoModal && selectedEncomenda && (
                 <RececaoModal
@@ -499,6 +609,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                         setShowDetailsModal(false);
                         handleOpenRececao(enc);
                     }}
+                    onReordenar={handleReordenar}
                     isAdmin={isAdmin}
                 />
             )}
