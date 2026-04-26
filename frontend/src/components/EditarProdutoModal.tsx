@@ -17,6 +17,7 @@ interface Produto {
     descricao?: string;
     fornecedores?: { id: number; nome: string }[];
     fornecedorPreferencial?: { id: number; nome: string } | null;
+    precosFornecedores?: { fornecedorId: number; preco: number }[];
     linhasPedido?: {
         pedidoCompra: {
             id: number;
@@ -59,6 +60,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
     // Fornecedores State
     const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean }[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
+    const [fornecedorPrecos, setFornecedorPrecos] = useState<Record<number, string>>({});
     const [fornecedorPreferencialId, setFornecedorPreferencialId] = useState<number | null>(null);
     const [isFornecedoresOpen, setIsFornecedoresOpen] = useState(false);
 
@@ -103,6 +105,16 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 setSelectedFornecedores(produto.fornecedores.map(f => f.id));
             } else {
                 setSelectedFornecedores([]);
+            }
+            
+            if (produto.precosFornecedores && Array.isArray(produto.precosFornecedores)) {
+                const map: Record<number, string> = {};
+                produto.precosFornecedores.forEach(pf => {
+                    map[pf.fornecedorId] = pf.preco.toString();
+                });
+                setFornecedorPrecos(map);
+            } else {
+                setFornecedorPrecos({});
             }
             
             if (produto.fornecedorPreferencial) {
@@ -177,6 +189,11 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             return;
         }
 
+        const fornecedoresData = selectedFornecedores.map(id => ({
+            id,
+            preco: parseFloat(fornecedorPrecos[id] || preco) || 0
+        }));
+
         setError(null);
         setLoading(true);
         try {
@@ -187,7 +204,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 preco: precoNumber,
                 categoria: categoria || undefined,
                 descricao: descricao || undefined,
-                fornecedorIds: selectedFornecedores, // Can be empty array if all are removed
+                fornecedoresData: fornecedoresData.length > 0 ? fornecedoresData : undefined,
                 fornecedorPreferencialId: fornecedorPreferencialId || undefined,
             });
             onSuccess();
@@ -336,7 +353,9 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                 )}
                             </div>
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Preço (€)</label>
+                                <label className="text-sm font-medium text-slate-700 ml-0.5">
+                                    Preço Base (€)
+                                </label>
                                 <div className="relative">
                                     <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -423,6 +442,43 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                 </div>
                             )}
                         </div>
+
+                        {/* List of selected suppliers to define price */}
+                        {selectedFornecedores.length > 0 && (
+                            <div className="space-y-2 mt-4 bg-slate-50/50 p-3 rounded-xl border border-slate-100">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                                    Preços Acordados por Fornecedor
+                                </h4>
+                                {selectedFornecedores.map(fId => {
+                                    const fNome = fornecedores.find(f => f.id === fId)?.nome || '';
+                                    return (
+                                        <div key={fId} className="flex items-center justify-between p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${fornecedorPreferencialId === fId ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
+                                                <span className={`text-sm font-medium ${fornecedorPreferencialId === fId ? 'text-amber-700 font-bold' : 'text-slate-700'}`}>{fNome}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="relative w-24">
+                                                    <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={fornecedorPrecos[fId] || ''}
+                                                        onChange={(e) => setFornecedorPrecos(prev => ({ ...prev, [fId]: e.target.value }))}
+                                                        placeholder={preco || '0.00'}
+                                                        className="w-full pl-6 pr-2 py-1 text-sm font-semibold text-slate-900 bg-white border border-slate-200 rounded-md focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <p className="text-[10px] text-slate-400 mt-2">
+                                    O preço do fornecedor <strong className="text-amber-500">★ Preferencial</strong> substituirá o preço base do produto.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Section: Stock */}

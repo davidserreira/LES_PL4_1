@@ -89,5 +89,9 @@ export const fornecedorService = {
             dataCriacao: string;
             utilizador: { id: number; username: string };
         }[];
+    },
+    updateProdutoPreco: async (id: number, produtoId: number, preco: number) => {
+        const response = await api.patch(`/fornecedores/${id}/produtos/${produtoId}/preco`, { preco });
+        return response.data;
     }
 };

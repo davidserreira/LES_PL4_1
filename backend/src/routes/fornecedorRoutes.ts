@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getFornecedores, createFornecedor, toggleEstado, updateObservacoes, updateFornecedor, avaliarFornecedor, getAvaliacaoMediaFornecedor, getMinhaAvaliacaoFornecedor, getAvaliacoesFornecedor } from '../controllers/FornecedorController';
+import { getFornecedores, createFornecedor, toggleEstado, updateObservacoes, updateFornecedor, avaliarFornecedor, getAvaliacaoMediaFornecedor, getMinhaAvaliacaoFornecedor, getAvaliacoesFornecedor, updateProdutoPreco } from '../controllers/FornecedorController';
 
 const router = Router();
 
@@ -12,5 +12,6 @@ router.get('/:id/minha-avaliacao', getMinhaAvaliacaoFornecedor);
 router.get('/:id/avaliacao-media', getAvaliacaoMediaFornecedor);
 router.patch('/:id/estado', toggleEstado);
 router.patch('/:id/observacoes', updateObservacoes);
+router.patch('/:id/produtos/:produtoId/preco', updateProdutoPreco);
 
 export default router;

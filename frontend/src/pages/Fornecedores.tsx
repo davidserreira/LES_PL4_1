@@ -25,6 +25,11 @@ interface Fornecedor {
         categoria: string;
         stock: number;
     }[];
+    precosProdutos?: {
+        produtoId: number;
+        fornecedorId: number;
+        preco: number;
+    }[];
     // Condições Comerciais
     valorMinimoEncomenda?: number | null;
     prazoMedioEntrega?: number | null;
@@ -259,6 +264,41 @@ const Fornecedores = () => {
             showToast('Erro ao guardar observações.', 'error');
         } finally {
             setSavingObs(false);
+        }
+    };
+
+    const handleUpdatePreco = async (produtoId: number, novoPreco: string) => {
+        if (!detalhesFornecedor) return;
+        const precoNum = parseFloat(novoPreco);
+        if (isNaN(precoNum)) return;
+
+        try {
+            await fornecedorService.updateProdutoPreco(detalhesFornecedor.id, produtoId, precoNum);
+            
+            // Atualizar estado local do modal
+            const updatedPrecos = detalhesFornecedor.precosProdutos?.map(p => 
+                p.produtoId === produtoId ? { ...p, preco: precoNum } : p
+            ) || [];
+            
+            if (!detalhesFornecedor.precosProdutos?.some(p => p.produtoId === produtoId)) {
+                updatedPrecos.push({ produtoId, fornecedorId: detalhesFornecedor.id, preco: precoNum });
+            }
+
+            setDetalhesFornecedor({
+                ...detalhesFornecedor,
+                precosProdutos: updatedPrecos
+            });
+
+            // Atualizar também na lista principal
+            setFornecedores(fornecedores.map(f => 
+                f.id === detalhesFornecedor.id 
+                ? { ...f, precosProdutos: updatedPrecos } 
+                : f
+            ));
+
+            showToast('Preço acordado atualizado!', 'success');
+        } catch (error) {
+            showToast('Erro ao atualizar preço.', 'error');
         }
     };
 
@@ -792,56 +832,53 @@ const Fornecedores = () => {
                                             )}
                                         </div>
                                         {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 ? (
-                                            <div className="relative mt-4 grid max-h-[min(22rem,50vh)] grid-cols-1 gap-3 overflow-y-auto custom-scrollbar pr-1 sm:grid-cols-2">
-                                                {detalhesFornecedor.produtos.map((prod, index) => {
+                                            <div className="relative mt-4 space-y-2 max-h-[min(22rem,50vh)] overflow-y-auto custom-scrollbar pr-1">
+                                                {detalhesFornecedor.produtos.map((prod) => {
+                                                    const precoObj = detalhesFornecedor.precosProdutos?.find(p => p.produtoId === prod.id);
+                                                    const currentPreco = precoObj ? precoObj.preco : 0;
                                                     const stockNum = Number(prod.stock);
-                                                    const accentClasses = [
-                                                        'from-teal-500/[0.12] to-cyan-500/[0.06] ring-teal-200/60',
-                                                        'from-violet-500/[0.12] to-indigo-500/[0.06] ring-violet-200/60',
-                                                        'from-emerald-500/[0.12] to-teal-500/[0.06] ring-emerald-200/60',
-                                                    ];
-                                                    const accent = accentClasses[index % accentClasses.length];
                                                     const stockLow = stockNum <= 0;
+
                                                     return (
                                                         <div
                                                             key={prod.id}
-                                                            className="group relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-3.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200/80 hover:shadow-md"
+                                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 transition-all group"
                                                         >
-                                                            <div
-                                                                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent} opacity-90`}
-                                                                aria-hidden
-                                                            />
-                                                            <div className="relative flex gap-3">
-                                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/95 text-indigo-600 shadow-inner ring-1 ring-slate-100 transition-transform duration-200 group-hover:scale-105">
-                                                                    <Pill size={22} strokeWidth={1.5} />
+                                                            <div className="flex items-center gap-4 flex-1">
+                                                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                    <Pill size={20} />
                                                                 </div>
-                                                                <div className="min-w-0 flex-1">
-                                                                    <p className="text-sm font-bold leading-snug text-slate-900 line-clamp-2">
+                                                                <div className="min-w-0">
+                                                                    <h4 className="text-sm font-bold text-slate-900 truncate">
                                                                         {prod.nome}
-                                                                    </p>
-                                                                    <span className="mt-1.5 inline-flex max-w-full truncate rounded-md bg-slate-900/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 ring-1 ring-slate-200/60">
-                                                                        {prod.categoria || 'Sem categoria'}
-                                                                    </span>
+                                                                    </h4>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                                            {prod.categoria || 'Sem categoria'}
+                                                                        </span>
+                                                                        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${stockLow ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                                                                            {stockLow ? 'Sem Stock' : `${stockNum} un.`}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="relative mt-3 flex items-center justify-between gap-2 border-t border-slate-200/60 pt-2.5">
-                                                                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                                                    Inventário
-                                                                </span>
-                                                                <span
-                                                                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider tabular-nums shadow-sm ring-1 ${
-                                                                        stockLow
-                                                                            ? 'bg-amber-50 text-amber-800 ring-amber-200/80'
-                                                                            : 'bg-emerald-50 text-emerald-800 ring-emerald-200/80'
-                                                                    }`}
-                                                                >
-                                                                    {stockLow ? (
-                                                                        <AlertCircle size={12} className="shrink-0 text-amber-600" />
-                                                                    ) : (
-                                                                        <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
-                                                                    )}
-                                                                    {stockLow ? 'Sem stock' : `${stockNum} un.`}
-                                                                </span>
+
+                                                            <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-lg border border-slate-100 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-colors">
+                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">Preço:</span>
+                                                                <div className="relative w-28">
+                                                                    <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        defaultValue={currentPreco}
+                                                                        onBlur={(e) => {
+                                                                            if (parseFloat(e.target.value) !== currentPreco) {
+                                                                                handleUpdatePreco(prod.id, e.target.value);
+                                                                            }
+                                                                        }}
+                                                                        className="w-full pl-6 pr-2 py-1 text-sm font-bold text-slate-700 bg-white border border-slate-200 rounded focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
