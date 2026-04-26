@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Check, Trash2, ArrowLeft, Loader2, Package, Building2, ChevronDown, Star, AlertTriangle } from 'lucide-react';
+import { X, Check, Trash2, ArrowLeft, Loader2, Package, Building2, ChevronDown, Star, AlertTriangle, Minus, Plus } from 'lucide-react';
 import { pedidoCompraService } from '../services/pedidoCompraService';
 import { SmartDropdown } from './SmartDropdown';
 
@@ -83,6 +83,13 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
         setLinhasAprovadas(prev => prev.filter(l => l.id !== linhaId));
     };
 
+    const handleUpdateQuantidade = (linhaId: number, novaQuantidade: number) => {
+        if (novaQuantidade <= 0) return;
+        setLinhasAprovadas(prev => prev.map(l => 
+            l.id === linhaId ? { ...l, quantidade: novaQuantidade } : l
+        ));
+    };
+
     const handleNext = () => {
         if (step === 1 && linhasAprovadas.length === 0) {
             setError('Deve manter pelo menos um produto ou cancelar o pedido.');
@@ -111,7 +118,8 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
         try {
             const payloadLinhas = linhasAprovadas.map(linha => ({
                 id: linha.id,
-                fornecedorId: selectedFornecedores[linha.id]
+                fornecedorId: selectedFornecedores[linha.id],
+                quantidade: linha.quantidade
             }));
 
             const savedUser = localStorage.getItem('user');
@@ -225,9 +233,23 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
                                                         {linha.produto?.categoria || 'Sem categoria'}
                                                     </span>
-                                                    <span className="text-sm text-slate-600 font-medium whitespace-nowrap">
-                                                        Quantidade solicitada: <b className="text-slate-800">{linha.quantidade} un</b>
-                                                    </span>
+                                                    <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
+                                                        <button 
+                                                            onClick={() => handleUpdateQuantidade(linha.id, linha.quantidade - 1)}
+                                                            disabled={linha.quantidade <= 1}
+                                                            className="w-6 h-6 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-md transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                                                        >
+                                                            <Minus size={14} />
+                                                        </button>
+                                                        <span className="w-8 text-center text-xs font-bold text-slate-700">{linha.quantidade}</span>
+                                                        <button 
+                                                            onClick={() => handleUpdateQuantidade(linha.id, linha.quantidade + 1)}
+                                                            className="w-6 h-6 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-700 rounded-md transition-colors"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </button>
+                                                    </div>
+                                                    <span className="text-xs font-bold text-slate-500">un</span>
                                                 </div>
                                             </div>
                                         </div>

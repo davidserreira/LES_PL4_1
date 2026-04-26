@@ -274,18 +274,37 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
                 }
             });
 
-            // 2. Atualizar as linhas sobreviventes com o Fornecedor escolhido na Fase 2
+            // 2. Atualizar as linhas sobreviventes com o Fornecedor escolhido na Fase 2 e opcionalmente nova Quantidade
+            let novoValorTotal = 0;
             for (const linha of linhasAprovadas) {
+                const dbLinha = await tx.linhaPedidoCompra.findUnique({
+                    where: { id: linha.id }
+                });
+                if (!dbLinha) continue;
+
+                // Validate new quantity if provided (or default to existing)
+                const newQuantidade = linha.quantidade && linha.quantidade > 0 ? linha.quantidade : dbLinha.quantidade;
+                const newValorTotalLinha = newQuantidade * dbLinha.precoUnitario;
+
                 await tx.linhaPedidoCompra.update({
                     where: { id: linha.id },
-                    data: { fornecedorId: linha.fornecedorId }
+                    data: { 
+                        fornecedorId: linha.fornecedorId,
+                        quantidade: newQuantidade,
+                        valorTotal: newValorTotalLinha
+                    }
                 });
+
+                novoValorTotal += newValorTotalLinha;
             }
 
             // 3. Modificar o estado final na Tabela PedidoCompra
             return await tx.pedidoCompra.update({
                 where: { id },
-                data: { estado: 'APROVADO' },
+                data: { 
+                    estado: 'APROVADO',
+                    valorTotalEstimado: novoValorTotal
+                },
                 include: {
                     linhas: {
                         include: {
