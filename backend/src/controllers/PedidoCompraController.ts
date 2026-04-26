@@ -109,7 +109,8 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
                             include: {
                                 fornecedores: {
                                     include: { avaliacoes: true }
-                                }
+                                },
+                                precosFornecedores: true
                             }
                         },
                         fornecedor: {
@@ -142,7 +143,8 @@ export const getPedidoById = async (req: Request, res: Response): Promise<any> =
                             include: {
                                 fornecedores: {
                                     include: { avaliacoes: true }
-                                }
+                                },
+                                precosFornecedores: true
                             }
                         },
                         fornecedor: {

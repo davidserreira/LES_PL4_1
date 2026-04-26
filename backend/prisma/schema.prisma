@@ -28,6 +28,7 @@ model Produto {
   linhasEncomenda LinhaEncomenda[]
   linhasPedido    LinhaPedidoCompra[]
   fornecedores    Fornecedor[]        @relation("FornecedorToProduto")
+  precosFornecedores ProdutoFornecedor[]
   fornecedorPreferencialId Int?
   fornecedorPreferencial   Fornecedor? @relation("FornecedorPreferencial", fields: [fornecedorPreferencialId], references: [id])
 }
@@ -51,7 +52,19 @@ model Fornecedor {
   encomendas           Encomenda[]
   linhasPedido         LinhaPedidoCompra[]
   produtos             Produto[]           @relation("FornecedorToProduto")
+  precosProdutos       ProdutoFornecedor[]
   produtosPreferenciais Produto[]          @relation("FornecedorPreferencial")
+}
+
+model ProdutoFornecedor {
+  produtoId    Int
+  fornecedorId Int
+  preco        Float
+
+  produto      Produto    @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
+
+  @@id([produtoId, fornecedorId])
 }
 
 model Avaliacao {

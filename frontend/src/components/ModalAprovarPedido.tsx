@@ -141,12 +141,22 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
         }
     };
 
-    const totalResumo = linhasAprovadas.reduce((acc, linha) => {
-        return acc + (linha.quantidade * (linha.produto?.preco || 0));
+    // Total em tempo real do step 2 e 3 (utilizando o preço do fornecedor selecionado, se aplicável)
+    const totalStep2 = linhasAprovadas.reduce((acc, linha) => {
+        const selectedFId = selectedFornecedores[linha.id];
+        let price = linha.produto?.preco || 0;
+        if (selectedFId && (linha.produto as any)?.precosFornecedores) {
+            const specificPrice = (linha.produto as any).precosFornecedores.find((p: any) => p.fornecedorId === selectedFId)?.preco;
+            if (specificPrice !== undefined) {
+                price = specificPrice;
+            }
+        }
+        return acc + (linha.quantidade * price);
     }, 0);
 
-    // Total em tempo real do step 2 (mesmo cálculo, mas separado para clareza)
-    const totalStep2 = totalResumo;
+    const totalResumo = step >= 2 ? totalStep2 : linhasAprovadas.reduce((acc, linha) => {
+        return acc + (linha.quantidade * (linha.produto?.preco || 0));
+    }, 0);
     const allSuppliersSelected = linhasAprovadas.every(l => {
         const hasFornecedores = (l.produto?.fornecedores?.length || 0) > 0;
         return !hasFornecedores || !!selectedFornecedores[l.id];
@@ -388,7 +398,12 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                     </div>
                                                     <div className="flex items-center gap-2 shrink-0">
                                                         {selectedF && !isOpen && (
-                                                            <span className="text-[11px] font-black text-emerald-700">{formatCurrency(unitPrice)}/un</span>
+                                                            <span className="text-[11px] font-black text-emerald-700">
+                                                                {formatCurrency((() => {
+                                                                    const specificPrice = (linha.produto as any)?.precosFornecedores?.find((p: any) => p.fornecedorId === selectedF.id)?.preco;
+                                                                    return specificPrice !== undefined ? specificPrice : (linha.produto?.preco || 0);
+                                                                })())}/un
+                                                            </span>
                                                         )}
                                                         <ChevronDown size={14} className={`transition-transform duration-200 ${isOpen ? 'rotate-180 text-emerald-600' : 'text-slate-400'}`} />
                                                     </div>
@@ -411,7 +426,8 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                     const isPreferential = linha.produto?.fornecedorPreferencialId === f.id;
                                                     const isRecommended = f.id === recommendedId && !linha.produto?.fornecedorPreferencialId;
                                                     const isSelected = selectedFornecedores[linha.id] === f.id;
-                                                    const fUnitPrice = unitPrice; // preço vem do produto; no futuro pode vir de contrato
+                                                    const precoAcordado = (linha.produto as any)?.precosFornecedores?.find((p: any) => p.fornecedorId === f.id)?.preco;
+                                                    const fUnitPrice = precoAcordado !== undefined ? precoAcordado : (linha.produto?.preco || 0);
                                                     
                                                     return (
                                                         <div 

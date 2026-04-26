@@ -38,6 +38,7 @@ export const getFornecedores = async (req: Request, res: Response) => {
                 produtos: {
                     select: { id: true, nome: true, categoria: true, stock: true }
                 },
+                precosProdutos: true,
                 avaliacoes: true
             },
             orderBy: { nome: 'asc' }
@@ -321,5 +322,47 @@ export const getAvaliacaoMediaFornecedor = async (req: Request, res: Response) =
     } catch (error: any) {
         console.error('Erro ao obter média de avaliação:', error);
         res.status(500).json({ error: 'Erro ao obter média de avaliação do fornecedor', details: error.message });
+    }
+};
+export const updateProdutoPreco = async (req: Request, res: Response) => {
+    try {
+        const { id, produtoId } = req.params;
+        const { preco } = req.body;
+
+        const fornecedorId = parseInt(id);
+        const prodId = parseInt(produtoId);
+        const precoNum = parseFloat(preco);
+
+        if (isNaN(precoNum)) {
+            return res.status(400).json({ error: 'Preço inválido' });
+        }
+
+        const updated = await prisma.produtoFornecedor.update({
+            where: {
+                produtoId_fornecedorId: {
+                    produtoId: prodId,
+                    fornecedorId: fornecedorId
+                }
+            },
+            data: { preco: precoNum }
+        });
+
+        // Se este fornecedor for o preferencial do produto, atualizamos também o preço base do produto
+        const produto = await prisma.produto.findUnique({
+            where: { id: prodId },
+            select: { fornecedorPreferencialId: true }
+        });
+
+        if (produto?.fornecedorPreferencialId === fornecedorId) {
+            await prisma.produto.update({
+                where: { id: prodId },
+                data: { preco: precoNum }
+            });
+        }
+
+        res.json(updated);
+    } catch (error: any) {
+        console.error('Erro ao atualizar preço do produto para o fornecedor:', error);
+        res.status(500).json({ error: 'Erro ao atualizar preço do produto', details: error.message });
     }
 };

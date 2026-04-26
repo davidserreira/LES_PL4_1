@@ -12,6 +12,9 @@ export const getProdutos = async (req: Request, res: Response) => {
                 fornecedorPreferencial: {
                     select: { id: true, nome: true }
                 },
+                precosFornecedores: {
+                    select: { fornecedorId: true, preco: true }
+                },
                 linhasPedido: {
                     include: {
                         pedidoCompra: {
@@ -30,20 +33,31 @@ export const getProdutos = async (req: Request, res: Response) => {
 
 export const createProduto = async (req: Request, res: Response): Promise<any> => {
     try {
-        const { nome, stock, stockMinimo, preco, categoria, descricao, fornecedorIds, fornecedorPreferencialId } = req.body;
+        const { nome, stock, stockMinimo, preco, categoria, descricao, fornecedoresData, fornecedorPreferencialId } = req.body;
         
         let finalPreferencialId = fornecedorPreferencialId;
-        if (fornecedorIds && fornecedorIds.length === 1) {
-            finalPreferencialId = fornecedorIds[0];
-        } else if (fornecedorIds && fornecedorIds.length > 1) {
+        const fData = fornecedoresData || [];
+        
+        if (fData.length === 1) {
+            finalPreferencialId = fData[0].id;
+        } else if (fData.length > 1) {
             if (!finalPreferencialId) {
                 return res.status(400).json({ error: 'Deve selecionar um fornecedor preferencial quando existem múltiplos fornecedores.' });
             }
-            if (!fornecedorIds.includes(finalPreferencialId)) {
+            if (!fData.some((f: any) => f.id === finalPreferencialId)) {
                 return res.status(400).json({ error: 'O fornecedor preferencial deve fazer parte da lista de fornecedores selecionados.' });
             }
         } else {
             finalPreferencialId = null;
+        }
+
+        // Definir preço do produto como o do fornecedor preferencial
+        let finalPreco = preco ? parseFloat(preco) : 0;
+        if (finalPreferencialId) {
+            const prefSupplier = fData.find((f: any) => f.id === finalPreferencialId);
+            if (prefSupplier && prefSupplier.preco !== undefined) {
+                finalPreco = parseFloat(prefSupplier.preco);
+            }
         }
 
         const produto = await prisma.produto.create({
@@ -51,15 +65,21 @@ export const createProduto = async (req: Request, res: Response): Promise<any> =
                 nome,
                 stock: parseFloat(stock),
                 stockMinimo: parseFloat(stockMinimo),
-                preco: preco ? parseFloat(preco) : 0,
+                preco: finalPreco,
                 categoria,
                 descricao,
                 fornecedorPreferencialId: finalPreferencialId,
-                fornecedores: fornecedorIds && fornecedorIds.length > 0 ? {
-                    connect: fornecedorIds.map((id: number) => ({ id }))
+                fornecedores: fData.length > 0 ? {
+                    connect: fData.map((f: any) => ({ id: f.id }))
+                } : undefined,
+                precosFornecedores: fData.length > 0 ? {
+                    create: fData.map((f: any) => ({
+                        fornecedorId: f.id,
+                        preco: parseFloat(f.preco || 0)
+                    }))
                 } : undefined
             },
-            include: { fornecedores: true, fornecedorPreferencial: true }
+            include: { fornecedores: true, fornecedorPreferencial: true, precosFornecedores: true }
         });
         return res.status(201).json(produto);
     } catch (error: any) {
@@ -71,22 +91,36 @@ export const createProduto = async (req: Request, res: Response): Promise<any> =
 export const updateProduto = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
-        const { nome, stock, stockMinimo, preco, categoria, descricao, fornecedorIds, fornecedorPreferencialId } = req.body;
+        const { nome, stock, stockMinimo, preco, categoria, descricao, fornecedoresData, fornecedorPreferencialId } = req.body;
         
         let finalPreferencialId = fornecedorPreferencialId;
-        if (fornecedorIds !== undefined) {
-            if (fornecedorIds.length === 1) {
-                finalPreferencialId = fornecedorIds[0];
-            } else if (fornecedorIds.length > 1) {
+        if (fornecedoresData !== undefined) {
+            if (fornecedoresData.length === 1) {
+                finalPreferencialId = fornecedoresData[0].id;
+            } else if (fornecedoresData.length > 1) {
                 if (!finalPreferencialId) {
                     return res.status(400).json({ error: 'Deve selecionar um fornecedor preferencial quando existem múltiplos fornecedores.' });
                 }
-                if (!fornecedorIds.includes(finalPreferencialId)) {
+                if (!fornecedoresData.some((f: any) => f.id === finalPreferencialId)) {
                     return res.status(400).json({ error: 'O fornecedor preferencial deve fazer parte da lista de fornecedores selecionados.' });
                 }
             } else {
                 finalPreferencialId = null;
             }
+        }
+
+        let finalPreco = preco !== undefined ? parseFloat(preco) : undefined;
+        if (finalPreferencialId && fornecedoresData) {
+            const prefSupplier = fornecedoresData.find((f: any) => f.id === finalPreferencialId);
+            if (prefSupplier && prefSupplier.preco !== undefined) {
+                finalPreco = parseFloat(prefSupplier.preco);
+            }
+        }
+
+        if (fornecedoresData !== undefined) {
+            await prisma.produtoFornecedor.deleteMany({
+                where: { produtoId: parseInt(id) }
+            });
         }
 
         const produto = await prisma.produto.update({
@@ -95,16 +129,21 @@ export const updateProduto = async (req: Request, res: Response): Promise<any> =
                 nome,
                 stock: stock !== undefined ? parseFloat(stock) : undefined,
                 stockMinimo: stockMinimo !== undefined ? parseFloat(stockMinimo) : undefined,
-                preco: preco !== undefined ? parseFloat(preco) : undefined,
+                preco: finalPreco,
                 categoria,
                 descricao,
                 fornecedorPreferencialId: finalPreferencialId,
-                // Replace the entire relation list instead of manually disconnecting
-                fornecedores: fornecedorIds !== undefined ? {
-                    set: fornecedorIds.map((id: number) => ({ id }))
+                fornecedores: fornecedoresData !== undefined ? {
+                    set: fornecedoresData.map((f: any) => ({ id: f.id }))
+                } : undefined,
+                precosFornecedores: fornecedoresData !== undefined ? {
+                    create: fornecedoresData.map((f: any) => ({
+                        fornecedorId: f.id,
+                        preco: parseFloat(f.preco || 0)
+                    }))
                 } : undefined
             },
-            include: { fornecedores: true, fornecedorPreferencial: true }
+            include: { fornecedores: true, fornecedorPreferencial: true, precosFornecedores: true }
         });
         return res.json(produto);
     } catch (error: any) {
