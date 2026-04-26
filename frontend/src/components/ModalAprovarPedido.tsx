@@ -64,6 +64,8 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
             pedido.linhas.forEach((linha: any) => {
                 if (linha.fornecedorId) {
                     initialSelections[linha.id] = linha.fornecedorId;
+                } else if (linha.produto?.fornecedorPreferencialId) {
+                    initialSelections[linha.id] = linha.produto.fornecedorPreferencialId;
                 } else if (linha.produto?.fornecedores?.length === 1) {
                     initialSelections[linha.id] = linha.produto.fornecedores[0].id;
                 } else if (linha.produto?.fornecedores?.length > 1) {
@@ -277,7 +279,7 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                             <div className="flex items-start justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-900">Selecionar Fornecedores</h3>
-                                    <p className="text-sm text-slate-500 mt-0.5">Escolha o fornecedor para cada produto. O <span className="font-semibold text-emerald-600">recomendado</span> é pre-selecionado com base na melhor avaliação.</p>
+                                    <p className="text-sm text-slate-500 mt-0.5">Escolha o fornecedor para cada produto. O <span className="font-semibold text-amber-600">preferencial</span> ou <span className="font-semibold text-emerald-600">recomendado</span> é pré-selecionado.</p>
                                 </div>
                                 <div className="shrink-0 flex flex-col items-end gap-1">
                                     <span className="text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full">
@@ -406,7 +408,8 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                 {produtoFornecedores.map((f: any) => {
                                                     const media = getMediaAvaliacao(f.avaliacoes);
                                                     const mediaVal = media ? parseFloat(media) : 0;
-                                                    const isRecommended = f.id === recommendedId;
+                                                    const isPreferential = linha.produto?.fornecedorPreferencialId === f.id;
+                                                    const isRecommended = f.id === recommendedId && !linha.produto?.fornecedorPreferencialId;
                                                     const isSelected = selectedFornecedores[linha.id] === f.id;
                                                     const fUnitPrice = unitPrice; // preço vem do produto; no futuro pode vir de contrato
                                                     
@@ -436,6 +439,11 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
                                                                     <span className={`font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-slate-800'}`}>{f.nome}</span>
                                                                 </div>
                                                                 <div className="flex items-center gap-1.5">
+                                                                    {isPreferential && (
+                                                                        <span className="bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                                                                            ★ Preferencial
+                                                                        </span>
+                                                                    )}
                                                                     {isRecommended && (
                                                                         <span className="bg-emerald-100 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
                                                                             ★ Recomendado

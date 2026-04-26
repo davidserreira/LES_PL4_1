@@ -1,5 +1,5 @@
 import {
-    X, Package, Calendar, Tag, AlertTriangle, CheckCircle2, Factory, DollarSign, Database, FileText
+    X, Package, Calendar, Tag, AlertTriangle, CheckCircle2, Factory, DollarSign, Database, FileText, Star
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -12,6 +12,7 @@ interface Produto {
     categoria?: string;
     descricao?: string;
     fornecedores?: { id: number; nome: string }[];
+    fornecedorPreferencial?: { id: number; nome: string } | null;
     linhasPedido?: {
         pedidoCompra: {
             id: number;
@@ -145,12 +146,23 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                                 <Factory size={14} /> Fornecedores Vinculados
                             </h3>
                             {produto.fornecedores && produto.fornecedores.length > 0 ? (
-                                <ul className="space-y-1.5">
-                                    {produto.fornecedores.map(f => (
-                                        <li key={f.id} className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div> {f.nome}
-                                        </li>
-                                    ))}
+                                <ul className="space-y-2">
+                                    {produto.fornecedores.map(f => {
+                                        const isPreferencial = produto.fornecedorPreferencial?.id === f.id;
+                                        return (
+                                            <li key={f.id} className={`text-sm font-medium flex items-center justify-between gap-2 p-2.5 bg-white border rounded-xl transition-all ${isPreferencial ? 'border-amber-200 shadow-sm shadow-amber-500/5' : 'border-slate-100 hover:border-slate-200'}`}>
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className={`w-2 h-2 rounded-full shadow-inner ${isPreferencial ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
+                                                    <span className={isPreferencial ? 'text-amber-900 font-bold' : 'text-slate-700'}>{f.nome}</span>
+                                                </div>
+                                                {isPreferencial && (
+                                                    <span className="bg-amber-100 text-amber-700 border border-amber-200 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                                                        <Star size={10} className="fill-current" /> Preferencial
+                                                    </span>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             ) : (
                                 <p className="text-sm italic text-slate-400">Nenhum fornecedor vinculado.</p>

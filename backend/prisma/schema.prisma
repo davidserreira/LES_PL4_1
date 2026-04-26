@@ -28,6 +28,8 @@ model Produto {
   linhasEncomenda LinhaEncomenda[]
   linhasPedido    LinhaPedidoCompra[]
   fornecedores    Fornecedor[]        @relation("FornecedorToProduto")
+  fornecedorPreferencialId Int?
+  fornecedorPreferencial   Fornecedor? @relation("FornecedorPreferencial", fields: [fornecedorPreferencialId], references: [id])
 }
 
 model Fornecedor {
@@ -49,6 +51,7 @@ model Fornecedor {
   encomendas           Encomenda[]
   linhasPedido         LinhaPedidoCompra[]
   produtos             Produto[]           @relation("FornecedorToProduto")
+  produtosPreferenciais Produto[]          @relation("FornecedorPreferencial")
 }
 
 model Avaliacao {
