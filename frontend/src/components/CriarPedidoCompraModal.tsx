@@ -25,6 +25,7 @@ interface CriarPedidoModalProps {
     draftId?: number | null;
     pedidoToEdit?: any | null;
     initialProdutos?: Produto[];
+    initialLinhas?: { produtoId: number; quantidade: number }[];
 }
 
 const formatCurrency = (value: number) => {
@@ -39,7 +40,7 @@ const PRIORIDADES = [
 
 const CATEGORIES = ['Medicamentos', 'Vacinas', 'Higiene', 'Equipamento', 'Outros'];
 
-export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedidoToEdit, initialProdutos }: CriarPedidoModalProps) {
+export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedidoToEdit, initialProdutos, initialLinhas }: CriarPedidoModalProps) {
     const [step, setStep] = useState<1 | 2>(1);
     const [produtos, setProdutos] = useState<Produto[]>([]);
     const [linhas, setLinhas] = useState<LinhaPedido[]>([]);
@@ -103,6 +104,15 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                         setLinhas(draftLinhas);
                     }
                 }).catch(console.error);
+            } else if (initialLinhas && initialLinhas.length > 0) {
+                // Pre-seed from cancelled order with exact quantities
+                const preSeeded = initialLinhas
+                    .map(l => {
+                        const p = data.find((prod: any) => prod.id === l.produtoId);
+                        return p ? { produto: p, quantidade: l.quantidade } : null;
+                    })
+                    .filter(Boolean) as { produto: Produto; quantidade: number }[];
+                setLinhas(preSeeded);
             } else if (initialProdutos && initialProdutos.length > 0) {
                 // Pre-seed from Stock page selection
                 const preSeeded = initialProdutos.map(p => {
