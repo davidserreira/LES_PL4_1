@@ -30,7 +30,7 @@ model Produto {
   fornecedores    Fornecedor[]        @relation("FornecedorToProduto")
   precosFornecedores ProdutoFornecedor[]
   fornecedorPreferencialId Int?
-  fornecedorPreferencial   Fornecedor? @relation("FornecedorPreferencial", fields: [fornecedorPreferencialId], references: [id])
+  fornecedorPreferencial   Fornecedor? @relation("Preferencial", fields: [fornecedorPreferencialId], references: [id])
 }
 
 model Fornecedor {
@@ -52,19 +52,8 @@ model Fornecedor {
   encomendas           Encomenda[]
   linhasPedido         LinhaPedidoCompra[]
   produtos             Produto[]           @relation("FornecedorToProduto")
+  produtosPreferenciais Produto[]           @relation("Preferencial")
   precosProdutos       ProdutoFornecedor[]
-  produtosPreferenciais Produto[]          @relation("FornecedorPreferencial")
-}
-
-model ProdutoFornecedor {
-  produtoId    Int
-  fornecedorId Int
-  preco        Float
-
-  produto      Produto    @relation(fields: [produtoId], references: [id], onDelete: Cascade)
-  fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id], onDelete: Cascade)
-
-  @@id([produtoId, fornecedorId])
 }
 
 model Avaliacao {
@@ -129,15 +118,15 @@ model Encomenda {
 }
 
 model LinhaEncomenda {
-  id            Int       @id @default(autoincrement())
-  encomendaId   Int
-  produtoId     Int
-  quantidade          Float
-  quantidadeRecebida  Float   @default(0)
-  precoUnitario       Float
-  valorTotal          Float
-  encomenda     Encomenda @relation(fields: [encomendaId], references: [id])
-  produto       Produto   @relation(fields: [produtoId], references: [id])
+  id                 Int       @id @default(autoincrement())
+  encomendaId        Int
+  produtoId          Int
+  quantidade         Float
+  precoUnitario      Float
+  valorTotal         Float
+  quantidadeRecebida Float     @default(0)
+  encomenda          Encomenda @relation(fields: [encomendaId], references: [id])
+  produto            Produto   @relation(fields: [produtoId], references: [id])
 }
 
 enum Role {
@@ -157,10 +146,21 @@ enum PrioridadePedido {
   URGENTE
 }
 
+model ProdutoFornecedor {
+  id           Int        @id @default(autoincrement())
+  produtoId    Int
+  fornecedorId Int
+  preco        Float
+  fornecedor   Fornecedor @relation(fields: [fornecedorId], references: [id])
+  produto      Produto    @relation(fields: [produtoId], references: [id])
+
+  @@unique([produtoId, fornecedorId])
+}
+
 enum EstadoEncomenda {
   EMITIDA
   ENVIADA
-  ENTREGUE_PARCIAL
   ENTREGUE
   CANCELADA
+  ENTREGUE_PARCIAL
 }

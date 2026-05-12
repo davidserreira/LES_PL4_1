@@ -3,7 +3,6 @@ import 'dotenv/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-// Prisma 7: usa adapter oficial para Postgres (pool do `pg`).
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -15,4 +14,3 @@ const prisma = new PrismaClient({
 });
 
 export default prisma;
-
