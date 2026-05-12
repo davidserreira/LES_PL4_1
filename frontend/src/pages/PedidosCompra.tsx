@@ -546,20 +546,20 @@ export default function PedidosCompra() {
     const getStatusStyle = (status: string) => {
         switch (status?.toUpperCase()) {
             case 'PENDENTE':
-                return 'text-amber-700 bg-amber-50 border-amber-100';
+                return 'text-amber-700 bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20';
             case 'APROVADO':
-                return 'text-emerald-700 bg-emerald-50 border-emerald-100';
+                return 'text-emerald-700 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20';
             case 'PROCESSADO':
-                return 'text-white bg-emerald-500 border-emerald-600 shadow-sm ring-1 ring-emerald-500/50';
+                return 'text-white bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-500 shadow-sm ring-1 ring-emerald-500/50';
             case 'CANCELADO':
             case 'RECUSADO':
-                return 'text-red-700 bg-red-50 border-red-100';
+                return 'text-red-700 bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20';
             case 'CONCLUÍDO':
-                return 'text-emerald-800 bg-emerald-100 border-emerald-200';
+                return 'text-emerald-800 bg-emerald-100 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20';
             case 'ENCERRADO':
-                return 'text-slate-600 bg-slate-100 border-slate-200';
+                return 'text-slate-600 bg-slate-100 dark:bg-slate-500/10 border-slate-200 dark:border-slate-500/20';
             default:
-                return 'text-slate-700 bg-slate-50 border-slate-200';
+                return 'text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
         }
     };
 
