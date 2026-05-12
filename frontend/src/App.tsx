@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import PedidosCompra from './pages/PedidosCompra';
 import Encomendas from './pages/Encomendas';
 import { Utilizador } from './services/utilizadorService';
+import ThemeToggle from './components/ThemeToggle';
 
 function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -30,7 +31,7 @@ function App() {
     return (
         <BrowserRouter>
             {user ? (
-                <div className="flex min-h-screen bg-slate-50 font-sans">
+                <div className="flex min-h-screen bg-slate-50 dark:bg-slate-900 font-sans transition-colors duration-300">
                     <Sidebar
                         user={user}
                         isCollapsed={isSidebarCollapsed}
@@ -49,11 +50,15 @@ function App() {
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                     </main>
+                    <ThemeToggle />
                 </div>
             ) : (
-                <Routes>
-                    <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
-                </Routes>
+                <>
+                    <Routes>
+                        <Route path="*" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+                    </Routes>
+                    <ThemeToggle />
+                </>
             )}
         </BrowserRouter>
     );

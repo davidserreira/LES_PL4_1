@@ -106,7 +106,7 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                 onClick={handleClose}
             />
 
-            <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
+            <div className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
                 <div className="bg-slate-900 p-6">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -115,7 +115,7 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                         </h2>
                         <button
                             onClick={handleClose}
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white dark:bg-slate-800/10 rounded-lg transition-all"
                         >
                             <X size={20} />
                         </button>
@@ -124,7 +124,7 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
                     {error && (
-                        <div className="animate-shake rounded-lg bg-red-50 border border-red-100 p-3 flex gap-3 items-center">
+                        <div className="animate-shake rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-3 flex gap-3 items-center">
                             <AlertCircle className="text-red-500 shrink-0" size={18} />
                             <p className="text-sm font-medium text-red-800">{error}</p>
                         </div>
@@ -132,7 +132,7 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-1.5 pt-1">
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Valor Mínimo Encomenda (€)</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Valor Mínimo Encomenda (€)</label>
                             <div className="relative">
                                 <TrendingUp className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                 <input
@@ -141,13 +141,13 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                                     min="0"
                                     value={valorMinimo}
                                     onChange={(e) => setValorMinimo(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
                                     placeholder="Ex: 50.00"
                                 />
                             </div>
                         </div>
                         <div className="space-y-1.5 pt-1">
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Prazo Médio Entrega (Dias)</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Prazo Médio Entrega (Dias)</label>
                             <div className="relative">
                                 <Truck className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                 <input
@@ -155,13 +155,13 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                                     min="0"
                                     value={prazo}
                                     onChange={(e) => setPrazo(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
                                     placeholder="Ex: 5"
                                 />
                             </div>
                         </div>
                         <div className="space-y-1.5 pt-1">
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Custo de Transporte (€)</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Custo de Transporte (€)</label>
                             <div className="relative">
                                 <TrendingUp className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                 <input
@@ -170,7 +170,7 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                                     min="0"
                                     value={custo}
                                     onChange={(e) => setCusto(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
                                     placeholder="Ex: 15.00"
                                 />
                             </div>
@@ -178,28 +178,28 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                     </div>
 
                     <div className="space-y-1.5 pt-1">
-                        <label className="text-sm font-medium text-slate-700 ml-0.5">Método de Pagamento</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Método de Pagamento</label>
                         <div className="relative">
                             <HandCoins className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 value={pagamento}
                                 onChange={(e) => setPagamento(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
+                                className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
                                 placeholder="Ex: Transferência Bancária (30 dias)"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-1.5 pt-1">
-                        <label className="text-sm font-medium text-slate-700 ml-0.5">Dias Habituais de Entrega</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Dias Habituais de Entrega</label>
                         <div className="relative">
                             <CalendarDays className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 value={dias}
                                 onChange={(e) => setDias(e.target.value)}
-                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
+                                className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-600/5 focus:border-emerald-600 outline-none transition-all text-sm"
                                 placeholder="Ex: Terças e Quintas"
                             />
                         </div>
@@ -209,7 +209,7 @@ const EditarCondicoesModal = ({ isOpen, fornecedor, onClose, onSuccess }: Editar
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all text-sm"
+                            className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-all text-sm"
                         >
                             Cancelar
                         </button>

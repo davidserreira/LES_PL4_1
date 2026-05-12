@@ -242,37 +242,37 @@ const CriarPedidoCompra = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-slate-900">Criar Pedido de Compra</h1>
-                    <p className="mt-1 text-sm text-slate-500">Crie uma nova requisição interna de compra</p>
+                    <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Criar Pedido de Compra</h1>
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Crie uma nova requisição interna de compra</p>
                 </div>
             </div>
 
             {/* DADOS GERAIS */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col gap-5">
-                <h2 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Dados Gerais</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 flex flex-col gap-5">
+                <h2 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase">Dados Gerais</h2>
                 <div className="flex flex-row items-center w-full gap-8">
                     <div className="flex-1">
-                        <p className="text-xs text-slate-500 mb-1">ID do Pedido</p>
-                        <p className="text-sm font-bold text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">ID do Pedido</p>
+                        <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
                             {createdPedido?.codigoFormatado ?? previewPedidoCode(nextPedidoId)}
                         </p>
                     </div>
                     <div className="flex-1">
-                        <p className="text-xs text-slate-500 mb-1">Data de Criação</p>
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Data de Criação</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {createdPedido?.criadoEm ? formatDate(createdPedido.criadoEm) : hoje}
                         </p>
                     </div>
                     <div className="flex-1">
-                        <p className="text-xs text-slate-500 mb-1">Tipo de Pedido</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Tipo de Pedido</p>
                         <div className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                            <p className="text-sm font-medium text-slate-900">Manual</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Manual</p>
                         </div>
                     </div>
                     <div className="flex-1">
-                        <p className="text-xs text-slate-500 mb-1">Emitido por</p>
-                        <p className="text-sm font-medium text-slate-900">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Emitido por</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {createdPedido?.criadoPor?.username
                                 ? `${createdPedido.criadoPor.username} (${getRoleLabel(createdPedido.criadoPor.role)})`
                                 : user
@@ -281,15 +281,15 @@ const CriarPedidoCompra = () => {
                         </p>
                     </div>
                     <div className="flex-1 relative" ref={prioridadeRef}>
-                        <p className="text-xs text-slate-500 mb-1">Prioridade</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Prioridade</p>
                         <button
                             type="button"
                             onClick={() => setIsPrioridadeOpen(!isPrioridadeOpen)}
-                            className="w-[120px] px-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all flex items-center justify-between text-sm group hover:bg-slate-50 shadow-sm"
+                            className="w-[120px] px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all flex items-center justify-between text-sm group hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 shadow-sm"
                         >
                             <div className="flex items-center gap-2">
                                 <span className={`w-2 h-2 rounded-full ${PRIORIDADES.find(p => p.value === prioridade)?.dot}`}></span>
-                                <span className="font-medium text-slate-700">
+                                <span className="font-medium text-slate-700 dark:text-slate-300">
                                     {PRIORIDADES.find(p => p.value === prioridade)?.label}
                                 </span>
                             </div>
@@ -297,7 +297,7 @@ const CriarPedidoCompra = () => {
                         </button>
 
                         {isPrioridadeOpen && (
-                            <div className="absolute top-[calc(100%+4px)] left-0 w-[120px] bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                            <div className="absolute top-[calc(100%+4px)] left-0 w-[120px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
                                 {PRIORIDADES.map((item) => (
                                     <button
                                         key={item.value}
@@ -306,7 +306,7 @@ const CriarPedidoCompra = () => {
                                             setPrioridade(item.value);
                                             setIsPrioridadeOpen(false);
                                         }}
-                                        className={`w-full px-3 py-2 flex items-center gap-2 transition-colors text-sm ${prioridade === item.value ? 'bg-emerald-50 text-emerald-700 font-medium' : 'text-slate-600 hover:bg-slate-50'}`}
+                                        className={`w-full px-3 py-2 flex items-center gap-2 transition-colors text-sm ${prioridade === item.value ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 font-medium' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                     >
                                         <span className={`w-2 h-2 rounded-full ${item.dot}`}></span>
                                         {item.label}
@@ -319,13 +319,13 @@ const CriarPedidoCompra = () => {
             </div>
 
             {/* PRODUTOS */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-transparent">
-                    <h2 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase">Produtos</h2>
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex justify-between items-center bg-transparent">
+                    <h2 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase">Produtos</h2>
                     {!isSelectionOpen && (
                         <button
                             onClick={() => setIsSelectionOpen(true)}
-                            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600 border border-slate-200 rounded-lg px-3 py-1.5 hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                            className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 hover:border-emerald-200 hover:bg-emerald-50 dark:bg-emerald-500/10 hover:text-emerald-700 transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                         >
                             <Plus size={14} strokeWidth={2.5} /> Adicionar Produto
                         </button>
@@ -333,62 +333,62 @@ const CriarPedidoCompra = () => {
                 </div>
 
                 {isSelectionOpen && (
-                    <div className="m-6 border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 bg-slate-50/50">
-                            <h3 className="text-xs font-semibold text-slate-700 tracking-wide uppercase">Selecionar Produto</h3>
-                            <button onClick={() => setIsSelectionOpen(false)} className="text-slate-400 hover:text-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-300 rounded p-1">
+                    <div className="m-6 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                        <div className="px-5 py-4 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50">
+                            <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300 tracking-wide uppercase">Selecionar Produto</h3>
+                            <button onClick={() => setIsSelectionOpen(false)} className="text-slate-400 hover:text-slate-600 dark:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-300 rounded p-1">
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="p-5 space-y-4 bg-white">
+                        <div className="p-5 space-y-4 bg-white dark:bg-slate-800">
                             {/* Filtros e Pesquisa parecidos ao Catálogo */}
                             <div className="flex flex-col gap-4 mb-4">
                                 {/* Filtros */}
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white p-3 rounded-xl border border-slate-200 shadow-sm relative z-20">
-                                    <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 pl-1">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative z-20">
+                                    <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm mr-2 pl-1">
                                         <Filter size={16} />
                                         Filtros:
                                     </div>
 
                                     {/* Status Filter */}
-                                    <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60">
+                                    <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700/60">
                                         <button
                                             onClick={() => setFilterStatus('todos')}
-                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'todos' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                         >
                                             Todos
                                         </button>
                                         <button
                                             onClick={() => setFilterStatus('estavel')}
-                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'estavel' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'estavel' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                         >
                                             Estável
                                         </button>
                                         <button
                                             onClick={() => setFilterStatus('critico')}
-                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'critico' ? 'bg-white text-amber-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterStatus === 'critico' ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                         >
                                             Crítico
                                         </button>
                                     </div>
 
-                                    <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+                                    <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
                                     {/* Category Dropdown */}
                                     <div className="relative min-w-[200px]">
                                         <button
                                             onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
-                                            className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterCategory ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                            className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterCategory ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'}`}
                                         >
                                             {filterCategory || 'Todas as Categorias'}
                                             <ChevronDown size={16} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
                                         </button>
 
                                         {isFilterCategoryOpen && (
-                                            <div className="absolute top-full left-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                            <div className="absolute top-full left-0 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                                                 <button
                                                     onClick={() => { setFilterCategory(''); setIsFilterCategoryOpen(false); }}
-                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategory ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategory ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                                 >
                                                     Todas as Categorias
                                                 </button>
@@ -396,7 +396,7 @@ const CriarPedidoCompra = () => {
                                                     <button
                                                         key={cat}
                                                         onClick={() => { setFilterCategory(cat); setIsFilterCategoryOpen(false); }}
-                                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategory === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                        className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategory === cat ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                                     >
                                                         {cat}
                                                     </button>
@@ -409,7 +409,7 @@ const CriarPedidoCompra = () => {
                                     {(filterStatus !== 'todos' || filterCategory !== '' || searchQuery !== '') && (
                                         <button
                                             onClick={() => { setFilterStatus('todos'); setFilterCategory(''); setSearchQuery(''); }}
-                                            className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2 whitespace-nowrap"
+                                            className="ml-auto text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors px-2 whitespace-nowrap"
                                         >
                                             Limpar filtros
                                         </button>
@@ -417,7 +417,7 @@ const CriarPedidoCompra = () => {
                                 </div>
                                 
                                 {/* Barra de Pesquisa */}
-                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative z-10">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative z-10">
                                     <div className="relative w-full max-w-md">
                                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <input
@@ -425,19 +425,19 @@ const CriarPedidoCompra = () => {
                                             placeholder="Pesquisar por nome ou descrição..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400 text-slate-700 focus:ring-0"
+                                            className="w-full pl-10 pr-4 py-2.5 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400 text-slate-700 dark:text-slate-300 focus:ring-0"
                                         />
                                     </div>
-                                    <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap">
-                                        A mostrar <span className="font-bold text-slate-700">{filteredProdutos.length}</span> de <span className="font-bold text-slate-700">{produtos.length}</span> produtos
+                                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium px-4 whitespace-nowrap">
+                                        A mostrar <span className="font-bold text-slate-700 dark:text-slate-300">{filteredProdutos.length}</span> de <span className="font-bold text-slate-700 dark:text-slate-300">{produtos.length}</span> produtos
                                     </div>
                                 </div>
                             </div>
 
                             {/* Tabela de Pesquisa */}
-                            <div className="border border-slate-200 rounded-lg overflow-hidden max-h-72 overflow-y-auto custom-scrollbar">
+                            <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden max-h-72 overflow-y-auto custom-scrollbar">
                                 <table className="w-full text-left text-sm whitespace-nowrap">
-                                    <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider sticky top-0 z-10 font-bold border-b border-slate-200">
+                                    <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider sticky top-0 z-10 font-bold border-b border-slate-200 dark:border-slate-700">
                                         <tr>
                                             <th className="px-5 py-3">Produto</th>
                                             <th className="px-5 py-3 text-right">Preço</th>
@@ -447,21 +447,21 @@ const CriarPedidoCompra = () => {
                                             <th className="px-5 py-3"></th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-100 bg-white">
+                                    <tbody className="divide-y divide-slate-100 bg-white dark:bg-slate-800">
                                         {filteredProdutos.map(p => {
                                             const isAbaixo = p.stock < p.stockMinimo;
                                             const sugestao = p.stockMinimo - p.stock;
                                             const isSelected = linhas.some(l => l.produto.id === p.id);
 
                                             return (
-                                                <tr key={p.id} className="hover:bg-slate-50/80 transition-colors group">
+                                                <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/80 transition-colors group">
                                                     <td className="px-5 py-4">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                                                            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
                                                                 <span className="text-slate-400 font-bold text-sm">📦</span>
                                                             </div>
                                                             <div>
-                                                                <p className="font-semibold text-slate-800 text-sm leading-none">{p.nome}</p>
+                                                                <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm leading-none">{p.nome}</p>
                                                                 {isAbaixo && (
                                                                     <p className="text-[10px] text-red-500 font-semibold flex items-center gap-1 mt-1">
                                                                         <AlertTriangle size={10} strokeWidth={3} /> Abaixo do mínimo
@@ -470,17 +470,17 @@ const CriarPedidoCompra = () => {
                                                             </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-5 py-4 text-right text-slate-600 font-medium">{formatCurrency(p.preco)}</td>
-                                                    <td className={`px-5 py-4 text-center font-bold ${isAbaixo ? 'text-red-500 bg-red-50/50' : 'text-slate-700'}`}>
+                                                    <td className="px-5 py-4 text-right text-slate-600 dark:text-slate-400 font-medium">{formatCurrency(p.preco)}</td>
+                                                    <td className={`px-5 py-4 text-center font-bold ${isAbaixo ? 'text-red-500 bg-red-50 dark:bg-red-500/10' : 'text-slate-700 dark:text-slate-300'}`}>
                                                         {p.stock}
                                                     </td>
-                                                    <td className="px-5 py-4 text-center text-slate-500 font-medium">{p.stockMinimo}</td>
-                                                    <td className="px-5 py-4 text-center text-slate-500">
-                                                        {sugestao > 0 ? <span className="text-slate-600 font-semibold">+{sugestao}</span> : '-'}
+                                                    <td className="px-5 py-4 text-center text-slate-500 dark:text-slate-400 font-medium">{p.stockMinimo}</td>
+                                                    <td className="px-5 py-4 text-center text-slate-500 dark:text-slate-400">
+                                                        {sugestao > 0 ? <span className="text-slate-600 dark:text-slate-400 font-semibold">+{sugestao}</span> : '-'}
                                                     </td>
                                                     <td className="px-5 py-4 text-right">
                                                         {isSelected ? (
-                                                            <button disabled className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-slate-100 text-slate-400 text-xs font-bold rounded-lg cursor-not-allowed">
+                                                            <button disabled className="inline-flex items-center justify-center gap-1.5 px-4 py-1.5 bg-slate-100 dark:bg-slate-700/50 text-slate-400 text-xs font-bold rounded-lg cursor-not-allowed">
                                                                 <Check size={14} strokeWidth={3} /> Adicionado
                                                             </button>
                                                         ) : (
@@ -497,7 +497,7 @@ const CriarPedidoCompra = () => {
                                         })}
                                         {filteredProdutos.length === 0 && (
                                             <tr>
-                                                <td colSpan={6} className="px-5 py-10 text-center text-slate-500 text-sm font-medium">Nenhum produto encontrado.</td>
+                                                <td colSpan={6} className="px-5 py-10 text-center text-slate-500 dark:text-slate-400 text-sm font-medium">Nenhum produto encontrado.</td>
                                             </tr>
                                         )}
                                     </tbody>
@@ -508,11 +508,11 @@ const CriarPedidoCompra = () => {
                 )}
 
                 {hasProdutos ? (
-                    <div className="border-t border-slate-100 bg-white">
+                    <div className="border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
                         {/* Tabela de Carrinho */}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm whitespace-nowrap">
-                                <thead className="bg-slate-50/50 text-slate-500 text-[10px] uppercase tracking-wider font-bold">
+                                <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-[10px] uppercase tracking-wider font-bold">
                                     <tr>
                                         <th className="px-6 py-4">Produto</th>
                                         <th className="px-6 py-4 text-center">Stock Atual</th>
@@ -532,14 +532,14 @@ const CriarPedidoCompra = () => {
                                         const lineTotal = p.preco * linha.quantidade;
 
                                         return (
-                                            <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors">
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                                                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0">
                                                             <span className="text-slate-400 font-bold text-sm">📦</span>
                                                         </div>
                                                         <div>
-                                                            <p className="font-semibold text-slate-900 text-sm leading-none">{p.nome}</p>
+                                                            <p className="font-semibold text-slate-900 dark:text-slate-100 text-sm leading-none">{p.nome}</p>
                                                             {hasSugestao && (
                                                                 <p className="text-[10px] font-medium text-slate-400 mt-1">
                                                                     Sugestão: +{sugestao} unidades
@@ -548,16 +548,16 @@ const CriarPedidoCompra = () => {
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className={`px-6 py-4 text-center font-bold ${isAbaixo ? 'text-red-500' : 'text-slate-700'}`}>
+                                                <td className={`px-6 py-4 text-center font-bold ${isAbaixo ? 'text-red-500' : 'text-slate-700 dark:text-slate-300'}`}>
                                                     {p.stock}
                                                 </td>
-                                                <td className="px-6 py-4 text-center text-slate-500 font-medium">{p.stockMinimo}</td>
+                                                <td className="px-6 py-4 text-center text-slate-500 dark:text-slate-400 font-medium">{p.stockMinimo}</td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center justify-center">
-                                                        <div className="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                                        <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-sm">
                                                             <button
                                                                 onClick={() => handleQuantidadeChange(p.id, Math.max(1, linha.quantidade - 1))}
-                                                                className="w-10 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors focus:outline-none disabled:opacity-50"
+                                                                className="w-10 h-9 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 hover:text-slate-800 dark:text-slate-200 transition-colors focus:outline-none disabled:opacity-50"
                                                                 disabled={linha.quantidade <= 1}
                                                             >-</button>
                                                             <input
@@ -565,22 +565,22 @@ const CriarPedidoCompra = () => {
                                                                 min={1}
                                                                 value={linha.quantidade}
                                                                 onChange={e => handleQuantidadeChange(p.id, parseInt(e.target.value) || 1)}
-                                                                className="w-14 h-9 text-center font-bold text-slate-900 focus:outline-none border-x border-slate-200"
+                                                                className="w-14 h-9 text-center font-bold text-slate-900 dark:text-slate-100 focus:outline-none border-x border-slate-200 dark:border-slate-700"
                                                                 style={{ MozAppearance: 'textfield' }}
                                                             />
                                                             <button
                                                                 onClick={() => handleQuantidadeChange(p.id, linha.quantidade + 1)}
-                                                                className="w-10 h-9 flex items-center justify-center text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors focus:outline-none"
+                                                                className="w-10 h-9 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 hover:text-slate-800 dark:text-slate-200 transition-colors focus:outline-none"
                                                             >+</button>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-right text-slate-600 font-medium">{formatCurrency(p.preco)}</td>
-                                                <td className="px-6 py-4 text-right text-slate-900 font-bold text-[15px]">{formatCurrency(lineTotal)}</td>
+                                                <td className="px-6 py-4 text-right text-slate-600 dark:text-slate-400 font-medium">{formatCurrency(p.preco)}</td>
+                                                <td className="px-6 py-4 text-right text-slate-900 dark:text-slate-100 font-bold text-[15px]">{formatCurrency(lineTotal)}</td>
                                                 <td className="px-6 py-4 text-center">
                                                     <button
                                                         onClick={() => handleRemover(p.id)}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
                                                         title="Remover"
                                                     >
                                                         <Trash2 size={18} />
@@ -594,30 +594,30 @@ const CriarPedidoCompra = () => {
                         </div>
 
                         {/* Observações */}
-                        <div className="p-6 bg-white border-t border-slate-100">
-                            <h3 className="text-[11px] font-bold text-slate-500 tracking-widest uppercase mb-3 text-left">Observações</h3>
+                        <div className="p-6 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700/50">
+                            <h3 className="text-[11px] font-bold text-slate-500 dark:text-slate-400 tracking-widest uppercase mb-3 text-left">Observações</h3>
                             <textarea
                                 value={observacoes}
                                 onChange={(e) => setObservacoes(e.target.value)}
                                 placeholder="Adicione observações ou instruções relevantes para este pedido (opcional)..."
-                                className="w-full h-20 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none transition-all"
+                                className="w-full h-20 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none transition-all"
                             />
                         </div>
 
                         {/* SUMÁRIO */}
-                        <div className="p-6 bg-slate-50/50 flex flex-col items-end border-t border-slate-200">
+                        <div className="p-6 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-end border-t border-slate-200 dark:border-slate-700">
                             <div className="w-full sm:w-auto min-w-[320px] pt-4 space-y-3">
-                                <div className="flex justify-between items-center text-sm font-medium text-slate-500 px-4">
+                                <div className="flex justify-between items-center text-sm font-medium text-slate-500 dark:text-slate-400 px-4">
                                     <span>Linhas do Pedido:</span>
-                                    <span className="text-slate-700 font-bold">{totalLinhas}</span>
+                                    <span className="text-slate-700 dark:text-slate-300 font-bold">{totalLinhas}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-sm font-medium text-slate-500 px-4">
+                                <div className="flex justify-between items-center text-sm font-medium text-slate-500 dark:text-slate-400 px-4">
                                     <span>Quantidade Total:</span>
-                                    <span className="text-slate-700 font-bold">{quantidadeTotal}</span>
+                                    <span className="text-slate-700 dark:text-slate-300 font-bold">{quantidadeTotal}</span>
                                 </div>
-                                <div className="flex justify-between items-center p-4 bg-white border border-slate-200 rounded-xl shadow-sm mt-3 mb-6">
-                                    <span className="font-bold text-slate-700">Total Estimado:</span>
-                                    <span className="text-xl font-black text-slate-900 tracking-tight">{formatCurrency(totalEstimado)}</span>
+                                <div className="flex justify-between items-center p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm mt-3 mb-6">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">Total Estimado:</span>
+                                    <span className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatCurrency(totalEstimado)}</span>
                                 </div>
 
                                 {/* Botões de Ação */}
@@ -626,8 +626,8 @@ const CriarPedidoCompra = () => {
                                         onClick={handleLimpar}
                                         disabled={!hasProdutos || isSubmitting}
                                         className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors border shadow-sm ${(!hasProdutos || isSubmitting)
-                                            ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed opacity-70'
-                                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                                            ? 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed opacity-70'
+                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
                                             }`}
                                     >
                                         <Trash2 size={16} /> Limpar
@@ -652,13 +652,13 @@ const CriarPedidoCompra = () => {
                     </div>
                 ) : !isSelectionOpen ? (
                     // ESTADO VAZIO (só mostrar quando não estamos a selecionar produtos)
-                    <div className="p-6 sm:p-12 bg-white">
+                    <div className="p-6 sm:p-12 bg-white dark:bg-slate-800">
                         <div className="flex flex-col items-center justify-center text-center py-16">
-                            <div className="w-16 h-16 bg-slate-100 border border-slate-200 rounded-full flex items-center justify-center mb-5 shadow-sm">
+                            <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center mb-5 shadow-sm">
                                 <ShoppingCart className="text-slate-400" size={28} />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">Nenhum produto adicionado</h3>
-                            <p className="text-sm text-slate-500 mb-8 max-w-sm">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Nenhum produto adicionado</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 max-w-sm">
                                 Comece por adicionar produtos ao seu pedido de compra
                             </p>
                             <button
