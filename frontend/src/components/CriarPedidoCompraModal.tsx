@@ -311,39 +311,39 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                 }
             }}
         >
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-emerald-50/10">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-emerald-50 dark:bg-emerald-500/10">
                     <div>
-                        <h2 className="text-xl font-bold text-slate-900">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
                             {pedidoToEdit ? 'Editar Pedido de Compra' : (currentDraftId ? 'Editar Rascunho' : 'Criar Pedido de Compra')}
                         </h2>
-                        <p className="text-sm text-slate-500">
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                             {step === 1 ? 'Passo 1: Selecione os produtos para o pedido' : 'Passo 2: Reveja e submeta o pedido'}
                         </p>
                     </div>
                     <button 
                         onClick={handleCloseX}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
+                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900 relative">
                     {/* Stepper Visual */}
                     <div className="flex items-center justify-center mb-8">
                         <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shadow-sm ${step === 1 ? 'bg-emerald-600 text-white' : 'bg-emerald-600 text-white'}`}>
                             {step === 2 ? <Check size={16} strokeWidth={3} /> : '1'}
                         </div>
-                        <div className={`w-16 h-1 mx-2 rounded-full ${step === 2 ? 'bg-emerald-600' : 'bg-slate-200'}`}></div>
-                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shadow-sm ${step === 2 ? 'bg-emerald-600 text-white' : 'bg-white border-2 border-slate-200 text-slate-400'}`}>
+                        <div className={`w-16 h-1 mx-2 rounded-full ${step === 2 ? 'bg-emerald-600' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
+                        <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shadow-sm ${step === 2 ? 'bg-emerald-600 text-white' : 'bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400'}`}>
                             2
                         </div>
-                        <div className="w-16 h-1 mx-2 rounded-full bg-slate-200"></div>
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold bg-white border-2 border-slate-200 text-slate-400 shadow-sm">
+                        <div className="w-16 h-1 mx-2 rounded-full bg-slate-200 dark:bg-slate-700"></div>
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 text-slate-400 shadow-sm">
                             3
                         </div>
                     </div>
@@ -351,32 +351,32 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                     {step === 1 && (
                         <div className="space-y-6">
                             {/* Filtros e Pesquisa */}
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-visible shadow-sm z-20 relative">
-                                <div className="p-4 border-b border-slate-100 space-y-4">
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-visible shadow-sm z-20 relative">
+                                <div className="p-4 border-b border-slate-100 dark:border-slate-700/50 space-y-4">
                                     {/* Linha 1: Filtros Compactos */}
                                     <div className="flex flex-wrap items-center gap-3">
-                                        <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
+                                        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 font-medium text-xs">
                                             <Filter size={14} />
                                             Filtros:
                                         </div>
                                         
                                         {/* Status Filter */}
-                                        <div className="flex p-0.5 bg-slate-100/80 rounded-lg border border-slate-200/60">
+                                        <div className="flex p-0.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700/60">
                                             <button
                                                 onClick={() => setFilterStatus('todos')}
-                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                             >
                                                 Todos
                                             </button>
                                             <button
                                                 onClick={() => setFilterStatus('estavel')}
-                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${filterStatus === 'estavel' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${filterStatus === 'estavel' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                             >
                                                 Estável
                                             </button>
                                             <button
                                                 onClick={() => setFilterStatus('critico')}
-                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${filterStatus === 'critico' ? 'bg-white text-amber-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                                className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${filterStatus === 'critico' ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                             >
                                                 Crítico
                                             </button>
@@ -386,16 +386,16 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                         <div className="relative min-w-[150px]">
                                             <button
                                                 onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
-                                                className={`w-full flex items-center justify-between gap-2 px-3 py-1 bg-white border rounded-md text-xs font-medium transition-all ${filterCategory ? 'border-blue-500 text-blue-700 bg-blue-50/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                                className={`w-full flex items-center justify-between gap-2 px-3 py-1 bg-white dark:bg-slate-800 border rounded-md text-xs font-medium transition-all ${filterCategory ? 'border-blue-500 text-blue-700 bg-blue-50 dark:bg-blue-500/10' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'}`}
                                             >
                                                 {filterCategory || 'Todas as Categorias'}
                                                 <ChevronDown size={14} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
                                             </button>
                                             {isFilterCategoryOpen && (
-                                                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-slate-200 rounded-lg shadow-xl py-1 z-30 animate-in fade-in zoom-in-95">
+                                                <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl py-1 z-30 animate-in fade-in zoom-in-95">
                                                     <button
                                                         onClick={() => { setFilterCategory(''); setIsFilterCategoryOpen(false); }}
-                                                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${!filterCategory ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                        className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${!filterCategory ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                                     >
                                                         Todas as Categorias
                                                     </button>
@@ -403,7 +403,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                         <button
                                                             key={cat}
                                                             onClick={() => { setFilterCategory(cat); setIsFilterCategoryOpen(false); }}
-                                                            className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${filterCategory === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                            className={`w-full text-left px-3 py-1.5 text-xs transition-colors ${filterCategory === cat ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                                         >
                                                             {cat}
                                                         </button>
@@ -416,7 +416,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                         {(filterStatus !== 'todos' || filterCategory !== '' || searchQuery !== '') && (
                                             <button
                                                 onClick={() => { setFilterStatus('todos'); setFilterCategory(''); setSearchQuery(''); }}
-                                                className="ml-auto text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
+                                                className="ml-auto text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors px-2"
                                             >
                                                 Limpar filtros
                                             </button>
@@ -431,7 +431,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                             placeholder="Pesquisar produto por nome ou categoria..."
                                             value={searchQuery}
                                             onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full pl-9 pr-24 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-xs placeholder:text-slate-400"
+                                            className="w-full pl-9 pr-24 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-xs placeholder:text-slate-400"
                                         />
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-medium">
                                              A mostrar {filteredProdutos.length} de {produtos.length}
@@ -440,7 +440,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                 </div>
                                 <div className="max-h-60 overflow-y-auto">
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-slate-50 sticky top-0 z-10 text-slate-500 text-xs shadow-sm">
+                                        <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-10 text-slate-500 dark:text-slate-400 text-xs shadow-sm">
                                             <tr>
                                                 <th className="px-5 py-3 font-semibold">Produto</th>
                                                 <th className="px-5 py-3 font-semibold">Categoria</th>
@@ -454,21 +454,21 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                 const isAdded = linhas.some(l => l.produto.id === p.id);
                                                 const isInCritical = p.stock <= p.stockMinimo;
                                                 return (
-                                                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
-                                                        <td className="px-5 py-3 text-slate-900 font-medium">{p.nome}</td>
+                                                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors">
+                                                        <td className="px-5 py-3 text-slate-900 dark:text-slate-100 font-medium">{p.nome}</td>
                                                         <td className="px-5 py-3">
-                                                            <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase font-bold tracking-wider">
+                                                            <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] uppercase font-bold tracking-wider">
                                                                 {p.categoria || 'Sem categoria'}
                                                             </span>
                                                         </td>
-                                                        <td className={`px-5 py-3 font-semibold ${isInCritical ? 'text-red-500' : 'text-emerald-600'}`}>
+                                                        <td className={`px-5 py-3 font-semibold ${isInCritical ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                                             {p.stock} un
                                                         </td>
-                                                        <td className="px-5 py-3 text-slate-500">{p.stockMinimo} un</td>
+                                                        <td className="px-5 py-3 text-slate-500 dark:text-slate-400">{p.stockMinimo} un</td>
                                                         <td className="px-5 py-3 rounded-r-xl align-middle">
                                                             <div className="flex flex-col items-center gap-1.5 w-[90px] mx-auto text-center">
                                                                 {isAdded ? (
-                                                                    <button disabled className="w-full px-3 py-1.5 text-xs font-bold text-slate-400 bg-white border border-slate-200 rounded-lg cursor-not-allowed">
+                                                                    <button disabled className="w-full px-3 py-1.5 text-xs font-bold text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg cursor-not-allowed">
                                                                         Adicionado
                                                                     </button>
                                                                 ) : (
@@ -480,7 +480,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                                     </button>
                                                                 )}
                                                                 {isInCritical && !isAdded && (
-                                                                    <div className="text-[10px] font-bold text-emerald-600 mt-0.5 tracking-tight">
+                                                                    <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5 tracking-tight">
                                                                         Sugestão: {(p.stockMinimo + 1) - p.stock} un
                                                                     </div>
                                                                 )}
@@ -502,8 +502,8 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                             </div>
 
                             {/* Produtos Selecionados */}
-                            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                                <h3 className="text-sm font-semibold text-slate-800 mb-4">Produtos na Lista ({linhas.length})</h3>
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
+                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-4">Produtos na Lista ({linhas.length})</h3>
                                 {linhas.length === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-10 text-slate-400">
                                         <Package size={48} strokeWidth={1} className="mb-3 text-slate-300" />
@@ -512,26 +512,26 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                 ) : (
                                     <div className="space-y-3">
                                         {linhas.map((linha) => (
-                                            <div key={linha.produto.id} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50/50 hover:border-emerald-100 hover:bg-emerald-50/30 transition-colors">
+                                            <div key={linha.produto.id} className="flex items-center justify-between p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50 hover:border-emerald-100 dark:border-emerald-500/20 hover:bg-emerald-50 dark:bg-emerald-500/10 transition-colors">
                                                 <div>
-                                                    <p className="text-sm font-bold text-slate-900">{linha.produto.nome}</p>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{linha.produto.categoria} &bull; {formatCurrency(linha.produto.preco)} / un</p>
+                                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{linha.produto.nome}</p>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{linha.produto.categoria} &bull; {formatCurrency(linha.produto.preco)} / un</p>
                                                 </div>
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-medium text-slate-500">Qtd:</span>
+                                                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Qtd:</span>
                                                         <input 
                                                             type="number" 
                                                             min="1"
                                                             value={linha.quantidade}
                                                             onChange={(e) => handleQuantidadeChange(linha.produto.id, parseInt(e.target.value) || 1)}
-                                                            className="w-20 px-3 py-1.5 text-sm font-bold text-slate-900 text-center bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
+                                                            className="w-20 px-3 py-1.5 text-sm font-bold text-slate-900 dark:text-slate-100 text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none"
                                                         />
-                                                        <span className="text-xs text-slate-500 w-6">un</span>
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400 w-6">un</span>
                                                     </div>
                                                     <button 
                                                         onClick={() => handleRemover(linha.produto.id)}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors"
                                                     >
                                                         <Trash2 size={18} />
                                                     </button>
@@ -547,40 +547,40 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                     {step === 2 && (
                         <div className="space-y-6">
                             {/* Resumo Geral */}
-                            <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm flex flex-col sm:flex-row gap-6 justify-between">
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm flex flex-col sm:flex-row gap-6 justify-between">
                                 <div className="space-y-4 flex-1">
-                                    <h3 className="text-sm font-bold text-slate-800">Resumo do Pedido</h3>
+                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Resumo do Pedido</h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <p className="text-xs text-slate-500 mb-1">ID</p>
-                                            <p className="text-sm font-bold text-slate-900">{mockIdStr}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">ID</p>
+                                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{mockIdStr}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-slate-500 mb-1">Data</p>
-                                            <p className="text-sm font-medium text-slate-900">{hoje}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Data</p>
+                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{hoje}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-slate-500 mb-1">Itens do Pedido</p>
-                                            <p className="text-sm font-medium text-slate-900">{linhas.length}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Itens do Pedido</p>
+                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{linhas.length}</p>
                                         </div>
                                         <div>
-                                            <p className="text-xs text-slate-500 mb-1">Total de Produtos</p>
-                                            <p className="text-sm font-medium text-slate-900">{totalProdutos} un</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Total de Produtos</p>
+                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{totalProdutos} un</p>
                                         </div>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <h3 className="text-sm font-bold text-slate-800">Definições</h3>
+                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Definições</h3>
                                     <div className="relative" ref={prioridadeRef}>
-                                        <p className="text-xs text-slate-500 mb-1">Prioridade</p>
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Prioridade</p>
                                         <button
                                             type="button"
                                             onClick={() => setIsPrioridadeOpen(!isPrioridadeOpen)}
-                                            className="w-full sm:w-[160px] px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all flex items-center justify-between text-sm group hover:bg-slate-50 shadow-sm"
+                                            className="w-full sm:w-[160px] px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all flex items-center justify-between text-sm group hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 shadow-sm"
                                         >
                                             <div className="flex items-center gap-2">
                                                 <span className={`w-2.5 h-2.5 rounded-full ${PRIORIDADES.find(p => p.value === prioridade)?.dot}`}></span>
-                                                <span className="font-semibold text-slate-700">
+                                                <span className="font-semibold text-slate-700 dark:text-slate-300">
                                                     {PRIORIDADES.find(p => p.value === prioridade)?.label}
                                                 </span>
                                             </div>
@@ -588,7 +588,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                         </button>
 
                                         {isPrioridadeOpen && (
-                                            <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                            <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
                                                 {PRIORIDADES.map((item) => (
                                                     <button
                                                         key={item.value}
@@ -597,7 +597,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                             setPrioridade(item.value);
                                                             setIsPrioridadeOpen(false);
                                                         }}
-                                                        className={`w-full px-3 py-2 flex items-center gap-2 transition-colors text-sm ${prioridade === item.value ? 'bg-emerald-50 text-emerald-700 font-bold' : 'text-slate-600 hover:bg-slate-50 font-medium'}`}
+                                                        className={`w-full px-3 py-2 flex items-center gap-2 transition-colors text-sm ${prioridade === item.value ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 font-bold' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 font-medium'}`}
                                                     >
                                                         <span className={`w-2 h-2 rounded-full ${item.dot}`}></span>
                                                         {item.label}
@@ -610,10 +610,10 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                             </div>
 
                             {/* Produtos Revistos */}
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                                <h3 className="text-sm font-bold text-slate-800 p-5 border-b border-slate-100">Lista de Produtos</h3>
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 p-5 border-b border-slate-100 dark:border-slate-700/50">Lista de Produtos</h3>
                                 <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50/50 text-slate-500 text-xs border-b border-slate-100 uppercase tracking-wider">
+                                    <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs border-b border-slate-100 dark:border-slate-700/50 uppercase tracking-wider">
                                         <tr>
                                             <th className="px-5 py-3 font-semibold">Produto</th>
                                             <th className="px-5 py-3 font-semibold">Categoria</th>
@@ -625,34 +625,34 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                     <tbody className="divide-y divide-slate-100">
                                         {linhas.map((linha) => (
                                             <tr key={linha.produto.id}>
-                                                <td className="px-5 py-3 font-medium text-slate-900">{linha.produto.nome}</td>
+                                                <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-100">{linha.produto.nome}</td>
                                                 <td className="px-5 py-3">
-                                                    <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[10px] uppercase font-bold tracking-wider">
+                                                    <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] uppercase font-bold tracking-wider">
                                                         {linha.produto.categoria || 'Sem categoria'}
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3 text-center font-bold text-slate-700">{linha.quantidade}</td>
-                                                <td className="px-5 py-3 text-right text-slate-500">{formatCurrency(linha.produto.preco)}</td>
-                                                <td className="px-5 py-3 text-right font-bold text-slate-900">{formatCurrency(linha.quantidade * linha.produto.preco)}</td>
+                                                <td className="px-5 py-3 text-center font-bold text-slate-700 dark:text-slate-300">{linha.quantidade}</td>
+                                                <td className="px-5 py-3 text-right text-slate-500 dark:text-slate-400">{formatCurrency(linha.produto.preco)}</td>
+                                                <td className="px-5 py-3 text-right font-bold text-slate-900 dark:text-slate-100">{formatCurrency(linha.quantidade * linha.produto.preco)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                                <div className="bg-emerald-50/50 px-6 py-4 flex items-center justify-end gap-6 border-t border-slate-200/60">
-                                    <span className="text-sm font-bold text-slate-600 uppercase tracking-wider">Total Estimado:</span>
+                                <div className="bg-emerald-50 dark:bg-emerald-500/10 px-6 py-4 flex items-center justify-end gap-6 border-t border-slate-200 dark:border-slate-700/60">
+                                    <span className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total Estimado:</span>
                                     <span className="text-xl font-bold text-emerald-700">{formatCurrency(totalEstimado)}</span>
                                 </div>
                             </div>
                             
                             {/* Observações */}
-                            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-                                <h3 className="text-sm font-bold text-slate-800 p-5 border-b border-slate-100">Observações</h3>
+                            <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 p-5 border-b border-slate-100 dark:border-slate-700/50">Observações</h3>
                                 <div className="p-5">
                                     <textarea
                                         value={observacoes}
                                         onChange={(e) => setObservacoes(e.target.value)}
                                         placeholder="Adicione observações relevantes para o pedido (opcional)..."
-                                        className="w-full text-sm placeholder-slate-400 text-slate-700 bg-slate-50 border border-slate-200 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none h-24 transition-colors"
+                                        className="w-full text-sm placeholder-slate-400 text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 resize-none h-24 transition-colors"
                                     />
                                 </div>
                             </div>
@@ -661,7 +661,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                 </div>
 
                 {/* Footer Actions */}
-                <div className="px-6 py-4 border-t border-slate-100 bg-white flex items-center justify-between">
+                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between">
                     <div className="flex gap-2">
                         {step === 1 && !currentDraftId && !pedidoToEdit && linhas.length > 0 && (
                             <button 
@@ -674,7 +674,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                         {step === 2 && (
                             <button 
                                 onClick={() => setStep(1)}
-                                className="text-sm font-semibold text-slate-500 hover:text-slate-800 px-4 py-2 border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
+                                className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
                             >
                                 <ArrowLeft size={16} /> Voltar
                             </button>
@@ -684,7 +684,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                         {!currentDraftId && (
                             <button 
                                 onClick={handleCancelClick}
-                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors"
+                                className="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors"
                             >
                                 Cancelar
                             </button>
@@ -693,7 +693,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                             <button 
                                 onClick={handleDeleteDraft}
                                 disabled={isSubmitting}
-                                className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                                className="px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:border-red-500/20"
                             >
                                 Eliminar Rascunho
                             </button>
@@ -734,21 +734,21 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                         }
                     }}
                 >
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-6">
-                            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                                <AlertTriangle size={24} className="text-red-600" />
+                            <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
+                                <AlertTriangle size={24} className="text-red-600 dark:text-red-400" />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">Eliminar Rascunho</h3>
-                            <p className="text-sm text-slate-500">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Eliminar Rascunho</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                                 Tem a certeza que deseja eliminar este rascunho? Esta ação não pode ser desfeita.
                             </p>
                         </div>
-                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-end gap-3">
                             <button
                                 onClick={() => setIsConfirmDeleteOpen(false)}
                                 disabled={isSubmitting}
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50"
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50"
                             >
                                 Voltar
                             </button>

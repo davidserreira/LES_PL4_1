@@ -105,9 +105,9 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
         } ${isCollapsed ? 'justify-center' : ''}`;
 
     return (
-        <aside ref={sidebarRef} className={`bg-slate-900 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50`}>
+        <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50`}>
             {/* Logo/Header */}
-            <div className={`p-6 border-b border-slate-800 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
+            <div className={`p-6 border-b border-slate-800 dark:border-slate-800/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
                     <div className="flex items-center justify-between w-full">
                         <span className="text-xl font-bold tracking-tight text-emerald-400 px-1 line-clamp-1">
@@ -117,7 +117,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                             type="button"
                             onClick={() => setShowLogout((prev) => !prev)}
                             data-logout-toggle
-                            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition-colors focus:outline-none"
+                            className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 dark:hover:bg-slate-900 rounded-lg transition-colors focus:outline-none"
                             title="Desconectar"
                         >
                             <LogOut size={20} />
@@ -136,7 +136,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                             }
                         }}
                         data-logout-toggle
-                        className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center font-bold text-white hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
+                        className="w-8 h-8 bg-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border dark:border-emerald-500/30 rounded-lg flex items-center justify-center font-bold text-white hover:bg-emerald-500 dark:hover:bg-emerald-500/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
                         title={getRoleLabel(user.role)}
                     >
                         {getRoleLabel(user.role).charAt(0)}
@@ -150,7 +150,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                 className={`px-4 pt-3 transition-all duration-200 ${showLogout ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 pointer-events-none'
                     }`}
             >
-                <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-4 space-y-3">
+                <div className="bg-slate-900 dark:bg-slate-900/80 border border-slate-700 dark:border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3">
                     <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/40 flex items-center justify-center">
                             <LogOut size={18} className="text-red-400" />

@@ -17,7 +17,7 @@ const CATEGORIES = [
     { name: 'Vacinas', icon: Syringe, color: 'text-emerald-500' },
     { name: 'Higiene', icon: Bath, color: 'text-sky-500' },
     { name: 'Equipamento', icon: Stethoscope, color: 'text-violet-500' },
-    { name: 'Outros', icon: Layers, color: 'text-slate-500' },
+    { name: 'Outros', icon: Layers, color: 'text-slate-500 dark:text-slate-400' },
 ];
 
 const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorModalProps) => {
@@ -164,7 +164,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
 
             {/* Modal Content */}
             <div
-                className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
+                className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
             >
                 {/* Minimal Header */}
                 <div className="bg-slate-900 p-6">
@@ -177,7 +177,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                         </div>
                         <button
                             onClick={handleClose}
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white dark:bg-slate-800/10 rounded-lg transition-all"
                         >
                             <X size={20} />
                         </button>
@@ -186,7 +186,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
                     {error && (
-                        <div className="animate-shake rounded-lg bg-red-50 border border-red-100 p-3 flex gap-3 items-center">
+                        <div className="animate-shake rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-3 flex gap-3 items-center">
                             <AlertCircle className="text-red-500 shrink-0" size={18} />
                             <p className="text-sm font-medium text-red-800">{error}</p>
                         </div>
@@ -197,7 +197,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Informações do Fornecedor</h3>
 
                         <div className="space-y-1.5 pt-1">
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Designação / Nome da Empresa</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Designação / Nome da Empresa</label>
                             <div className="relative">
                                 <Factory className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                 <input
@@ -205,14 +205,14 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                     required
                                     value={nome}
                                     onChange={(e) => setNome(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
                                     placeholder="Ex: Farmácia Vet Lda."
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5 pt-1">
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Email Profissional/Empresa *</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Email Profissional/Empresa *</label>
                             <div className="relative">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                 <input
@@ -220,22 +220,22 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
+                                    className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
                                     placeholder="Ex: geral@empresa.com"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5 pt-1 relative" ref={categoryRef}>
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Categoria de Fornecimento *</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Categoria de Fornecimento *</label>
                             <button
                                 type="button"
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
+                                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
                             >
                                 <div className="flex items-center gap-2">
                                     <SelectedCategoryIcon size={16} className={categoria ? CATEGORIES.find(c => c.name === categoria)?.color : "text-slate-400"} />
-                                    <span className={categoria ? "text-slate-900" : "text-slate-400"}>
+                                    <span className={categoria ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
                                         {categoria || "Selecionar categoria..."}
                                     </span>
                                 </div>
@@ -243,7 +243,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                             </button>
 
                             {isCategoryOpen && (
-                                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
                                     {CATEGORIES.map((item) => (
                                         <button
                                             key={item.name}
@@ -252,7 +252,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                                 setCategoria(item.name);
                                                 setIsCategoryOpen(false);
                                             }}
-                                            className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600'}`}
+                                            className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 dark:bg-blue-500/10 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-medium' : 'text-slate-600 dark:text-slate-400'}`}
                                         >
                                             <item.icon size={16} className={item.color} />
                                             {item.name}
@@ -264,7 +264,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">NIF *</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">NIF *</label>
                                 <div className="relative">
                                     <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -272,13 +272,13 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                         required
                                         value={nif}
                                         onChange={(e) => setNif(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
                                         placeholder="Ex: 500123456"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Contacto Telefónico *</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Contacto Telefónico *</label>
                                 <div className="relative">
                                     <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -286,7 +286,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                         required
                                         value={contacto}
                                         onChange={(e) => setContacto(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
                                         placeholder="Ex: 912345678"
                                     />
                                 </div>
@@ -295,33 +295,33 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                     </div>
 
                     <div className="space-y-1.5 pt-2">
-                        <label className="text-sm font-medium text-slate-700 ml-0.5">Observações</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Observações</label>
                         <div className="relative">
                             <FileText className="absolute left-3.5 top-3 text-slate-400" size={16} />
                             <textarea
                                 value={observacoes}
                                 onChange={(e) => setObservacoes(e.target.value)}
                                 rows={2}
-                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
+                                className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
                                 placeholder="Informação adicional opcional..."
                             />
                         </div>
                     </div>
                     
                     {/* Section: Associar Produtos */}
-                    <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                        <label className="text-sm font-medium text-slate-700 ml-0.5">Produtos Fornecidos</label>
-                        <p className="text-xs text-slate-500 ml-0.5 mb-2">Selecione os produtos que este fornecedor disponibiliza.</p>
+                    <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Produtos Fornecidos</label>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 ml-0.5 mb-2">Selecione os produtos que este fornecedor disponibiliza.</p>
                         
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
                             <div className="max-h-48 overflow-y-auto custom-scrollbar p-2">
                                 {produtos.length > 0 ? (
                                     produtos.map(produto => (
-                                        <label key={produto.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors group">
+                                        <label key={produto.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 rounded-lg cursor-pointer transition-colors group">
                                             <div className="relative flex items-center">
                                                 <input
                                                     type="checkbox"
-                                                    className="w-5 h-5 border-2 border-slate-300 rounded peer checked:bg-blue-600 checked:border-blue-600 appearance-none cursor-pointer text-white transition-all"
+                                                    className="w-5 h-5 border-2 border-slate-300 dark:border-slate-600 rounded peer checked:bg-blue-600 checked:border-blue-600 appearance-none cursor-pointer text-white transition-all"
                                                     checked={produtoIds.includes(produto.id)}
                                                     onChange={(e) => {
                                                         if (e.target.checked) {
@@ -336,7 +336,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                                 </svg>
                                             </div>
                                             <div className="flex-1">
-                                                <p className="text-sm font-semibold text-slate-700 group-hover:text-slate-900 transition-colors">{produto.nome}</p>
+                                                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:text-slate-100 transition-colors">{produto.nome}</p>
                                                 {produto.categoria && (
                                                     <span className="text-[10px] uppercase font-bold text-slate-400">{produto.categoria}</span>
                                                 )}
@@ -344,7 +344,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                                         </label>
                                     ))
                                 ) : (
-                                    <div className="p-4 text-center text-sm text-slate-500 italic">
+                                    <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400 italic">
                                         Nenhum produto disponível no sistema.
                                     </div>
                                 )}
@@ -357,7 +357,7 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all text-sm"
+                            className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-all text-sm"
                         >
                             Cancelar
                         </button>

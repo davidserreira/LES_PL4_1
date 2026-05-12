@@ -48,23 +48,23 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                 }
             }}
         >
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 shadow-sm border border-blue-100">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-500/20">
                             <Package size={20} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
                                 {produto.nome}
                             </h2>
                             <div className="flex items-center gap-2 mt-0.5">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200/70 text-slate-600 uppercase tracking-wider">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     ID: {produto.id}
                                 </span>
                                 {produto.categoria && (
-                                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-medium">
+                                    <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
                                         <Tag size={12} className="text-slate-400" />
                                         {produto.categoria}
                                     </span>
@@ -74,40 +74,40 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                     </div>
                     <button 
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative custom-scrollbar space-y-6">
+                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900 relative custom-scrollbar space-y-6">
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Status Card */}
-                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <Database size={14} /> Níveis de Inventário
                             </h3>
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <p className="text-sm text-slate-500 mb-0.5">Stock Atual</p>
-                                    <p className={`text-2xl font-black ${isCritico ? 'text-red-500' : 'text-slate-900'}`}>{produto.stock}</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Stock Atual</p>
+                                    <p className={`text-2xl font-black ${isCritico ? 'text-red-500' : 'text-slate-900 dark:text-slate-100'}`}>{produto.stock}</p>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-sm text-slate-500 mb-0.5">Mínimo</p>
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Mínimo</p>
                                     <p className="text-lg font-bold text-slate-400">{produto.stockMinimo}</p>
                                 </div>
                             </div>
-                            <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
-                                <span className="text-xs text-slate-500 font-medium">Estado:</span>
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50 flex justify-between items-center">
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Estado:</span>
                                 {isCritico ? (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-amber-50 text-amber-600 border border-amber-100">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20">
                                         <AlertTriangle size={12} />
                                         CRÍTICO
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20">
                                         <CheckCircle2 size={12} />
                                         ESTÁVEL
                                     </span>
@@ -116,33 +116,33 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                         </div>
 
                         {/* Values Card */}
-                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <DollarSign size={14} /> Financeiro
                             </h3>
                             <div>
-                                <p className="text-sm text-slate-500 mb-0.5">Preço Unitário</p>
-                                <p className="text-2xl font-black text-slate-900">{formatCurrency(produto.preco || 0)}</p>
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Preço Unitário</p>
+                                <p className="text-2xl font-black text-slate-900 dark:text-slate-100">{formatCurrency(produto.preco || 0)}</p>
                             </div>
-                            <div className="pt-2 border-t border-slate-100">
-                                <p className="text-sm text-slate-500 mb-0.5">Valor Total em Stock</p>
-                                <p className="text-lg font-bold text-slate-700">{formatCurrency((produto.preco || 0) * produto.stock)}</p>
+                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Valor Total em Stock</p>
+                                <p className="text-lg font-bold text-slate-700 dark:text-slate-300">{formatCurrency((produto.preco || 0) * produto.stock)}</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Descricao & Fornecedores */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <FileText size={14} /> Descrição
                             </h3>
-                            <p className="text-sm text-slate-600">
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
                                 {produto.descricao || <span className="italic text-slate-400">Sem descrição fornecida.</span>}
                             </p>
                         </div>
 
-                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                 <Factory size={14} /> Fornecedores Vinculados
                             </h3>
@@ -152,13 +152,13 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                                         const isPreferencial = produto.fornecedorPreferencial?.id === f.id;
                                         const precoAcordado = produto.precosFornecedores?.find(p => p.fornecedorId === f.id)?.preco;
                                         return (
-                                            <li key={f.id} className={`text-sm font-medium flex items-center justify-between gap-2 p-2.5 bg-white border rounded-xl transition-all ${isPreferencial ? 'border-amber-200 shadow-sm shadow-amber-500/5' : 'border-slate-100 hover:border-slate-200'}`}>
+                                            <li key={f.id} className={`text-sm font-medium flex items-center justify-between gap-2 p-2.5 bg-white dark:bg-slate-800 border rounded-xl transition-all ${isPreferencial ? 'border-amber-200 shadow-sm shadow-amber-500/5' : 'border-slate-100 dark:border-slate-700/50 hover:border-slate-200 dark:border-slate-700'}`}>
                                                 <div className="flex items-center gap-2.5 flex-1">
                                                     <div className={`w-2 h-2 rounded-full shadow-inner shrink-0 ${isPreferencial ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
                                                     <div className="flex flex-col">
-                                                        <span className={isPreferencial ? 'text-amber-900 font-bold leading-tight' : 'text-slate-700 leading-tight'}>{f.nome}</span>
+                                                        <span className={isPreferencial ? 'text-amber-900 font-bold leading-tight' : 'text-slate-700 dark:text-slate-300 leading-tight'}>{f.nome}</span>
                                                         {precoAcordado !== undefined && (
-                                                            <span className="text-[10px] text-slate-500 font-medium">Preço: {formatCurrency(precoAcordado)}</span>
+                                                            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Preço: {formatCurrency(precoAcordado)}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -178,7 +178,7 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                     </div>
 
                     {/* History / Orders */}
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                             <Package size={14} /> Pedidos Associados
                         </h3>
@@ -189,12 +189,12 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                                     const pId = String(linha.pedidoCompra.id).padStart(3, '0');
                                     const estado = linha.pedidoCompra.estado;
                                     return (
-                                        <div key={linha.pedidoCompra.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-slate-100 transition-colors">
+                                        <div key={linha.pedidoCompra.id} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors">
                                             <div>
-                                                <div className="text-sm font-bold text-slate-900">
+                                                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">
                                                     Pedido PM-{ano}-{pId}
                                                 </div>
-                                                <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                                                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1">
                                                     <Calendar size={12} className="text-slate-400" />
                                                     {new Date(linha.pedidoCompra.criadoEm).toLocaleDateString('pt-PT')}
                                                 </div>
@@ -202,7 +202,7 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                                             <div>
                                                 <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-md tracking-wider ${
                                                     estado === 'PENDENTE' ? 'bg-amber-100 text-amber-700 border border-amber-200' :
-                                                    estado === 'RASCUNHO' ? 'bg-slate-200 text-slate-700 border border-slate-300' :
+                                                    estado === 'RASCUNHO' ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-600' :
                                                     'bg-emerald-100 text-emerald-700 border border-emerald-200'
                                                 }`}>
                                                     {estado}

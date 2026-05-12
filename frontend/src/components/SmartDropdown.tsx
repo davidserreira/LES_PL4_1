@@ -57,7 +57,7 @@ export function SmartDropdown({ isOpen, triggerRef, children }: SmartDropdownPro
     return createPortal(
         <div
             ref={dropdownRef}
-            className="fixed z-[99999] bg-white rounded-xl shadow-[0_12px_45px_rgb(0,0,0,0.2)] border border-slate-200 py-2 animate-in fade-in duration-150 max-h-72 overflow-y-auto"
+            className="fixed z-[99999] bg-white dark:bg-slate-800 rounded-xl shadow-[0_12px_45px_rgb(0,0,0,0.2)] border border-slate-200 dark:border-slate-700 py-2 animate-in fade-in duration-150 max-h-72 overflow-y-auto"
             style={{
                 left: coords.left,
                 width: coords.width,
