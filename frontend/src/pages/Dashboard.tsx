@@ -6,16 +6,12 @@ import {
     Package,
     ClipboardList,
     Users,
-    ArrowUpRight,
-    ArrowDownRight,
     MoreHorizontal,
     Check,
     BarChart2,
     PieChart,
-    Cpu,
     Factory,
     Zap,
-    ChevronRight,
     GripHorizontal,
     TrendingUp,
     CircleDot
@@ -76,7 +72,8 @@ const Sparkline = ({ colorHex }: { colorHex: string }) => {
 // ─── Main Component ──────────────────────────────────────────────────────────
 const Dashboard = () => {
     const [stats, setStats] = useState<SummaryStats>({
-        totalProdutos: 0, totalPedidos: 0, totalUtilizadores: 0, pedidosPendentes: 0
+        totalProdutos: 0, totalPedidos: 0, totalUtilizadores: 0, pedidosPendentes: 0,
+        totalFornecedores: 0, valorTotalStock: 0, pedidosAprovados: 0, totalDrafts: 0
     });
     const [loading, setLoading] = useState(true);
     const [user] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'));
@@ -222,7 +219,7 @@ const Dashboard = () => {
         if (!loading) {
             setTimeout(() => {
                 pedidoCompraService.getAll().then(pRaw => {
-                    const p = pRaw.filter(x => x.estado !== 'RASCUNHO');
+                    const p = pRaw.filter((x: any) => x.estado !== 'RASCUNHO');
                     if (visible.statusPie) renderPieChart(p);
                     if (visible.areaLine) renderAreaLineChart(p, chartDays);
                 });
@@ -274,10 +271,9 @@ const Dashboard = () => {
                 .style('padding-right', '5px')
                 .style('font-size', '12px')
                 .style('font-weight', '700')
-                .style('color', '#334155')
                 .style('line-height', '1.1')
                 .style('overflow', 'hidden')
-                .html(`<span title="${d.nome}" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${d.nome}</span>`);
+                .html(`<span class="text-slate-700 dark:text-slate-300" title="${d.nome}" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${d.nome}</span>`);
         });
 
         // Barras Horizontais com Gradient Moderno
@@ -315,7 +311,7 @@ const Dashboard = () => {
         const arc = d3.arc<any>().innerRadius(radius * 0.6).outerRadius(radius * 0.9).cornerRadius(4);
 
         svg.append('text').attr('text-anchor', 'middle').attr('dy', '-0.5em').style('font-size', '10px').style('fill', '#94a3b8').text('Pedidos');
-        svg.append('text').attr('text-anchor', 'middle').attr('dy', '0.6em').style('font-size', '30px').style('font-weight', 'bold').style('fill', '#0f172a').text(data.length);
+        svg.append('text').attr('text-anchor', 'middle').attr('dy', '0.6em').style('font-size', '30px').style('font-weight', 'bold').attr('class', 'fill-slate-900 dark:fill-slate-100').text(data.length);
 
         svg.selectAll('.arc').data(pie(pieData)).enter().append('path')
             .attr('fill', d => color(d.data.key)).attr('stroke', '#fff').style('stroke-width', '2px')
@@ -425,7 +421,7 @@ const Dashboard = () => {
             }) 
         };
         const pack = d3.pack<any>().size([W - 10, H - 10]).padding(3);
-        const root = pack(d3.hierarchy(data).sum(d => d.value));
+        const root = pack(d3.hierarchy<any>(data).sum((d: any) => d.value));
 
         const color = d3.scaleOrdinal(d3.quantize(d3.interpolateSinebow, produtos.length + 1));
         
@@ -481,27 +477,27 @@ const Dashboard = () => {
         quickEntry: (
             <div className={`grid gap-4 p-5 ${
                 [
-                    { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
-                    { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600', bg: 'bg-indigo-50', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600', bg: 'bg-blue-50', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', roles: ['ADMINISTRADOR'] },
+                    { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
+                    { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
+                    { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+                    { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10', roles: ['ADMINISTRADOR'] },
                 ].filter(l => l.roles.includes(user.role)).length >= 4 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2'
             }`}>
                 {[
-                    { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600', bg: 'bg-emerald-50', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
-                    { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600', bg: 'bg-indigo-50', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600', bg: 'bg-blue-50', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', roles: ['ADMINISTRADOR'] },
+                    { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
+                    { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
+                    { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+                    { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10', roles: ['ADMINISTRADOR'] },
                 ].filter(l => l.roles.includes(user.role)).map((l, i) => (
-                    <button key={i} onClick={() => navigate(l.to)} className="flex flex-col items-center justify-center p-6 bg-white border border-slate-200 rounded-xl hover:shadow-lg hover:border-blue-300 transition-all group">
+                    <button key={i} onClick={() => navigate(l.to)} className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-lg hover:border-blue-300 transition-all group">
                         <div className={`p-4 rounded-full ${l.bg} ${l.color} mb-3 group-hover:scale-110 transition-transform`}><l.icon size={28} /></div>
-                        <span className="font-bold text-sm text-slate-800">{l.label}</span>
+                        <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{l.label}</span>
                     </button>
                 ))}
             </div>
         ),
         cards: (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-slate-50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-slate-50 dark:bg-slate-900">
                 {[
                     { label: 'Total Produtos', val: stats.totalProdutos, icon: Package, hex: '#10b981' },
                     { label: 'Valor em Stock', val: `${stats.valorTotalStock.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}`, icon: Coins, hex: '#059669' },
@@ -512,10 +508,10 @@ const Dashboard = () => {
                     { label: 'Fornecedores', val: stats.totalFornecedores, icon: Factory, hex: '#6366f1' },
                     { label: 'Utilizadores', val: stats.totalUtilizadores, icon: Users, hex: '#a855f7' },
                 ].map((c, i) => (
-                    <div key={i} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div key={i} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center justify-between hover:shadow-md transition-shadow">
                         <div className="min-w-0">
                             <p className="text-[10px] uppercase font-bold text-slate-400 mb-1 tracking-widest truncate">{c.label}</p>
-                            <h3 className="text-xl md:text-2xl font-black text-slate-800 truncate">{c.val}</h3>
+                            <h3 className="text-xl md:text-2xl font-black text-slate-800 dark:text-slate-200 truncate">{c.val}</h3>
                         </div>
                         <div className={`p-2.5 rounded-xl bg-opacity-10 shrink-0`} style={{ backgroundColor: `${c.hex}15`, color: c.hex }}>
                             <c.icon size={22} />
@@ -525,23 +521,23 @@ const Dashboard = () => {
             </div>
         ),
         stockBar: (
-            <div className="bg-white p-6 border border-slate-100 flex flex-col h-full">
-                <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 p-6 border border-slate-100 dark:border-slate-700/50 flex flex-col h-full">
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
                     <BarChart2 size={18} className="text-emerald-500"/> Análise de Stock (Top Produtos)
                 </h4>
                 <div className="flex-1 min-h-[220px]"><svg ref={barChartRef}></svg></div>
                 <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-3 h-3 bg-emerald-500 rounded-sm shadow-sm" />
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Unidades Disponíveis (un)</span>
+                        <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">Unidades Disponíveis (un)</span>
                     </div>
                     <div className="text-[10px] text-slate-400 italic font-medium">Top 8 por volume</div>
                 </div>
             </div>
         ),
         statusPie: (
-            <div className="bg-white p-6 border border-slate-100 flex flex-col items-center">
-                 <h4 className="text-sm font-bold text-slate-700 mb-4 w-full text-left flex items-center gap-2">
+            <div className="bg-white dark:bg-slate-800 p-6 border border-slate-100 dark:border-slate-700/50 flex flex-col items-center">
+                 <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-4 w-full text-left flex items-center gap-2">
                     <PieChart size={18} className="text-blue-500"/> Distribuição de Estados (Tickets)
                 </h4>
                 <div className="w-56 h-56 mt-4"><svg ref={pieChartRef}></svg></div>
@@ -553,7 +549,7 @@ const Dashboard = () => {
                         { label: 'Cancelado', val: 'CANCELADO', color: 'bg-slate-400' },
                         { label: 'Recusado', val: 'RECUSADO', color: 'bg-red-500' },
                     ].map(s => (
-                        <span key={s.val} className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1.5">
+                        <span key={s.val} className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase flex items-center gap-1.5">
                             <div className={`w-2.5 h-2.5 rounded-full ${s.color} shadow-sm`} /> {s.label}
                         </span>
                     ))}
@@ -561,18 +557,18 @@ const Dashboard = () => {
             </div>
         ),
         areaLine: (
-            <div className="bg-slate-50 p-6 border border-slate-100">
+            <div className="bg-slate-50 dark:bg-slate-900 p-6 border border-slate-100 dark:border-slate-700/50">
                 <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-base font-bold text-slate-700 flex items-center gap-2">
+                    <h4 className="text-base font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                         <TrendingUp className="text-blue-500" size={20} />
                         Curva de Gastos em Aprovisionamento
                     </h4>
-                    <div className="flex bg-white rounded-lg p-0.5 border border-slate-200 shadow-sm">
+                    <div className="flex bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700 shadow-sm">
                         {[7, 15, 30].map(d => (
                             <button
                                 key={d}
                                 onClick={() => setChartDays(d)}
-                                className={`px-4 py-1 text-[10px] uppercase font-bold tracking-wider rounded-md transition-all ${chartDays === d ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+                                className={`px-4 py-1 text-[10px] uppercase font-bold tracking-wider rounded-md transition-all ${chartDays === d ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-600 dark:text-slate-400'}`}
                             >
                                 {d}D
                             </button>
@@ -582,20 +578,20 @@ const Dashboard = () => {
                 
                 <div className="flex flex-col md:flex-row items-stretch gap-6 w-full">
                     {/* Legenda (Esquerda) */}
-                    <div className="w-full md:w-1/4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                    <div className="w-full md:w-1/4 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center">
                         <h5 className="text-xs uppercase font-bold text-slate-400 mb-6 tracking-widest text-center">Legenda Visual</h5>
                         <div className="flex flex-col gap-5">
                             <div className="flex items-center gap-3">
                                 <div className="w-6 h-1 bg-blue-500 shadow-sm shrink-0 rounded-full" />
-                                <span className="text-xs font-semibold text-slate-600">Total de Gastos em Stock (€)</span>
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Total de Gastos em Stock (€)</span>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="w-3 h-3 bg-white border-2 border-blue-500 rounded-full shadow-sm shrink-0 ml-1.5" />
-                                <span className="text-xs font-semibold text-slate-600">Marcação Temporal de Ocorrência</span>
+                                <div className="w-3 h-3 bg-white dark:bg-slate-800 border-2 border-blue-500 rounded-full shadow-sm shrink-0 ml-1.5" />
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Marcação Temporal de Ocorrência</span>
                             </div>
                              <div className="flex items-center gap-3">
                                 <div className="w-6 h-4 bg-blue-500/20 shadow-inner shrink-0 rounded" />
-                                <span className="text-xs font-semibold text-slate-600">Densidade Logística Acumulada</span>
+                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Densidade Logística Acumulada</span>
                             </div>
                         </div>
                     </div>
@@ -606,20 +602,20 @@ const Dashboard = () => {
                     </div>
 
                     {/* Explicação (Direita) */}
-                    <div className="w-full md:w-1/4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                    <div className="w-full md:w-1/4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center">
                         <h5 className="text-xs uppercase font-bold text-blue-500 mb-3 tracking-widest text-left w-full flex items-center gap-2">
                            <LayoutDashboard size={16}/> Comportamento da Curva
                         </h5>
-                        <p className="text-sm text-slate-600 leading-relaxed text-justify hyphens-auto">
-                            Este gráfico monitoriza o <span className="font-semibold text-slate-800">fluxo de capital</span> destinado à aquisição de inventário. A curva mapeia o custo total dos pedidos efetuados, revelando picos de investimento e permitindo o controlo visual das saídas financeiras para reposição de stock nos últimos <span className="font-bold text-blue-600">{chartDays} dias</span>.
+                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed text-justify hyphens-auto">
+                            Este gráfico monitoriza o <span className="font-semibold text-slate-800 dark:text-slate-200">fluxo de capital</span> destinado à aquisição de inventário. A curva mapeia o custo total dos pedidos efetuados, revelando picos de investimento e permitindo o controlo visual das saídas financeiras para reposição de stock nos últimos <span className="font-bold text-blue-600 dark:text-blue-400">{chartDays} dias</span>.
                         </p>
                     </div>
                 </div>
             </div>
         ),
         bubble: (
-            <div className="bg-slate-50 p-6 flex flex-col border border-slate-100">
-                <h4 className="text-base font-bold text-slate-700 mb-2 w-full text-left flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-900 p-6 flex flex-col border border-slate-100 dark:border-slate-700/50">
+                <h4 className="text-base font-bold text-slate-700 dark:text-slate-300 mb-2 w-full text-left flex items-center gap-2">
                     <CircleDot className="text-emerald-500" size={20} />
                     Agrupamento de Massa Pró-Ativa (Produtos)
                 </h4>
@@ -628,21 +624,21 @@ const Dashboard = () => {
                 <div className="flex flex-col md:flex-row items-stretch gap-6 w-full">
                     
                     {/* Legenda de Cores (Esquerda) */}
-                    <div className="w-full md:w-1/4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm overflow-y-auto max-h-96 custom-scrollbar">
-                        <h5 className="text-xs uppercase font-bold text-slate-400 mb-4 tracking-widest sticky top-0 bg-white pb-2">Legenda Visual</h5>
+                    <div className="w-full md:w-1/4 bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-y-auto max-h-96 custom-scrollbar">
+                        <h5 className="text-xs uppercase font-bold text-slate-400 mb-4 tracking-widest sticky top-0 bg-white dark:bg-slate-800 pb-2">Legenda Visual</h5>
                         <div className="flex flex-col gap-3">
                             {bubbleLegend.map((item, idx) => (
-                                <div key={idx} className="flex items-center gap-3 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <div key={idx} className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-2.5 rounded-lg border border-slate-100 dark:border-slate-700/50">
                                     <div className={`w-3.5 h-3.5 rounded-full shadow-sm shrink-0 ${item.isLow ? 'ring-2 ring-red-500 ring-offset-1' : ''}`} style={{ backgroundColor: item.color }} />
                                     <div className="flex flex-col flex-1">
-                                        <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]" title={item.name}>
+                                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 truncate max-w-[120px]" title={item.name}>
                                             {item.name}
                                         </span>
-                                        <span className="text-[10px] text-emerald-600 font-medium">
+                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                                             {item.qt} un <span className="text-slate-400 font-normal">× {item.preco.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}</span>
                                         </span>
                                     </div>
-                                    <div className="text-xs font-black text-slate-800 shrink-0">
+                                    <div className="text-xs font-black text-slate-800 dark:text-slate-200 shrink-0">
                                         {item.valorTotal.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' })}
                                     </div>
                                 </div>
@@ -656,12 +652,12 @@ const Dashboard = () => {
                     </div>
                     
                     {/* Explicação Pedida Pelo Utilizador (Direita) */}
-                    <div className="w-full md:w-1/4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-center">
+                    <div className="w-full md:w-1/4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col justify-center">
                         <h5 className="text-xs uppercase font-bold text-blue-500 mb-3 tracking-widest text-left w-full flex items-center gap-2">
                            <LayoutDashboard size={16}/> Como ler este Gráfico?
                         </h5>
-                        <p className="text-sm text-slate-600 leading-relaxed text-justify hyphens-auto">
-                            Neste gráfico de alto desempenho, o tamanho de cada bolha cruza o <span className="font-semibold text-slate-800">Preço com Quantidade</span>, representando assim o seu <span className="font-bold text-slate-800">Valor Total de Inventário</span>. 
+                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed text-justify hyphens-auto">
+                            Neste gráfico de alto desempenho, o tamanho de cada bolha cruza o <span className="font-semibold text-slate-800 dark:text-slate-200">Preço com Quantidade</span>, representando assim o seu <span className="font-bold text-slate-800 dark:text-slate-200">Valor Total de Inventário</span>. 
                             Quão maior a bolha central, mais dinheiro tem empatado nesse respetivo artigo do armazém! Artigos perto do limite escasso de stock refletem ainda uma margem de alerta a vermelho, ajudando visivelmente a identificar o risco sem tabelas.
                         </p>
                     </div>
@@ -671,28 +667,28 @@ const Dashboard = () => {
     };
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-12 bg-slate-100 min-h-screen -m-4 p-8">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-12 bg-slate-100 dark:bg-slate-700/50 min-h-screen -m-4 p-8">
             {/* Header */}
-            <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                    <LayoutDashboard className="text-emerald-600" />
+            <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+                <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight flex items-center gap-2">
+                    <LayoutDashboard className="text-emerald-600 dark:text-emerald-400" />
                     Dashboard
                 </h1>
                 <div className="relative" ref={settingsRef}>
-                    <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 border rounded-lg hover:bg-slate-50">
+                    <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900">
                         <MoreHorizontal size={20} />
                     </button>
                     {settingsOpen && (
-                        <div className="absolute right-0 top-12 z-50 w-64 bg-white border border-slate-200 rounded-xl shadow-xl">
-                            <div className="p-3 bg-slate-50 border-b text-[10px] font-bold text-slate-500 uppercase">Visibilidade dos Módulos</div>
+                        <div className="absolute right-0 top-12 z-50 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl">
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Visibilidade dos Módulos</div>
                             <ul className="py-2">
                                 {SECTIONS.map(s => (
-                                    <li key={s.key} className="px-4 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-3" onClick={() => toggleSection(s.key)}>
-                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${visible[s.key] ? 'border-blue-500 bg-blue-500' : 'border-slate-300'}`}>
+                                    <li key={s.key} className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 cursor-pointer flex items-center gap-3" onClick={() => toggleSection(s.key)}>
+                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${visible[s.key] ? 'border-blue-500 bg-blue-500' : 'border-slate-300 dark:border-slate-600'}`}>
                                             {visible[s.key] && <Check size={12} className="text-white" />}
                                         </div>
-                                        <s.icon size={16} className={visible[s.key] ? "text-slate-800" : "text-slate-400"} />
-                                        <span className={`text-sm ${visible[s.key] ? 'text-slate-800 font-semibold' : 'text-slate-500'}`}>{s.label}</span>
+                                        <s.icon size={16} className={visible[s.key] ? "text-slate-800 dark:text-slate-200" : "text-slate-400"} />
+                                        <span className={`text-sm ${visible[s.key] ? 'text-slate-800 dark:text-slate-200 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>{s.label}</span>
                                     </li>
                                 ))}
                             </ul>
@@ -721,7 +717,7 @@ const Dashboard = () => {
                         >
                             
                             {/* Placeholder 'Sombra' (Movimento para Cima) */}
-                            <div className={`overflow-hidden transition-all duration-300 flex items-center justify-center bg-blue-50/80 border-dashed border-blue-400 rounded-xl shadow-inner 
+                            <div className={`overflow-hidden transition-all duration-300 flex items-center justify-center bg-blue-50 dark:bg-blue-500/10 border-dashed border-blue-400 rounded-xl shadow-inner 
                                 ${isDragOver && isDraggingUp ? 'h-28 mb-6 opacity-100 border-2' : 'h-0 mb-0 opacity-0 border-0'}`}>
                                 <span className="text-blue-500 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                                     <GripHorizontal size={16}/> Encaixar Módulo Aqui
@@ -731,7 +727,7 @@ const Dashboard = () => {
                             <div className="relative">
                                 {/* O slot invisível original! Abre o espaço "Encaixar Módulo Aqui" quando hover */}
                                 {draggingIdx === index && isGhostCaptured && (
-                                    <div className={`transition-all duration-300 overflow-hidden ${dragOverIdx === index ? 'h-28 bg-blue-50/80 border-dashed border-blue-400 border-2 rounded-xl shadow-inner flex items-center justify-center opacity-100' : 'h-8 bg-transparent border-0 opacity-0 mb-0'}`}>
+                                    <div className={`transition-all duration-300 overflow-hidden ${dragOverIdx === index ? 'h-28 bg-blue-50 dark:bg-blue-500/10 border-dashed border-blue-400 border-2 rounded-xl shadow-inner flex items-center justify-center opacity-100' : 'h-8 bg-transparent border-0 opacity-0 mb-0'}`}>
                                         <span className={`${dragOverIdx === index ? 'flex' : 'hidden'} text-blue-500 font-bold uppercase tracking-widest text-sm items-center gap-2`}>
                                             <GripHorizontal size={16}/> Encaixar Módulo Aqui
                                         </span>
@@ -755,26 +751,26 @@ const Dashboard = () => {
                                         opacity: 1,
                                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)'
                                     } : {}}
-                                    className={`bg-white rounded-xl shadow-sm border overflow-hidden group cursor-grab active:cursor-grabbing ${draggingIdx === index && isGhostCaptured ? 'border-blue-500 ring-4 ring-blue-500/20' : 'border-slate-300 relative transition-all duration-300'}`}
+                                    className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border overflow-hidden group cursor-grab active:cursor-grabbing ${draggingIdx === index && isGhostCaptured ? 'border-blue-500 ring-4 ring-blue-500/20' : 'border-slate-300 dark:border-slate-600 relative transition-all duration-300'}`}
                                 >
                                     {/* Widget Header (Drag Handle) */}
-                                    <div className="flex items-center gap-2 bg-gradient-to-r from-slate-100 to-white px-4 py-3 border-b border-slate-200 cursor-move hover:bg-slate-50 transition-colors rounded-t-xl">
+                                    <div className="flex items-center gap-2 bg-gradient-to-r from-slate-100 dark:from-slate-800 to-white dark:to-slate-900 px-4 py-3 border-b border-slate-200 dark:border-slate-700 cursor-move hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors rounded-t-xl">
                                         <div className="text-slate-400 group-hover:text-blue-500 transition-colors">
                                             <GripHorizontal size={18} />
                                         </div>
                                         <div className="w-1 h-5 bg-blue-500 rounded-full shadow-sm" />
-                                        <span className="font-bold text-sm text-slate-700">{secInfo?.label}</span>
+                                        <span className="font-bold text-sm text-slate-700 dark:text-slate-300">{secInfo?.label}</span>
                                     </div>
                                     
                                     {/* Widget Content */}
-                                    <div className="bg-white cursor-default rounded-b-xl overflow-hidden">
+                                    <div className="bg-white dark:bg-slate-800 cursor-default rounded-b-xl overflow-hidden">
                                         {MappedWidgets[sectionKey]}
                                     </div>
                                 </div>
                             </div>
 
                             {/* Placeholder 'Sombra' (Movimento para Baixo) */}
-                            <div className={`overflow-hidden transition-all duration-300 flex items-center justify-center bg-blue-50/80 border-dashed border-blue-400 rounded-xl shadow-inner
+                            <div className={`overflow-hidden transition-all duration-300 flex items-center justify-center bg-blue-50 dark:bg-blue-500/10 border-dashed border-blue-400 rounded-xl shadow-inner
                                 ${isDragOver && isDraggingDown ? 'h-28 mt-6 opacity-100 border-2' : 'h-0 mt-0 opacity-0 border-0'}`}>
                                 <span className="text-blue-500 font-bold uppercase tracking-widest text-sm flex items-center gap-2">
                                     <GripHorizontal size={16}/> Encaixar Módulo Aqui

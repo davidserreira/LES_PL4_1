@@ -7,10 +7,10 @@ async function main() {
     // 1. Criar Utilizadores Gestores
     const gestor = await prisma.utilizador.upsert({
         where: { username: 'gestor' },
-        update: {},
+        update: { password: '1234' },
         create: {
             username: 'gestor',
-            password: 'password123',
+            password: '1234',
             role: Role.RESPONSAVEL_STOCK
         }
     });
@@ -18,10 +18,10 @@ async function main() {
 
     const admin = await prisma.utilizador.upsert({
         where: { username: 'admin' },
-        update: {},
+        update: { password: '1234' },
         create: {
             username: 'admin',
-            password: 'admin',
+            password: '1234',
             role: Role.ADMINISTRADOR
         }
     });
@@ -29,10 +29,10 @@ async function main() {
 
     const financeiro = await prisma.utilizador.upsert({
         where: { username: 'financeiro' },
-        update: {},
+        update: { password: '1234' },
         create: {
             username: 'financeiro',
-            password: 'password123',
+            password: '1234',
             role: Role.RESPONSAVEL_FINANCEIRO
         }
     });

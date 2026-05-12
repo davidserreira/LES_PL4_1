@@ -153,46 +153,46 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                 }
             }}
         >
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-blue-50/10">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-blue-50 dark:bg-blue-500/10">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                             <ShoppingCart size={20} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900">Pedido Automático</h2>
-                            <p className="text-xs text-slate-500 font-medium">Sugestão baseada em stock crítico e reposição saudável</p>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Pedido Automático</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Sugestão baseada em stock crítico e reposição saudável</p>
                         </div>
                     </div>
                     <button
                         onClick={() => onClose(false)}
-                        className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Filters */}
-                <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-4 items-center justify-between">
+                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 flex flex-wrap gap-4 items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="flex p-0.5 bg-white rounded-lg border border-slate-200 shadow-sm">
+                        <div className="flex p-0.5 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm">
                             <button
                                 onClick={() => setFilterStatus('todos')}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'todos' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'todos' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'}`}
                             >
                                 Todos
                             </button>
                             <button
                                 onClick={() => setFilterStatus('critico')}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'critico' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'critico' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'}`}
                             >
                                 Críticos
                             </button>
                             <button
                                 onClick={() => setFilterStatus('selecionados')}
-                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'selecionados' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-900'}`}
+                                className={`px-4 py-1.5 text-xs font-bold rounded-md transition-all ${filterStatus === 'selecionados' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'}`}
                             >
                                 Selecionados ({totalItens})
                             </button>
@@ -206,22 +206,22 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                             placeholder="Procurar produto..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm transition-all"
+                            className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm transition-all"
                         />
                     </div>
                 </div>
 
                 {/* Table */}
-                <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
+                <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                             <p className="text-sm font-medium">A analisar inventário...</p>
                         </div>
                     ) : (
-                        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                             <table className="w-full text-left text-sm border-collapse">
-                                <thead className="bg-slate-50 text-slate-500 text-xs font-black uppercase tracking-widest border-b border-slate-200">
+                                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-xs font-black uppercase tracking-widest border-b border-slate-200 dark:border-slate-700">
                                     <tr>
                                         <th className="px-6 py-4 w-12 text-center">Sel.</th>
                                         <th className="px-6 py-4">Produto</th>
@@ -237,12 +237,12 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                                         return (
                                             <tr
                                                 key={item.produto.id}
-                                                className={`transition-colors border-l-4 ${item.jaEncomendado ? 'bg-slate-50 opacity-60 cursor-not-allowed border-l-slate-200' : item.selecionado ? 'bg-blue-50/40 hover:bg-blue-50/60 border-l-blue-500' : 'hover:bg-slate-50 border-l-transparent cursor-pointer'}`}
+                                                className={`transition-colors border-l-4 ${item.jaEncomendado ? 'bg-slate-50 dark:bg-slate-900 opacity-60 cursor-not-allowed border-l-slate-200' : item.selecionado ? 'bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-50 dark:bg-blue-500/10 border-l-blue-500' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 border-l-transparent cursor-pointer'}`}
                                                 onClick={() => !item.jaEncomendado && toggleSelecao(item.produto.id)}
                                             >
                                                 <td className="px-6 py-4">
                                                     <div className="flex justify-center">
-                                                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.jaEncomendado ? 'bg-slate-100 border-slate-200' : item.selecionado ? 'bg-blue-600 border-blue-600' : 'border-slate-300 bg-white'}`}>
+                                                        <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${item.jaEncomendado ? 'bg-slate-100 dark:bg-slate-700/50 border-slate-200 dark:border-slate-700' : item.selecionado ? 'bg-blue-600 border-blue-600' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'}`}>
                                                             {item.jaEncomendado ? (
                                                                 <X size={12} className="text-slate-400" strokeWidth={3} />
                                                             ) : item.selecionado && (
@@ -253,14 +253,14 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`p-2 rounded-lg ${item.jaEncomendado ? 'bg-slate-100 text-slate-400' : isCritico ? 'bg-amber-50 text-amber-600' : 'bg-slate-100 text-slate-500'}`}>
+                                                        <div className={`p-2 rounded-lg ${item.jaEncomendado ? 'bg-slate-100 dark:bg-slate-700/50 text-slate-400' : isCritico ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'}`}>
                                                             {item.jaEncomendado ? <ShoppingCart size={16} /> : isCritico ? <AlertTriangle size={16} /> : <Package size={16} />}
                                                         </div>
                                                         <div>
                                                             <div className="flex items-center gap-2">
-                                                                <p className={`font-bold ${item.jaEncomendado ? 'text-slate-400' : 'text-slate-900'}`}>{item.produto.nome}</p>
+                                                                <p className={`font-bold ${item.jaEncomendado ? 'text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>{item.produto.nome}</p>
                                                                 {item.jaEncomendado && (
-                                                                    <span className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-tighter border border-slate-200">
+                                                                    <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-[8px] font-black uppercase tracking-tighter border border-slate-200 dark:border-slate-700">
                                                                         Encomenda em curso
                                                                     </span>
                                                                 )}
@@ -270,7 +270,7 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className={`font-mono font-bold ${isCritico ? 'text-red-600' : 'text-slate-600'}`}>
+                                                    <span className={`font-mono font-bold ${isCritico ? 'text-red-600 dark:text-red-400' : 'text-slate-600 dark:text-slate-400'}`}>
                                                         {item.produto.stock}
                                                     </span>
                                                 </td>
@@ -285,11 +285,11 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                                                             disabled={item.jaEncomendado}
                                                             value={item.quantidade}
                                                             onChange={(e) => handleQuantidadeChange(item.produto.id, parseInt(e.target.value) || 1)}
-                                                            className={`w-20 px-2 py-1.5 text-xs font-bold text-center rounded-lg border transition-all outline-none focus:ring-2 focus:ring-blue-500/20 ${item.jaEncomendado ? 'bg-slate-50 border-slate-100 text-slate-300 pointer-events-none' : item.selecionado ? 'border-blue-300 bg-white shadow-sm' : 'border-slate-200 bg-slate-50/50'}`}
+                                                            className={`w-20 px-2 py-1.5 text-xs font-bold text-center rounded-lg border transition-all outline-none focus:ring-2 focus:ring-blue-500/20 ${item.jaEncomendado ? 'bg-slate-50 dark:bg-slate-900 border-slate-100 dark:border-slate-700/50 text-slate-300 pointer-events-none' : item.selecionado ? 'border-blue-300 bg-white dark:bg-slate-800 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50'}`}
                                                         />
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-4 text-right font-bold text-slate-900">
+                                                <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-slate-100">
                                                     {formatCurrency(item.quantidade * item.produto.preco)}
                                                 </td>
                                             </tr>
@@ -309,15 +309,15 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-5 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <div className="px-6 py-5 border-t border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-1">Total do Pedido ({totalItens} itens)</span>
-                        <span className="text-2xl font-black text-slate-900 tracking-tight">{formatCurrency(valorTotalEstimado)}</span>
+                        <span className="text-2xl font-black text-slate-900 dark:text-slate-100 tracking-tight">{formatCurrency(valorTotalEstimado)}</span>
                     </div>
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => onClose(false)}
-                            className="px-6 py-2.5 text-sm font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                            className="px-6 py-2.5 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 transition-colors"
                         >
                             Cancelar
                         </button>

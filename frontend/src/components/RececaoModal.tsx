@@ -66,19 +66,19 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
 
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
                 {/* Header */}
-                <div className="bg-slate-50 px-8 py-6 border-b border-slate-100 flex items-center justify-between">
+                <div className="bg-slate-50 dark:bg-slate-900 px-8 py-6 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
                     <div>
-                        <div className="flex items-center gap-2 text-emerald-600 font-bold text-sm uppercase tracking-wider mb-1">
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-sm uppercase tracking-wider mb-1">
                             <Package size={16} />
                             Registar Receção
                         </div>
-                        <h2 className="text-2xl font-black text-slate-900">
+                        <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100">
                             Encomenda <span className="text-slate-400">#</span>{encomenda.codigoFormatado}
                         </h2>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-200/50 rounded-xl transition-colors text-slate-400 hover:text-slate-600">
+                    <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:bg-slate-700/50 rounded-xl transition-colors text-slate-400 hover:text-slate-600 dark:text-slate-400">
                         <X size={24} />
                     </button>
                 </div>
@@ -86,14 +86,14 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
                 {/* Content */}
                 <div className="p-8 max-h-[60vh] overflow-y-auto">
                     {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-start gap-3">
+                        <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-700 rounded-2xl flex items-start gap-3">
                             <AlertCircle className="shrink-0 mt-0.5" size={18} />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
                     )}
 
                     {/* Preview total/parcial */}
-                    <div className={`mb-5 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-semibold border ${seraTotal ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-amber-50 border-amber-100 text-amber-700'}`}>
+                    <div className={`mb-5 px-4 py-3 rounded-xl flex items-center gap-3 text-sm font-semibold border ${seraTotal ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-700' : 'bg-amber-50 dark:bg-amber-500/10 border-amber-100 dark:border-amber-500/20 text-amber-700'}`}>
                         {seraTotal
                             ? <><CheckCircle2 size={16} /> Esta receção irá <strong>completar</strong> a encomenda.</>
                             : <><AlertTriangle size={16} /> Esta receção será <strong>parcial</strong> — ainda haverá itens por receber.</>
@@ -102,16 +102,16 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
 
                     <div className="space-y-4">
                         {itens.map((item) => (
-                            <div key={item.linhaId} className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div key={item.linhaId} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1">
-                                        <p className="font-bold text-slate-800">{item.nome}</p>
-                                        <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-500">
-                                            <span>Pedido: <span className="font-bold text-slate-700">{item.quantidadePedida}</span></span>
+                                        <p className="font-bold text-slate-800 dark:text-slate-200">{item.nome}</p>
+                                        <div className="flex items-center gap-4 mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                                            <span>Pedido: <span className="font-bold text-slate-700 dark:text-slate-300">{item.quantidadePedida}</span></span>
                                             {item.jaRecebido > 0 && (
-                                                <span className="text-emerald-600 font-bold">Já recebido: {item.jaRecebido}</span>
+                                                <span className="text-emerald-600 dark:text-emerald-400 font-bold">Já recebido: {item.jaRecebido}</span>
                                             )}
-                                            <span className="text-amber-600 font-bold">Por receber: {item.porReceber}</span>
+                                            <span className="text-amber-600 dark:text-amber-400 font-bold">Por receber: {item.porReceber}</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
@@ -123,12 +123,12 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
                                             value={item.quantidadeRecebida}
                                             onChange={(e) => updateQuantidade(item.linhaId, e.target.value)}
                                             disabled={item.porReceber === 0}
-                                            className="w-24 px-3 py-2 bg-white border border-slate-200 rounded-xl text-center font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="w-24 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-center font-bold text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                         />
                                     </div>
                                 </div>
                                 {/* Progress bar */}
-                                <div className="mt-3 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                <div className="mt-3 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                                     <div
                                         className="h-full bg-emerald-500 rounded-full transition-all"
                                         style={{ width: `${Math.min(100, ((item.jaRecebido + item.quantidadeRecebida) / item.quantidadePedida) * 100)}%` }}
@@ -140,8 +140,8 @@ export default function RececaoModal({ encomenda, onClose, onSuccess }: RececaoM
                 </div>
 
                 {/* Footer */}
-                <div className="p-8 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-4">
-                    <button onClick={onClose} className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200/50 rounded-xl transition-all">
+                <div className="p-8 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-end gap-4">
+                    <button onClick={onClose} className="px-6 py-3 font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700/50 rounded-xl transition-all">
                         Cancelar
                     </button>
                     <button
