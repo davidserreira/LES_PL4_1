@@ -133,9 +133,9 @@ export default function PedidosCompra() {
     });
 
     const canViewHistorico = user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'ADMINISTRADOR';
-    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO']), []);
-    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'], []);
-    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO'], []);
+    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO', 'CONCLUÍDO', 'ENCERRADO']), []);
+    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
+    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
     const geralStatuses = useMemo(() => new Set(['PENDENTE', 'APROVADO', 'RECUSADO', 'PROCESSADO']), []);
 
     useEffect(() => {
@@ -554,8 +554,10 @@ export default function PedidosCompra() {
             case 'CANCELADO':
             case 'RECUSADO':
                 return 'text-red-700 bg-red-50 border-red-100';
-            case 'ENTREGUE':
-                return 'text-blue-700 bg-blue-50 border-blue-100';
+            case 'CONCLUÍDO':
+                return 'text-emerald-800 bg-emerald-100 border-emerald-200';
+            case 'ENCERRADO':
+                return 'text-slate-600 bg-slate-100 border-slate-200';
             default:
                 return 'text-slate-700 bg-slate-50 border-slate-200';
         }
@@ -1176,7 +1178,7 @@ export default function PedidosCompra() {
                                                                 onMouseDown={(e) => e.stopPropagation()}
                                                                 className="absolute left-0 mt-2 w-40 bg-white rounded-xl shadow-2xl border border-slate-200 py-1.5 z-[60] animate-in fade-in zoom-in-95 duration-200"
                                                             >
-                                                                {['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'].map((status) => (
+                                                                {['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'].map((status) => (
                                                                     <button
                                                                         key={status}
                                                                         onClick={() => handleUpdateStatusAdmin(p.id, status)}

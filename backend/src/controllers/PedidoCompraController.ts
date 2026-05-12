@@ -566,7 +566,7 @@ export const updateStatusAdmin = async (req: Request, res: Response): Promise<an
             return res.status(403).json({ error: 'Apenas Administradores podem alterar o estado manualmente.' });
         }
 
-        const estadosValidos = ['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'];
+        const estadosValidos = ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'];
         if (!novoEstado || !estadosValidos.includes(novoEstado.toUpperCase())) {
             return res.status(400).json({ error: 'Estado inválido.' });
         }
