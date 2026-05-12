@@ -132,7 +132,7 @@ export default function PedidosCompra() {
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
-    const canViewHistorico = user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'ADMINISTRADOR';
+    const canViewHistorico = user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'ADMINISTRADOR' || user?.role === 'RESPONSAVEL_STOCK';
     const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO', 'CONCLUÍDO', 'ENCERRADO']), []);
     const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
     const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
