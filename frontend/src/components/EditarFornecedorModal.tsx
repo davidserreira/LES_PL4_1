@@ -173,7 +173,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm border border-amber-100 dark:border-amber-500/20">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-sm border border-indigo-100 dark:border-indigo-500/20">
                             <Pencil size={20} />
                         </div>
                         <div>

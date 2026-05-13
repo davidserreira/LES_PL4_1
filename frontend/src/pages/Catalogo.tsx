@@ -720,6 +720,11 @@ const Catalogo = () => {
             <DetalhesProdutoModal
                 isOpen={!!productToView}
                 onClose={() => setProductToView(null)}
+                onEdit={() => {
+                    const p = productToView;
+                    setProductToView(null);
+                    if (p) setProductToEdit(p);
+                }}
                 produto={productToView!}
             />
 
