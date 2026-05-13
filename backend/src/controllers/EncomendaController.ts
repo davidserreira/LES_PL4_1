@@ -126,9 +126,10 @@ export const gerarEncomendas = async (req: Request, res: Response) => {
             }
 
             // Mudar estado do Pedido para PROCESSADO após emitir encomendas
+            // Limpar o flag revertido — o pedido está a ser reprocessado
             await tx.pedidoCompra.update({
                 where: { id: pedidoId },
-                data: { estado: 'PROCESSADO' }
+                data: { estado: 'PROCESSADO', revertido: false }
             });
 
             return criadas;
@@ -435,10 +436,13 @@ async function verificarEstadoPedidoCompra(tx: any, pedidoId: number) {
     if (todasCanceladas) {
         const pedido = await tx.pedidoCompra.findUnique({ where: { id: pedidoId } });
         if (pedido && pedido.estado !== 'PENDENTE') {
-            console.log(`[CICLO DE VIDA] Pedido #${pedidoId} revertido para PENDENTE (ALTA prioridade)`);
+            console.log(`[CICLO DE VIDA] Pedido #${pedidoId} revertido para PENDENTE`);
+            // Pedidos NORMAIS sobem para ALTA; URGENTES mantêm prioridade
+            // Em ambos os casos, marcamos revertido=true para sinalização visual
+            const novaPrioridade = pedido.prioridade === 'URGENTE' ? 'URGENTE' : 'ALTA';
             await tx.pedidoCompra.update({
                 where: { id: pedidoId },
-                data: { estado: 'PENDENTE', prioridade: 'ALTA' }
+                data: { estado: 'PENDENTE', prioridade: novaPrioridade, revertido: true }
             });
         }
         return;
