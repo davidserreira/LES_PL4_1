@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, User, Shield, Lock, AlertCircle, Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
+import { X, User, Shield, Lock, AlertCircle, Loader2, CheckCircle2, ChevronDown, Users } from 'lucide-react';
 import { utilizadorService, Utilizador } from '../services/utilizadorService';
 
 interface UtilizadorModalProps {
@@ -110,8 +110,8 @@ const UtilizadorModal: React.FC<UtilizadorModalProps> = ({ isOpen, onClose, onSu
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-500/20">
-                            {utilizador ? <Shield size={20} /> : <User size={20} />}
+                        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 shadow-sm border border-purple-100 dark:border-purple-500/20">
+                            <Users size={20} />
                         </div>
                         <div>
                             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">

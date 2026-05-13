@@ -1,4 +1,4 @@
-import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2 } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2, ClipboardList } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
 
@@ -137,11 +137,9 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                 {/* Header Modal */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
-                        {isLocked && (
-                            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 rounded-xl flex items-center justify-center">
-                                <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                        )}
+                        <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-full flex items-center justify-center shadow-sm">
+                            <ClipboardList size={20} className="text-blue-600 dark:text-blue-400" />
+                        </div>
                         <div>
                             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight flex items-center gap-3">
                                 Detalhes do Pedido
