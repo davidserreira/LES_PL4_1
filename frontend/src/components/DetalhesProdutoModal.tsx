@@ -1,5 +1,5 @@
 import {
-    X, Package, Calendar, Tag, AlertTriangle, CheckCircle2, Factory, DollarSign, Database, FileText, Star
+    X, Pencil, Package, Calendar, Tag, AlertTriangle, CheckCircle2, Factory, DollarSign, Database, FileText, Star
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -27,6 +27,7 @@ interface Produto {
 interface DetalhesProdutoModalProps {
     isOpen: boolean;
     onClose: () => void;
+    onEdit?: () => void;
     produto: Produto;
 }
 
@@ -34,7 +35,7 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
 };
 
-export default function DetalhesProdutoModal({ isOpen, onClose, produto }: DetalhesProdutoModalProps) {
+export default function DetalhesProdutoModal({ isOpen, onClose, onEdit, produto }: DetalhesProdutoModalProps) {
     if (!isOpen || !produto) return null;
 
     const isCritico = produto.stock <= produto.stockMinimo;
@@ -72,12 +73,23 @@ export default function DetalhesProdutoModal({ isOpen, onClose, produto }: Detal
                             </div>
                         </div>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
-                    >
-                        <X size={20} />
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                        {onEdit && (
+                            <button
+                                onClick={() => { onClose(); onEdit(); }}
+                                className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                title="Editar produto"
+                            >
+                                <Pencil size={18} />
+                            </button>
+                        )}
+                        <button 
+                            onClick={onClose}
+                            className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Body Content */}
