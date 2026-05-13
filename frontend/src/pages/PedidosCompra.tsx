@@ -137,13 +137,21 @@ export default function PedidosCompra() {
     const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'CONCLUÍDO', 'ENCERRADO']), []);
     const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO'], []);
     const historicoEstadoOptions = useMemo(() => ['RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
+    const allEstadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
     const geralStatuses = useMemo(() => new Set(['PENDENTE', 'APROVADO', 'PROCESSADO']), []);
 
+    // Opções do dropdown Estado conforme role + tab
+    const estadoFilterOptions = useMemo(() => {
+        const isAdmin = user?.role === 'ADMINISTRADOR';
+        if (viewMode === 'HISTORICO') return historicoEstadoOptions;
+        if (isAdmin) return allEstadoOptions;          // admin na lista vê todos
+        return estadoOptions;                           // outros users na lista só vêem activos
+    }, [user?.role, viewMode, historicoEstadoOptions, allEstadoOptions, estadoOptions]);
+
     useEffect(() => {
-        if (canViewHistorico && viewMode === 'HISTORICO' && (filterEstado || '').toUpperCase() === 'PENDENTE') {
-            setFilterEstado('Todos');
-        }
-    }, [canViewHistorico, viewMode, filterEstado]);
+        // Limpa filtro inválido ao trocar de tab
+        setFilterEstado('Todos');
+    }, [viewMode]);
 
     useEffect(() => {
         const role = user?.role;
@@ -936,8 +944,7 @@ export default function PedidosCompra() {
                         <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
                         <div className="flex w-full sm:w-auto gap-2">
-                            {(!canViewHistorico || viewMode === 'HISTORICO') && (
-                                <div className="relative flex-1 sm:min-w-[150px]">
+                            <div className="relative flex-1 sm:min-w-[150px]">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -953,42 +960,41 @@ export default function PedidosCompra() {
                                         <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {isFilterEstadoOpen && (
-                                        <div
-                                            onMouseDown={(e) => e.stopPropagation()}
-                                            className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                            {isFilterEstadoOpen && (
+                                    <div
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
+                                        <button
+                                            onClick={() => {
+                                                setFilterEstado('Todos');
+                                                setIsFilterEstadoOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                }`}
                                         >
+                                            Todos os estados
+                                        </button>
+                                        {estadoFilterOptions.map(est => (
                                             <button
+                                                key={est}
                                                 onClick={() => {
-                                                    setFilterEstado('Todos');
+                                                    setFilterEstado(est);
                                                     setIsFilterEstadoOpen(false);
                                                 }}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos'
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est
                                                     ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
                                                     : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
                                                     }`}
                                             >
-                                                Todos os estados
+                                                {est}
                                             </button>
-                                            {(canViewHistorico && viewMode === 'HISTORICO' ? historicoEstadoOptions : estadoOptions).map(est => (
-                                                <button
-                                                    key={est}
-                                                    onClick={() => {
-                                                        setFilterEstado(est);
-                                                        setIsFilterEstadoOpen(false);
-                                                    }}
-                                                    className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est
-                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
-                                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
-                                                        }`}
-                                                >
-                                                    {est}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="relative flex-1 sm:min-w-[150px]">
                                 <button
@@ -1080,7 +1086,16 @@ export default function PedidosCompra() {
             ) : (
                 <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col flex-1 min-h-0 relative z-0">
                     <div className="w-full h-full overflow-auto custom-scrollbar">
-                        <table className="w-full text-left relative">
+                        <table className="w-full text-left relative table-fixed">
+                            <colgroup>
+                                <col style={{ width: '180px' }} />
+                                <col style={{ width: '140px' }} />
+                                <col style={{ width: '220px' }} />
+                                <col style={{ width: '140px' }} />
+                                <col style={{ width: '110px' }} />
+                                <col style={{ width: '180px' }} />
+                                <col style={{ width: '160px' }} />
+                            </colgroup>
                             <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
                                 <tr>
                                     <th
