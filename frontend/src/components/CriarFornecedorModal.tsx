@@ -166,22 +166,23 @@ const CriarFornecedorModal = ({ isOpen, onClose, onSuccess }: CriarFornecedorMod
             <div
                 className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
             >
-                {/* Minimal Header */}
-                <div className="bg-slate-900 p-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Plus size={20} className="text-blue-400" />
-                                Novo Fornecedor
-                            </h2>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-100 dark:border-emerald-500/20">
+                            <Plus size={20} />
                         </div>
-                        <button
-                            onClick={handleClose}
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white dark:bg-slate-800/10 rounded-lg transition-all"
-                        >
-                            <X size={20} />
-                        </button>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Novo Fornecedor</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Preencha os dados do novo fornecedor</p>
+                        </div>
                     </div>
+                    <button
+                        onClick={handleClose}
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">

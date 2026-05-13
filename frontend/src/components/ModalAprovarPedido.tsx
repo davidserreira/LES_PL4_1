@@ -168,18 +168,24 @@ export default function ModalAprovarPedido({ isOpen, onClose, pedido }: ModalApr
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl flex flex-col overflow-hidden max-h-[85vh]">
                 
                 {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                            Aprovar Pedido de Compra
-                            <span className="text-sm font-black bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
-                                {pedido.codigoFormatado}
-                            </span>
-                        </h2>
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-100 dark:border-emerald-500/20">
+                            <Check size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight flex items-center gap-3">
+                                Aprovar Pedido de Compra
+                                <span className="text-sm font-black bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                                    {pedido.codigoFormatado}
+                                </span>
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Reveja e selecione os fornecedores para aprovar</p>
+                        </div>
                     </div>
                     <button 
                         onClick={() => onClose()}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>

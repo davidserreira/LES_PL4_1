@@ -60,12 +60,18 @@ const ListarAvaliacoesFornecedorModal = ({ isOpen, onClose, fornecedorId, fornec
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
             <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
             <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl animate-in zoom-in-95 duration-200 overflow-hidden flex flex-col max-h-[85vh]">
-                <div className="bg-slate-900 p-6 flex justify-between items-start shrink-0">
-                    <div>
-                        <h2 className="text-xl font-bold text-white leading-tight">Avaliações do Fornecedor</h2>
-                        <p className="text-slate-400 text-sm mt-1">{fornecedorNome}</p>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80 shrink-0">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm border border-amber-100 dark:border-amber-500/20">
+                            <Star size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Avaliações do Fornecedor</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{fornecedorNome}</p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:bg-white dark:bg-slate-800/10 hover:text-white transition-colors rounded-lg flex-shrink-0">
+                    <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors flex-shrink-0">
                         <X size={20} />
                     </button>
                 </div>

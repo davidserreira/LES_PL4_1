@@ -51,7 +51,7 @@ export default function RascunhosModal({ isOpen, onClose, onEditDraft, user }: R
 
     return (
         <div 
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
                     onClose();
@@ -61,11 +61,19 @@ export default function RascunhosModal({ isOpen, onClose, onEditDraft, user }: R
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                 
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">Meus Rascunhos</h2>
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-500/20">
+                            <Edit2 size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Meus Rascunhos</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Pedidos de compra guardados localmente</p>
+                        </div>
+                    </div>
                     <button 
                         onClick={() => onClose()}
-                        className="text-slate-400 hover:text-slate-600 dark:text-slate-400 transition-colors p-1"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>

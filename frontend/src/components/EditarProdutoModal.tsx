@@ -233,60 +233,61 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             <div
                 className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
             >
-                {/* Minimal Header */}
-                <div className="bg-slate-900 p-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Edit2 size={20} className="text-blue-400" />
-                                Editar Produto
-                            </h2>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-100 dark:border-blue-500/20">
+                            <Edit2 size={20} />
                         </div>
-                        <div className="flex items-center gap-2">
-                            {showDeleteConfirm ? (
-                                <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20 mr-2 animate-in slide-in-from-right-2">
-                                    <span className="text-xs font-bold text-red-400 mr-2">Certeza?</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowDeleteConfirm(false)}
-                                        className="text-xs px-2 py-1 bg-slate-800 text-slate-300 font-medium rounded hover:bg-slate-700 transition-colors"
-                                    >
-                                        Não
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={deleteLoading}
-                                        onClick={async () => {
-                                            setDeleteLoading(true);
-                                            const success = await onDelete(produto.id, false);
-                                            setDeleteLoading(false);
-                                            if (success === false) {
-                                                setShowDeleteConfirm(false);
-                                                setShowForceDeleteConfirm(true);
-                                            }
-                                        }}
-                                        className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
-                                    >
-                                        Sim, Apagar
-                                    </button>
-                                </div>
-                            ) : (
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Editar Produto</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{produto.nome}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {showDeleteConfirm ? (
+                            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/20 mr-2 animate-in slide-in-from-right-2">
+                                <span className="text-xs font-bold text-red-600 dark:text-red-400 mr-2">Certeza?</span>
                                 <button
                                     type="button"
-                                    onClick={() => setShowDeleteConfirm(true)}
-                                    className="p-1.5 mr-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                                    title="Apagar produto"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                                 >
-                                    <Trash2 size={18} />
+                                    Não
                                 </button>
-                            )}
+                                <button
+                                    type="button"
+                                    disabled={deleteLoading}
+                                    onClick={async () => {
+                                        setDeleteLoading(true);
+                                        const success = await onDelete(produto.id, false);
+                                        setDeleteLoading(false);
+                                        if (success === false) {
+                                            setShowDeleteConfirm(false);
+                                            setShowForceDeleteConfirm(true);
+                                        }
+                                    }}
+                                    className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                    Sim, Apagar
+                                </button>
+                            </div>
+                        ) : (
                             <button
-                                onClick={handleClose}
-                                className="p-1.5 text-slate-400 hover:text-white hover:bg-white dark:bg-slate-800/10 rounded-lg transition-all"
+                                type="button"
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="p-2 mr-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                title="Apagar produto"
                             >
-                                <X size={20} />
+                                <Trash2 size={18} />
                             </button>
-                        </div>
+                        )}
+                        <button
+                            onClick={handleClose}
+                            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
                 </div>
 
