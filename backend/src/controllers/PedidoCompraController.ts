@@ -119,6 +119,12 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
                     }
                 },
                 criadoPor: true,
+                encomendas: {
+                    include: {
+                        linhas: true,
+                        fornecedor: true
+                    }
+                }
             },
             orderBy: { id: 'desc' },
         });
