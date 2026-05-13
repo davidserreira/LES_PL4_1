@@ -133,10 +133,11 @@ export default function PedidosCompra() {
     });
 
     const canViewHistorico = user?.role === 'RESPONSAVEL_FINANCEIRO' || user?.role === 'ADMINISTRADOR' || user?.role === 'RESPONSAVEL_STOCK';
-    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'APROVADO', 'PROCESSADO', 'CONCLUÍDO', 'ENCERRADO']), []);
-    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
-    const historicoEstadoOptions = useMemo(() => ['APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
-    const geralStatuses = useMemo(() => new Set(['PENDENTE', 'APROVADO', 'RECUSADO', 'PROCESSADO']), []);
+    // Lista: apenas pedidos activos (sem terminal states)
+    const historicoStatuses = useMemo(() => new Set(['CANCELADO', 'RECUSADO', 'CONCLUÍDO', 'ENCERRADO']), []);
+    const estadoOptions = useMemo(() => ['PENDENTE', 'APROVADO', 'PROCESSADO'], []);
+    const historicoEstadoOptions = useMemo(() => ['RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'], []);
+    const geralStatuses = useMemo(() => new Set(['PENDENTE', 'APROVADO', 'PROCESSADO']), []);
 
     useEffect(() => {
         if (canViewHistorico && viewMode === 'HISTORICO' && (filterEstado || '').toUpperCase() === 'PENDENTE') {
@@ -406,7 +407,11 @@ export default function PedidosCompra() {
                 result = result.filter(p => geralStatuses.has(status(p)));
             }
         } else if (role === 'ADMINISTRADOR') {
-            // Admin vê tudo
+            // Admin vê todos os estados na LISTA; no histórico apenas terminais
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(p => historicoStatuses.has(status(p)));
+            }
+            // Na lista o admin vê tudo (sem filtro de estado)
         } else if (canViewHistorico) {
             if (viewMode === 'HISTORICO') {
                 result = result.filter(p => historicoStatuses.has(status(p)));
@@ -415,7 +420,7 @@ export default function PedidosCompra() {
 
         const isAtivo = (p: PedidoCompra) => {
             const est = (p.estado || '').toUpperCase();
-            return est === 'PENDENTE' || est === 'APROVADO';
+            return est === 'PENDENTE' || est === 'APROVADO' || est === 'PROCESSADO';
         };
 
         if (quickFilter === 'ATIVOS') {
@@ -635,8 +640,8 @@ export default function PedidosCompra() {
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-800'
-                            : 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 text-red-800'
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-800'
+                        : 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 text-red-800'
                         }`}>
                         {toast.type === 'success'
                             ? <CheckCircle2 size={20} className="text-emerald-500" />
@@ -778,8 +783,8 @@ export default function PedidosCompra() {
                     {(() => {
                         const role = user?.role;
                         const status = (p: PedidoCompra) => (p.estado || '').toUpperCase();
-                        const isAtivo = (p: PedidoCompra) => ['PENDENTE', 'APROVADO'].includes(status(p));
-                        const countGeral = pedidos.filter(p => ['PENDENTE', 'APROVADO', 'RECUSADO', 'PROCESSADO'].includes(status(p))).length;
+                        const isAtivo = (p: PedidoCompra) => ['PENDENTE', 'APROVADO', 'PROCESSADO'].includes(status(p));
+                        const countGeral = pedidos.filter(p => ['PENDENTE', 'APROVADO', 'PROCESSADO'].includes(status(p))).length;
                         const countAtivos = pedidos.filter(isAtivo).length;
                         const countUrgentes = pedidos.filter(p => isAtivo(p) && (p.prioridade || '').toUpperCase() === 'URGENTE').length;
                         const countRecusados = pedidos.filter(p => status(p) === 'RECUSADO').length;
@@ -826,8 +831,8 @@ export default function PedidosCompra() {
                                     setSearchQuery('');
                                 }}
                                 className={`p-2 rounded-xl border shadow-sm flex items-center justify-between text-left transition-all ${quickFilter === c.key || (quickFilter === 'TODOS' && c.key === defaultKey)
-                                        ? `bg-white dark:bg-slate-800 ${c.border} ring-2 ${c.ring}`
-                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-md'
+                                    ? `bg-white dark:bg-slate-800 ${c.border} ring-2 ${c.ring}`
+                                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:shadow-md'
                                     }`}
                             >
                                 <div>
@@ -875,8 +880,8 @@ export default function PedidosCompra() {
                                         setFilterEstado('Todos');
                                     }}
                                     className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA'
-                                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
-                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                                         }`}
                                 >
                                     Lista
@@ -887,8 +892,8 @@ export default function PedidosCompra() {
                                         setFilterEstado('Todos');
                                     }}
                                     className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO'
-                                            ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
-                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                                         }`}
                                 >
                                     Histórico
@@ -902,8 +907,8 @@ export default function PedidosCompra() {
                             <button
                                 onClick={() => setFilterTipo('Todos')}
                                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'Todos'
-                                        ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
-                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                                     }`}
                             >
                                 Todos
@@ -911,8 +916,8 @@ export default function PedidosCompra() {
                             <button
                                 onClick={() => setFilterTipo('MANUAL')}
                                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'MANUAL'
-                                        ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
-                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                                     }`}
                             >
                                 Manuais
@@ -920,8 +925,8 @@ export default function PedidosCompra() {
                             <button
                                 onClick={() => setFilterTipo('AUTOMATICO')}
                                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all whitespace-nowrap ${filterTipo === 'AUTOMATICO'
-                                        ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
-                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
                                     }`}
                             >
                                 Automáticos
@@ -940,8 +945,8 @@ export default function PedidosCompra() {
                                             setIsFilterEstadoOpen(!isFilterEstadoOpen);
                                         }}
                                         className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos'
-                                                ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
-                                                : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
+                                            ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                            : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
                                             }`}
                                     >
                                         <span className="truncate">{filterEstado === 'Todos' ? 'Estado' : filterEstado}</span>
@@ -959,8 +964,8 @@ export default function PedidosCompra() {
                                                     setIsFilterEstadoOpen(false);
                                                 }}
                                                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos'
-                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
-                                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
                                                     }`}
                                             >
                                                 Todos os estados
@@ -973,8 +978,8 @@ export default function PedidosCompra() {
                                                         setIsFilterEstadoOpen(false);
                                                     }}
                                                     className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est
-                                                            ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
-                                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
                                                         }`}
                                                 >
                                                     {est}
@@ -993,8 +998,8 @@ export default function PedidosCompra() {
                                         setIsFilterPrioridadeOpen(!isFilterPrioridadeOpen);
                                     }}
                                     className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterPrioridade !== 'Todas'
-                                            ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
-                                            : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
+                                        ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
                                         }`}
                                 >
                                     <span className="truncate">{filterPrioridade === 'Todas' ? 'Prioridade' : filterPrioridade}</span>
@@ -1012,8 +1017,8 @@ export default function PedidosCompra() {
                                                 setIsFilterPrioridadeOpen(false);
                                             }}
                                             className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === 'Todas'
-                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
-                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
                                                 }`}
                                         >
                                             Todas as prioridades
@@ -1026,8 +1031,8 @@ export default function PedidosCompra() {
                                                     setIsFilterPrioridadeOpen(false);
                                                 }}
                                                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterPrioridade === prio
-                                                        ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
-                                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
                                                     }`}
                                             >
                                                 {prio}
@@ -1121,8 +1126,10 @@ export default function PedidosCompra() {
                                 {filteredPedidos.map((p) => {
                                     const estadoUpper = (p.estado || '').toUpperCase();
                                     const isProcessado = estadoUpper === 'PROCESSADO';
-                                    // Pedido revertido automaticamente: PENDENTE + ALTA (todas as encomendas foram canceladas)
-                                    const isRevertido = estadoUpper === 'PENDENTE' && p.prioridade === 'ALTA';
+                                    // Usa o campo DB para identificar pedidos revertidos (independente da prioridade)
+                                    const isRevertido = !!p.revertido;
+                                    const isRevertidoUrgente = isRevertido && p.prioridade === 'URGENTE';
+                                    const isRevertidoNormal = isRevertido && p.prioridade !== 'URGENTE';
 
                                     return (
                                         <tr
@@ -1132,18 +1139,23 @@ export default function PedidosCompra() {
                                                 setSelectedPedido(p);
                                                 setIsDetailsModalOpen(true);
                                             }}
-                                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 ${
-                                                isProcessado ? 'cursor-pointer' : ''
-                                            } ${
-                                                isRevertido
-                                                    ? 'border-l-4 border-amber-400 dark:border-amber-500 bg-amber-50/40 dark:bg-amber-500/5'
-                                                    : ''
-                                            }`}
+                                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 ${isProcessado ? 'cursor-pointer' : ''
+                                                } ${isRevertidoUrgente
+                                                    ? 'border-l-4 border-red-500 dark:border-red-500 bg-red-50/40 dark:bg-red-500/5'
+                                                    : isRevertidoNormal
+                                                        ? 'border-l-4 border-amber-400 dark:border-amber-500 bg-amber-50/40 dark:bg-amber-500/5'
+                                                        : ''
+                                                }`}
                                         >
                                             <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">
                                                 <div className="flex items-center gap-2">
                                                     {p.codigoFormatado}
-                                                    {isRevertido && (
+                                                    {isRevertidoUrgente && (
+                                                        <span title="Todas as encomendas foram canceladas. Era URGENTE — requer atenção imediata!" className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30 cursor-help animate-pulse">
+                                                            <AlertCircle size={9} /> Revertido
+                                                        </span>
+                                                    )}
+                                                    {isRevertidoNormal && (
                                                         <span title="Todas as encomendas foram canceladas. Requer nova emissão de encomendas." className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 cursor-help">
                                                             <AlertCircle size={9} /> Revertido
                                                         </span>
@@ -1197,8 +1209,8 @@ export default function PedidosCompra() {
                                                                         key={status}
                                                                         onClick={() => handleUpdateStatusAdmin(p.id, status)}
                                                                         className={`w-full text-left px-4 py-2 text-[10px] font-black tracking-wider transition-colors flex items-center gap-2 ${p.estado === status
-                                                                                ? 'bg-slate-50 dark:bg-slate-900 text-slate-400 cursor-default'
-                                                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400'
+                                                                            ? 'bg-slate-50 dark:bg-slate-900 text-slate-400 cursor-default'
+                                                                            : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400'
                                                                             }`}
                                                                         disabled={p.estado === status}
                                                                     >
@@ -1341,10 +1353,10 @@ export default function PedidosCompra() {
                                                                             }
                                                                             onClick={() => handleCancelar(p.id)}
                                                                             className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${(estadoUpper === 'APROVADO' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_FINANCEIRO') ||
-                                                                                    (!['PENDENTE', 'APROVADO'].includes(estadoUpper)) ||
-                                                                                    (estadoUpper === 'PENDENTE' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
-                                                                                    ? 'text-slate-400 cursor-not-allowed'
-                                                                                    : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10'
+                                                                                (!['PENDENTE', 'APROVADO'].includes(estadoUpper)) ||
+                                                                                (estadoUpper === 'PENDENTE' && user.role !== 'ADMINISTRADOR' && user.role !== 'RESPONSAVEL_STOCK')
+                                                                                ? 'text-slate-400 cursor-not-allowed'
+                                                                                : 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10'
                                                                                 }`}
                                                                         >
                                                                             Cancelar

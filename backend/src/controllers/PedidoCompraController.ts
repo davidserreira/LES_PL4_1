@@ -610,7 +610,10 @@ export const reverterPedido = async (req: Request, res: Response): Promise<any> 
 
         if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
         if (pedido.estado !== 'APROVADO') return res.status(400).json({ error: 'Apenas pedidos APROVADOS podem ser revertidos.' });
-        if (pedido.encomendas.length > 0) return res.status(400).json({ error: 'Não é possível reverter um pedido com encomendas geradas.' });
+
+        // Só bloqueia se houver encomendas ATIVAS (não canceladas)
+        const encomendasAtivas = pedido.encomendas.filter((e: any) => e.estado !== 'CANCELADA');
+        if (encomendasAtivas.length > 0) return res.status(400).json({ error: 'Não é possível reverter um pedido com encomendas activas. Cancele primeiro todas as encomendas.' });
 
         await prisma.$transaction([
             // Limpar fornecedorId de todas as linhas

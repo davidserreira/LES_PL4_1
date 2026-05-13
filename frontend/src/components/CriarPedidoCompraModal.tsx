@@ -32,7 +32,14 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
 };
 
+// O utilizador só pode seleccionar NORMAL ou URGENTE.
+// ALTA é reservada ao sistema (pedidos revertidos automaticamente).
 const PRIORIDADES = [
+    { value: 'NORMAL', label: 'Normal', dot: 'bg-blue-500' },
+    { value: 'URGENTE', label: 'Urgente', dot: 'bg-red-500' }
+];
+// Inclui ALTA apenas para efeitos de display (quando o pedido já tem prioridade ALTA)
+const TODAS_PRIORIDADES = [
     { value: 'NORMAL', label: 'Normal', dot: 'bg-blue-500' },
     { value: 'ALTA', label: 'Alta', dot: 'bg-amber-400' },
     { value: 'URGENTE', label: 'Urgente', dot: 'bg-red-500' }
@@ -52,12 +59,12 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
     const [observacoes, setObservacoes] = useState('');
     const [originalDraft, setOriginalDraft] = useState<any>(null);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
-    
+
     // Filtros catalog-style
     const [filterCategory, setFilterCategory] = useState<string>('');
     const [filterStatus, setFilterStatus] = useState<'todos' | 'estavel' | 'critico'>('todos');
     const [isFilterCategoryOpen, setIsFilterCategoryOpen] = useState(false);
-    
+
     const [nextPedidoId, setNextPedidoId] = useState<number>(1);
     const prioridadeRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +74,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
 
     useEffect(() => {
         if (!isOpen) return;
-        
+
         setStep(1);
         setLinhas([]);
         setSearchQuery('');
@@ -79,7 +86,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
 
         produtoService.getAll().then(data => {
             setProdutos(data);
-            
+
             if (pedidoToEdit) {
                 setPrioridade(pedidoToEdit.prioridade);
                 setObservacoes(pedidoToEdit.observacoes || '');
@@ -145,18 +152,18 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
     const filteredProdutos = useMemo(() => {
         return produtos.filter(p => {
             const query = searchQuery.toLowerCase();
-            const matchesSearch = 
-                p.nome.toLowerCase().includes(query) || 
+            const matchesSearch =
+                p.nome.toLowerCase().includes(query) ||
                 (p.categoria?.toLowerCase() || '').includes(query);
-            
+
             const matchesCategory = filterCategory === '' || p.categoria === filterCategory;
-            
+
             const isCritico = p.stock <= p.stockMinimo;
-            const matchesStatus = 
+            const matchesStatus =
                 filterStatus === 'todos' ? true :
-                filterStatus === 'critico' ? isCritico :
-                !isCritico;
-                
+                    filterStatus === 'critico' ? isCritico :
+                        !isCritico;
+
             return matchesSearch && matchesCategory && matchesStatus;
         });
     }, [produtos, searchQuery, filterCategory, filterStatus]);
@@ -164,12 +171,12 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
     const handleAdicionar = (produto: Produto) => {
         const isAdded = linhas.find(l => l.produto.id === produto.id);
         if (isAdded) return;
-        
+
         let qtdInicial = 1;
         if (produto.stock < produto.stockMinimo) {
             qtdInicial = (produto.stockMinimo + 1) - produto.stock;
         }
-        
+
         setLinhas([...linhas, { produto, quantidade: qtdInicial }]);
     };
 
@@ -303,7 +310,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
     const mockIdStr = pedidoToEdit ? pedidoToEdit.codigoFormatado : (originalDraft ? originalDraft.codigoFormatado : `PM-${ano}-${String(nextPedidoId).padStart(3, '0')}`);
 
     const modalContent = (
-        <div 
+        <div
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
             onMouseDown={(e) => {
                 if (e.target === e.currentTarget) {
@@ -312,7 +319,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
             }}
         >
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-                
+
                 {/* Header Modal */}
                 <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
@@ -328,7 +335,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                             </p>
                         </div>
                     </div>
-                    <button 
+                    <button
                         onClick={handleCloseX}
                         className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                     >
@@ -364,7 +371,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                             <Filter size={14} />
                                             Filtros:
                                         </div>
-                                        
+
                                         {/* Status Filter */}
                                         <div className="flex p-0.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700/60">
                                             <button
@@ -439,7 +446,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                             className="w-full pl-9 pr-24 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-xs placeholder:text-slate-400"
                                         />
                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-medium">
-                                             A mostrar {filteredProdutos.length} de {produtos.length}
+                                            A mostrar {filteredProdutos.length} de {produtos.length}
                                         </div>
                                     </div>
                                 </div>
@@ -477,7 +484,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                                         Adicionado
                                                                     </button>
                                                                 ) : (
-                                                                    <button 
+                                                                    <button
                                                                         onClick={() => handleAdicionar(p)}
                                                                         className="w-full px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm"
                                                                     >
@@ -525,8 +532,8 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                 <div className="flex items-center gap-4">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Qtd:</span>
-                                                        <input 
-                                                            type="number" 
+                                                        <input
+                                                            type="number"
                                                             min="1"
                                                             value={linha.quantidade}
                                                             onChange={(e) => handleQuantidadeChange(linha.produto.id, parseInt(e.target.value) || 1)}
@@ -534,7 +541,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                                         />
                                                         <span className="text-xs text-slate-500 dark:text-slate-400 w-6">un</span>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={() => handleRemover(linha.produto.id)}
                                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors"
                                                     >
@@ -584,9 +591,9 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                             className="w-full sm:w-[160px] px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all flex items-center justify-between text-sm group hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 shadow-sm"
                                         >
                                             <div className="flex items-center gap-2">
-                                                <span className={`w-2.5 h-2.5 rounded-full ${PRIORIDADES.find(p => p.value === prioridade)?.dot}`}></span>
+                                                <span className={`w-2.5 h-2.5 rounded-full ${TODAS_PRIORIDADES.find(p => p.value === prioridade)?.dot || 'bg-slate-400'}`}></span>
                                                 <span className="font-semibold text-slate-700 dark:text-slate-300">
-                                                    {PRIORIDADES.find(p => p.value === prioridade)?.label}
+                                                    {TODAS_PRIORIDADES.find(p => p.value === prioridade)?.label || prioridade}
                                                 </span>
                                             </div>
                                             <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 ${isPrioridadeOpen ? 'rotate-180' : ''}`} />
@@ -594,6 +601,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
 
                                         {isPrioridadeOpen && (
                                             <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                                {/* Apenas NORMAL e URGENTE são selectáveis — ALTA é sistema */}
                                                 {PRIORIDADES.map((item) => (
                                                     <button
                                                         key={item.value}
@@ -648,7 +656,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                     <span className="text-xl font-bold text-emerald-700">{formatCurrency(totalEstimado)}</span>
                                 </div>
                             </div>
-                            
+
                             {/* Observações */}
                             <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
                                 <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 p-5 border-b border-slate-100 dark:border-slate-700/50">Observações</h3>
@@ -669,7 +677,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                 <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between">
                     <div className="flex gap-2">
                         {step === 1 && !currentDraftId && !pedidoToEdit && linhas.length > 0 && (
-                            <button 
+                            <button
                                 onClick={() => setLinhas([])}
                                 className="text-sm font-semibold text-slate-400 hover:text-red-500 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5"
                             >
@@ -677,7 +685,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                             </button>
                         )}
                         {step === 2 && (
-                            <button 
+                            <button
                                 onClick={() => setStep(1)}
                                 className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 px-4 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 rounded-lg transition-colors flex items-center gap-2 shadow-sm"
                             >
@@ -687,7 +695,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                     </div>
                     <div className="flex items-center gap-3">
                         {!currentDraftId && (
-                            <button 
+                            <button
                                 onClick={handleCancelClick}
                                 className="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors"
                             >
@@ -695,7 +703,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                             </button>
                         )}
                         {currentDraftId && !pedidoToEdit && (
-                            <button 
+                            <button
                                 onClick={handleDeleteDraft}
                                 disabled={isSubmitting}
                                 className="px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:border-red-500/20"
@@ -703,9 +711,9 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                 Eliminar Rascunho
                             </button>
                         )}
-                        
+
                         {step === 1 ? (
-                            <button 
+                            <button
                                 onClick={() => setStep(2)}
                                 disabled={linhas.length === 0}
                                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -713,7 +721,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
                                 Rever Lista <ArrowRight size={16} />
                             </button>
                         ) : (
-                            <button 
+                            <button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || linhas.length === 0}
                                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -731,7 +739,7 @@ export default function CriarPedidoCompraModal({ isOpen, onClose, draftId, pedid
 
             {/* Confirm Delete Draft Modal */}
             {isConfirmDeleteOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[10000] flex items-center justify-center p-4 animate-in fade-in duration-200"
                     onMouseDown={(e) => {
                         if (e.target === e.currentTarget) {
