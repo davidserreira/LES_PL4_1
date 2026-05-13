@@ -24,5 +24,10 @@ export const encomendaService = {
     receber: async (id: number, itens: any[]) => {
         const res = await api.patch(`/encomendas/${id}/receber`, { itens });
         return res.data;
+    },
+
+    encerrar: async (id: number, observacoes: string) => {
+        const res = await api.patch(`/encomendas/${id}/encerrar`, { observacoes });
+        return res.data;
     }
 };

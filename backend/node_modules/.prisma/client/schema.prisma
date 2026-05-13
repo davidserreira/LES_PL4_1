@@ -163,4 +163,5 @@ enum EstadoEncomenda {
   ENTREGUE
   CANCELADA
   ENTREGUE_PARCIAL
+  ENCERRADA
 }

@@ -5,7 +5,8 @@ import {
     getEncomendaById, 
     atualizarEstado, 
     receberEncomenda,
-    getHistoricoStock
+    getHistoricoStock,
+    encerrarEncomenda
 } from '../controllers/EncomendaController';
 
 const router = Router();
@@ -16,5 +17,6 @@ router.get('/', getAllEncomendas);
 router.get('/:id', getEncomendaById);
 router.patch('/:id/estado', atualizarEstado);
 router.patch('/:id/receber', receberEncomenda);
+router.patch('/:id/encerrar', encerrarEncomenda);
 
 export default router;

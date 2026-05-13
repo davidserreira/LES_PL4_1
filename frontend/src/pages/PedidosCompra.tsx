@@ -1121,6 +1121,8 @@ export default function PedidosCompra() {
                                 {filteredPedidos.map((p) => {
                                     const estadoUpper = (p.estado || '').toUpperCase();
                                     const isProcessado = estadoUpper === 'PROCESSADO';
+                                    // Pedido revertido automaticamente: PENDENTE + ALTA (todas as encomendas foram canceladas)
+                                    const isRevertido = estadoUpper === 'PENDENTE' && p.prioridade === 'ALTA';
 
                                     return (
                                         <tr
@@ -1130,11 +1132,23 @@ export default function PedidosCompra() {
                                                 setSelectedPedido(p);
                                                 setIsDetailsModalOpen(true);
                                             }}
-                                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 ${isProcessado ? 'cursor-pointer' : ''
-                                                }`}
+                                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 ${
+                                                isProcessado ? 'cursor-pointer' : ''
+                                            } ${
+                                                isRevertido
+                                                    ? 'border-l-4 border-amber-400 dark:border-amber-500 bg-amber-50/40 dark:bg-amber-500/5'
+                                                    : ''
+                                            }`}
                                         >
                                             <td className="px-6 py-3 font-bold text-slate-900 dark:text-slate-100">
-                                                <div>{p.codigoFormatado}</div>
+                                                <div className="flex items-center gap-2">
+                                                    {p.codigoFormatado}
+                                                    {isRevertido && (
+                                                        <span title="Todas as encomendas foram canceladas. Requer nova emissão de encomendas." className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30 cursor-help">
+                                                            <AlertCircle size={9} /> Revertido
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="text-[10px] text-slate-400 font-medium bg-slate-100 dark:bg-slate-700/50 inline-block px-1.5 rounded mt-0.5">{p.tipo}</div>
                                             </td>
                                             <td className="px-6 py-3 text-slate-600 dark:text-slate-400 font-medium">{formatDate(p.criadoEm)}</td>
