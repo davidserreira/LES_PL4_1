@@ -50,7 +50,8 @@ export const gerarEncomendas = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Só é possível gerar encomendas a partir de pedidos APROVADOS.' });
         }
 
-        if (pedido.encomendas.length > 0) {
+        const encomendasAtivas = pedido.encomendas.filter(e => e.estado !== 'CANCELADA');
+        if (encomendasAtivas.length > 0) {
             return res.status(400).json({ error: 'Este pedido já tem encomendas geradas.' });
         }
 
@@ -396,8 +397,8 @@ export const encerrarEncomenda = async (req: Request, res: Response) => {
         const encomenda = await prisma.encomenda.findUnique({ where: { id } });
         if (!encomenda) return res.status(404).json({ error: 'Encomenda não encontrada.' });
 
-        if (encomenda.estado === 'ENTREGUE' || encomenda.estado === 'ENCERRADA' || encomenda.estado === 'CANCELADA') {
-            return res.status(400).json({ error: 'A encomenda já se encontra num estado final.' });
+        if (encomenda.estado !== 'ENTREGUE_PARCIAL') {
+            return res.status(400).json({ error: 'Só é possível encerrar encomendas que tenham sido parcialmente entregues.' });
         }
 
         const novaObservacao = encomenda.observacoes 
@@ -426,25 +427,36 @@ export const encerrarEncomenda = async (req: Request, res: Response) => {
 
 // --- FUNÇÃO AUXILIAR ---
 async function verificarEstadoPedidoCompra(tx: any, pedidoId: number) {
-    const encomendas = await tx.encomenda.findMany({ where: { pedidoCompraId: pedidoId } });
-    if (encomendas.length === 0) return;
+    const todasEncomendas = await tx.encomenda.findMany({ where: { pedidoCompraId: pedidoId } });
+    if (todasEncomendas.length === 0) return;
 
-    // Verificar se todas estão em estados terminais
-    const estadosTerminais = ['ENTREGUE', 'ENCERRADA', 'CANCELADA'];
-    const todasTerminais = encomendas.every((e: any) => estadosTerminais.includes(e.estado));
-
-    if (!todasTerminais) return; // Ainda há encomendas a processar, não mexe no pedido
-
-    const todasEntregues = encomendas.every((e: any) => e.estado === 'ENTREGUE');
-    const todasCanceladas = encomendas.every((e: any) => e.estado === 'CANCELADA');
-
-    let novoEstadoPedido = 'ENCERRADO'; // Default se for uma mistura (ex: 1 ENTREGUE, 1 ENCERRADA)
-    
-    if (todasEntregues) {
-        novoEstadoPedido = 'CONCLUÍDO';
-    } else if (todasCanceladas) {
-        novoEstadoPedido = 'PENDENTE';
+    // Se TODAS as encomendas associadas estão canceladas
+    const todasCanceladas = todasEncomendas.every((e: any) => e.estado === 'CANCELADA');
+    if (todasCanceladas) {
+        const pedido = await tx.pedidoCompra.findUnique({ where: { id: pedidoId } });
+        if (pedido && pedido.estado !== 'PENDENTE') {
+            console.log(`[CICLO DE VIDA] Pedido #${pedidoId} revertido para PENDENTE (ALTA prioridade)`);
+            await tx.pedidoCompra.update({
+                where: { id: pedidoId },
+                data: { estado: 'PENDENTE', prioridade: 'ALTA' }
+            });
+        }
+        return;
     }
+
+    // Filtrar as canceladas do cálculo normal
+    const encomendasAtivas = todasEncomendas.filter((e: any) => e.estado !== 'CANCELADA');
+    if (encomendasAtivas.length === 0) return;
+
+    // Verificar se todas as ativas estão em estados terminais
+    const estadosTerminais = ['ENTREGUE', 'ENCERRADA'];
+    const todasAtivasTerminais = encomendasAtivas.every((e: any) => estadosTerminais.includes(e.estado));
+
+    if (!todasAtivasTerminais) return; // Ainda há encomendas a processar
+
+    // Se todas as ativas estão ENTREGUE, o pedido é CONCLUÍDO. Se houver alguma ENCERRADA, é ENCERRADO.
+    const todasEntregues = encomendasAtivas.every((e: any) => e.estado === 'ENTREGUE');
+    const novoEstadoPedido = todasEntregues ? 'CONCLUÍDO' : 'ENCERRADO';
 
     const pedido = await tx.pedidoCompra.findUnique({ where: { id: pedidoId } });
     if (pedido && pedido.estado !== novoEstadoPedido) {
