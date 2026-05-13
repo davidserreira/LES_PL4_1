@@ -1,4 +1,4 @@
-import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2 } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2, ClipboardList } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
 
@@ -135,15 +135,13 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
                 
                 {/* Header Modal */}
-                <div className={`flex items-center justify-between px-6 py-4 border-b ${isLocked ? 'border-emerald-100 dark:border-emerald-500/20 bg-gradient-to-r from-emerald-50 dark:from-emerald-900/20 to-teal-50 dark:to-teal-900/20' : 'border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800'}`}>
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
-                        {isLocked && (
-                            <div className="w-9 h-9 bg-emerald-100 dark:bg-emerald-500/20 border border-emerald-200 dark:border-emerald-500/30 rounded-xl flex items-center justify-center">
-                                <ShieldCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                        )}
+                        <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-full flex items-center justify-center shadow-sm">
+                            <ClipboardList size={20} className="text-blue-600 dark:text-blue-400" />
+                        </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3">
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight flex items-center gap-3">
                                 Detalhes do Pedido
                                 <span className="text-sm font-black bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
                                     {pedido.codigoFormatado}
@@ -165,7 +163,7 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                     </div>
                     <button 
                         onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>

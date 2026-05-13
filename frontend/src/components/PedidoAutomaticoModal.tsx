@@ -156,19 +156,19 @@ export default function PedidoAutomaticoModal({ isOpen, onClose }: PedidoAutomat
             <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
 
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-blue-50 dark:bg-blue-500/10">
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-sm border border-blue-100 dark:border-blue-500/20">
                             <ShoppingCart size={20} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Pedido Automático</h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Sugestão baseada em stock crítico e reposição saudável</p>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Pedido Automático</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Sugestão baseada em stock crítico e reposição saudável</p>
                         </div>
                     </div>
                     <button
                         onClick={() => onClose(false)}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
                     >
                         <X size={20} />
                     </button>
