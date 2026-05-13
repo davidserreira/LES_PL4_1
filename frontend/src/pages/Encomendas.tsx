@@ -36,6 +36,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     const [showRececaoModal, setShowRececaoModal] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [cancelConfirmId, setCancelConfirmId] = useState<number | null>(null);
+    const [encerrarDirectEnc, setEncerrarDirectEnc] = useState<any | null>(null);
+    const [encerrarDirectMotivo, setEncerrarDirectMotivo] = useState('');
 
     // Filtros e Pesquisa
     const [searchQuery, setSearchQuery] = useState('');
@@ -165,8 +167,11 @@ export default function Encomendas({ user }: { user: Utilizador }) {
             await encomendaService.encerrar(id, observacoes);
             loadEncomendas();
             if (showDetailsModal) setShowDetailsModal(false);
-        } catch (err) {
-            alert('Erro ao encerrar encomenda.');
+            setEncerrarDirectEnc(null);
+            setEncerrarDirectMotivo('');
+        } catch (err: any) {
+            const msg = err?.response?.data?.error || 'Erro ao encerrar encomenda.';
+            alert(msg);
         }
     };
 
@@ -413,8 +418,12 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                     const isEnviada = enc.estado === 'ENVIADA';
                                     const isParcial = enc.estado === 'ENTREGUE_PARCIAL';
                                     const isEmitida = enc.estado === 'EMITIDA';
-                                    const isFinalizada = enc.estado === 'ENTREGUE' || enc.estado === 'CANCELADA';
+                                    const isFinalizada = enc.estado === 'ENTREGUE' || enc.estado === 'CANCELADA' || enc.estado === 'ENCERRADA';
                                     const podeReceber = isEnviada || isParcial;
+                                    // Cancelar: só emitida ou enviada (sem entregas parciais)
+                                    const podeCancelar = isAdmin && (isEmitida || isEnviada);
+                                    // Encerrar: só parcialmente entregue
+                                    const podeEncerrar = isAdmin && isParcial;
                                     
                                     const isFromHighlightedPedido =
                                         (highlightPedidoId != null && Number(enc.pedidoCompraId) === highlightPedidoId) ||
@@ -478,15 +487,35 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                             </td>
                                             <td className="px-5 py-4">
                                                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                                    {isEmitida && isAdmin && (
+                                                    {/* CANCELAR — só emitida ou enviada */}
+                                                    {podeCancelar && (
                                                         <button
                                                             onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
-                                                            className="px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors"
+                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95"
                                                             title="Cancelar encomenda"
                                                         >
+                                                            <XCircle size={13} />
                                                             Cancelar
                                                         </button>
                                                     )}
+
+                                                    {/* ENCERRAR — só parcialmente entregue */}
+                                                    {podeEncerrar && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEncerrarDirectEnc(enc);
+                                                                setEncerrarDirectMotivo('');
+                                                            }}
+                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
+                                                            title="Encerrar encomenda"
+                                                        >
+                                                            <ClipboardList size={13} />
+                                                            Encerrar
+                                                        </button>
+                                                    )}
+
+                                                    {/* MARCAR ENVIADA — só admin em emitida */}
                                                     {isEmitida && isAdmin && (
                                                         <button
                                                             onClick={(e) => {
@@ -500,18 +529,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                             Marcar Enviada
                                                         </button>
                                                     )}
-                                                    {isEmitida && !isAdmin && (
-                                                        <span className="text-[11px] text-slate-400 font-bold italic">Aguarda envio</span>
-                                                    )}
-                                                    {isEnviada && isAdmin && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
-                                                            className="px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors"
-                                                            title="Cancelar encomenda"
-                                                        >
-                                                            Cancelar
-                                                        </button>
-                                                    )}
+
+                                                    {/* RECEBER */}
                                                     {podeReceber && (
                                                         <button 
                                                             onClick={(e) => {
@@ -525,11 +544,15 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                             {isParcial ? 'Receber Restante' : 'Receber Encomenda'}
                                                         </button>
                                                     )}
+
+                                                    {/* Estado final — sem ações */}
                                                     {isFinalizada && (
                                                         <span className="text-[11px] text-slate-400 font-bold italic">
-                                                            {enc.estado === 'ENTREGUE' ? 'Concluída' : 'Cancelada'}
+                                                            {enc.estado === 'ENTREGUE' ? 'Concluída' : enc.estado === 'ENCERRADA' ? 'Encerrada' : 'Cancelada'}
                                                         </span>
                                                     )}
+
+                                                    {/* REPETIR — sempre disponível */}
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -540,7 +563,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                                 }))
                                                             );
                                                         }}
-                                                        className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300"
+                                                        className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300"
                                                         title="Repetir encomenda"
                                                     >
                                                         <RotateCcw size={13} />
@@ -624,6 +647,50 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                     onEncerrar={handleEncerrar}
                     isAdmin={isAdmin}
                 />
+            )}
+
+            {/* Modal de Encerramento Direto da Lista */}
+            {encerrarDirectEnc && (
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                <ClipboardList size={20} className="text-slate-600 dark:text-slate-300" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Encerrar Encomenda?</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    {encerrarDirectEnc.codigoFormatado} — entrega parcial
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mb-5 space-y-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Motivo (obrigatório)</label>
+                            <textarea
+                                value={encerrarDirectMotivo}
+                                onChange={(e) => setEncerrarDirectMotivo(e.target.value)}
+                                placeholder="Ex: Fornecedor sem stock para o restante."
+                                className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500 min-h-[80px]"
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => { setEncerrarDirectEnc(null); setEncerrarDirectMotivo(''); }}
+                                className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={() => handleEncerrar(encerrarDirectEnc.id, encerrarDirectMotivo)}
+                                disabled={!encerrarDirectMotivo.trim()}
+                                className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-slate-800 dark:bg-slate-600 hover:bg-slate-900 dark:hover:bg-slate-500 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                            >
+                                <ClipboardList size={15} /> Confirmar Fecho
+                            </button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

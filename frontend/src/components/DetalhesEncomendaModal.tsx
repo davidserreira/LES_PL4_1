@@ -77,6 +77,11 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
     const isEnviada = encomenda.estado === 'ENVIADA';
     const isParcial = encomenda.estado === 'ENTREGUE_PARCIAL';
     const isFinalizada = encomenda.estado === 'ENTREGUE' || encomenda.estado === 'CANCELADA' || encomenda.estado === 'ENCERRADA';
+    const podeReceber = isEnviada || isParcial;
+    // Cancelar: só se nenhum produto foi entregue (emitida ou enviada)
+    const podeCancelar = isAdmin && (isEmitida || isEnviada);
+    // Encerrar: só se parcialmente entregue
+    const podeEncerrar = !!onEncerrar && isParcial;
 
     const handleConfirmCancel = () => {
         setShowConfirmCancel(false);
@@ -121,12 +126,26 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                             </div>
                         </div>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
-                    >
-                        <X size={20} />
-                    </button>
+                    {/* Header right: Repetir (se aplicável) + X fechar */}
+                    <div className="flex items-center gap-2">
+                        {onReordenar && (
+                            <button
+                                onClick={() => onReordenar(
+                                    encomenda.linhas.map(l => ({ produtoId: (l.produto as any).id ?? (l as any).produtoId, quantidade: l.quantidade }))
+                                )}
+                                title="Repetir Encomenda"
+                                className="p-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                            >
+                                <RotateCcw size={18} />
+                            </button>
+                        )}
+                        <button 
+                            onClick={onClose}
+                            className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Body Content */}
@@ -227,75 +246,59 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                             <h4 className="text-[10px] font-black text-blue-700 uppercase tracking-widest mb-1 flex items-center gap-2">
                                 <FileText size={12} /> Observações
                             </h4>
-                            <p className="text-xs text-blue-800 leading-relaxed font-medium">{encomenda.observacoes}</p>
+                            <p className="text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium whitespace-pre-line">{encomenda.observacoes}</p>
                         </div>
                     )}
                 </div>
 
-                {/* Footer Modal */}
-                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
-                    <button 
-                        onClick={onClose} 
-                        className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-all"
-                    >
-                        Voltar
-                    </button>
-                    
-                    <div className="flex items-center gap-3">
-                        {isAdmin && !isFinalizada && (
-                            <button 
-                                onClick={() => setShowConfirmCancel(true)}
-                                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 border border-red-200 rounded-lg transition-all"
-                            >
-                                <XCircle size={15} /> Cancelar Encomenda
-                            </button>
-                        )}
+                {/* Footer Modal — sem botão Voltar */}
+                <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-end gap-3">
 
-                        {isAdmin && isEmitida && (
-                            <button 
-                                onClick={() => onUpdateEstado(encomenda.id, 'ENVIADA')}
-                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                            >
-                                <Truck size={16} /> Marcar como Enviada
-                            </button>
-                        )}
+                    {/* Ações de cancelar / encerrar (destrutivas, à esquerda) */}
+                    {podeCancelar && (
+                        <button 
+                            onClick={() => setShowConfirmCancel(true)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-lg transition-all mr-auto"
+                        >
+                            <XCircle size={15} /> Cancelar Encomenda
+                        </button>
+                    )}
 
-                        {(isEnviada || isParcial) && (
-                            <button 
-                                onClick={() => onReceber(encomenda)}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95"
-                            >
-                                <Package size={16} /> 
-                                {isParcial ? 'Receber Restante' : 'Registar Receção'}
-                            </button>
-                        )}
+                    {podeEncerrar && (
+                        <button 
+                            onClick={() => setShowConfirmEncerrar(true)}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg transition-all mr-auto"
+                        >
+                            <ClipboardList size={15} /> Encerrar Encomenda
+                        </button>
+                    )}
 
-                        {onEncerrar && isParcial && !isFinalizada && (
-                            <button 
-                                onClick={() => setShowConfirmEncerrar(true)}
-                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 active:scale-95"
-                            >
-                                <ClipboardList size={16} /> Encerrar
-                            </button>
-                        )}
+                    {/* Marcar enviada */}
+                    {isAdmin && isEmitida && (
+                        <button 
+                            onClick={() => onUpdateEstado(encomenda.id, 'ENVIADA')}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                        >
+                            <Truck size={16} /> Marcar como Enviada
+                        </button>
+                    )}
 
-                        {onReordenar && (
-                            <button
-                                onClick={() => onReordenar(
-                                    encomenda.linhas.map(l => ({ produtoId: l.produto.id ?? (l as any).produtoId, quantidade: l.quantidade }))
-                                )}
-                                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 active:scale-95"
-                            >
-                                <RotateCcw size={15} /> Repetir Encomenda
-                            </button>
-                        )}
+                    {/* Receber (sempre o mais à direita) */}
+                    {podeReceber && (
+                        <button 
+                            onClick={() => onReceber(encomenda)}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20 active:scale-95"
+                        >
+                            <Package size={16} /> 
+                            {isParcial ? 'Receber Restante' : 'Registar Receção'}
+                        </button>
+                    )}
 
-                        {isFinalizada && encomenda.estado === 'ENTREGUE' && (
-                            <span className="text-sm font-bold text-slate-400 italic">
-                                Receção concluída
-                            </span>
-                        )}
-                    </div>
+                    {isFinalizada && encomenda.estado === 'ENTREGUE' && (
+                        <span className="text-sm font-bold text-slate-400 italic">
+                            Receção concluída
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -318,7 +321,7 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                         <div className="flex items-center justify-end gap-3">
                             <button
                                 onClick={() => setShowConfirmCancel(false)}
-                                className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-all"
+                                className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
                             >
                                 Voltar
                             </button>
@@ -361,7 +364,7 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                                     setShowConfirmEncerrar(false);
                                     setEncerrarMotivo('');
                                 }}
-                                className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-all"
+                                className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all"
                             >
                                 Voltar
                             </button>
