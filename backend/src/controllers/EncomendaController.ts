@@ -458,8 +458,9 @@ async function verificarEstadoPedidoCompra(tx: any, pedidoId: number) {
 
     if (!todasAtivasTerminais) return; // Ainda há encomendas a processar
 
-    // Se todas as ativas estão ENTREGUE, o pedido é CONCLUÍDO. Se houver alguma ENCERRADA, é ENCERRADO.
-    const todasEntregues = encomendasAtivas.every((e: any) => e.estado === 'ENTREGUE');
+    // Se todas as ativas estão ENTREGUE sem exceção (incluindo nenhuma cancelada), o pedido é CONCLUÍDO.
+    // Se houver alguma cancelada ou encerrada no mix, é ENCERRADO (entrega incompleta).
+    const todasEntregues = todasEncomendas.every((e: any) => e.estado === 'ENTREGUE');
     const novoEstadoPedido = todasEntregues ? 'CONCLUÍDO' : 'ENCERRADO';
 
     const pedido = await tx.pedidoCompra.findUnique({ where: { id: pedidoId } });
