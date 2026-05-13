@@ -44,6 +44,7 @@ interface DetalhesEncomendaModalProps {
     onUpdateEstado: (id: number, novoEstado: string) => void;
     onReceber: (enc: Encomenda) => void;
     onReordenar?: (linhas: { produtoId: number; quantidade: number }[]) => void;
+    onEncerrar?: (id: number, obs: string) => void;
     isAdmin?: boolean;
 }
 
@@ -59,10 +60,13 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: any }>
     ENTREGUE_PARCIAL: { label: 'Parcial',          color: 'text-orange-700 bg-orange-50 border-orange-200', icon: Package },
     ENTREGUE:         { label: 'Entregue',         color: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200', icon: CheckCircle2 },
     CANCELADA:        { label: 'Cancelada',        color: 'text-red-700 bg-red-50 dark:bg-red-500/10 border-red-200',         icon: XCircle },
+    ENCERRADA:        { label: 'Encerrada',        color: 'text-slate-700 bg-slate-100 dark:bg-slate-500/10 border-slate-300 dark:border-slate-600', icon: ClipboardList },
 };
 
-export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onUpdateEstado, onReceber, onReordenar, isAdmin }: DetalhesEncomendaModalProps) {
+export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onUpdateEstado, onReceber, onReordenar, onEncerrar, isAdmin }: DetalhesEncomendaModalProps) {
     const [showConfirmCancel, setShowConfirmCancel] = useState(false);
+    const [showConfirmEncerrar, setShowConfirmEncerrar] = useState(false);
+    const [encerrarMotivo, setEncerrarMotivo] = useState('');
 
     if (!isOpen || !encomenda) return null;
 
@@ -72,11 +76,18 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
     const isEmitida = encomenda.estado === 'EMITIDA';
     const isEnviada = encomenda.estado === 'ENVIADA';
     const isParcial = encomenda.estado === 'ENTREGUE_PARCIAL';
-    const isFinalizada = encomenda.estado === 'ENTREGUE' || encomenda.estado === 'CANCELADA';
+    const isFinalizada = encomenda.estado === 'ENTREGUE' || encomenda.estado === 'CANCELADA' || encomenda.estado === 'ENCERRADA';
 
     const handleConfirmCancel = () => {
         setShowConfirmCancel(false);
         onUpdateEstado(encomenda.id, 'CANCELADA');
+    };
+
+    const handleConfirmEncerrar = () => {
+        if (!encerrarMotivo.trim() || !onEncerrar) return;
+        setShowConfirmEncerrar(false);
+        onEncerrar(encomenda.id, encerrarMotivo);
+        setEncerrarMotivo('');
     };
 
     return createPortal(
@@ -259,6 +270,15 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                             </button>
                         )}
 
+                        {onEncerrar && !isFinalizada && (
+                            <button 
+                                onClick={() => setShowConfirmEncerrar(true)}
+                                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 active:scale-95"
+                            >
+                                <ClipboardList size={16} /> Encerrar
+                            </button>
+                        )}
+
                         {onReordenar && (
                             <button
                                 onClick={() => onReordenar(
@@ -307,6 +327,50 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                                 className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-red-600 hover:bg-red-700 rounded-xl shadow-lg shadow-red-500/20 transition-all active:scale-95"
                             >
                                 <XCircle size={15} /> Confirmar Cancelamento
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirm Encerrar Dialog */}
+            {showConfirmEncerrar && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm rounded-2xl animate-in fade-in duration-150">
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-6 mx-6 max-w-sm w-full animate-in zoom-in-95 duration-150">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                                <ClipboardList size={20} className="text-slate-600 dark:text-slate-300" />
+                            </div>
+                            <div>
+                                <h3 className="text-base font-black text-slate-900 dark:text-slate-100">Encerrar Encomenda?</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Esta ação fechará a encomenda com falta de artigos.</p>
+                            </div>
+                        </div>
+                        <div className="mb-5 space-y-2">
+                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">Motivo (obrigatório)</label>
+                            <textarea
+                                value={encerrarMotivo}
+                                onChange={(e) => setEncerrarMotivo(e.target.value)}
+                                placeholder="Ex: Fornecedor sem stock para o resto."
+                                className="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-500 min-h-[80px]"
+                            />
+                        </div>
+                        <div className="flex items-center justify-end gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowConfirmEncerrar(false);
+                                    setEncerrarMotivo('');
+                                }}
+                                className="px-4 py-2 text-sm font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-all"
+                            >
+                                Voltar
+                            </button>
+                            <button
+                                onClick={handleConfirmEncerrar}
+                                disabled={!encerrarMotivo.trim()}
+                                className="flex items-center gap-2 px-5 py-2 text-sm font-black text-white bg-slate-800 dark:bg-slate-600 hover:bg-slate-900 dark:hover:bg-slate-500 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
+                            >
+                                <ClipboardList size={15} /> Confirmar Fecho
                             </button>
                         </div>
                     </div>

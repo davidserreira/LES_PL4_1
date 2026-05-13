@@ -22,6 +22,7 @@ const ESTADO_CONFIG: Record<string, { label: string; color: string; icon: React.
     ENTREGUE_PARCIAL: { label: 'Parcial',          color: 'text-orange-700 bg-orange-50 border-orange-200', icon: Package },
     ENTREGUE:         { label: 'Entregue',         color: 'text-emerald-700 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200', icon: CheckCircle2 },
     CANCELADA:        { label: 'Cancelada',        color: 'text-red-700 bg-red-50 dark:bg-red-500/10 border-red-200',         icon: XCircle },
+    ENCERRADA:        { label: 'Encerrada',        color: 'text-slate-700 bg-slate-100 dark:bg-slate-500/10 border-slate-300 dark:border-slate-600', icon: ClipboardList },
 };
 
 export default function Encomendas({ user }: { user: Utilizador }) {
@@ -156,6 +157,16 @@ export default function Encomendas({ user }: { user: Utilizador }) {
             if (showDetailsModal) setShowDetailsModal(false);
         } catch (err) {
             alert('Erro ao atualizar estado da encomenda.');
+        }
+    };
+
+    const handleEncerrar = async (id: number, observacoes: string) => {
+        try {
+            await encomendaService.encerrar(id, observacoes);
+            loadEncomendas();
+            if (showDetailsModal) setShowDetailsModal(false);
+        } catch (err) {
+            alert('Erro ao encerrar encomenda.');
         }
     };
 
@@ -610,6 +621,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                         handleOpenRececao(enc);
                     }}
                     onReordenar={handleReordenar}
+                    onEncerrar={handleEncerrar}
                     isAdmin={isAdmin}
                 />
             )}
