@@ -386,8 +386,8 @@ const Fornecedores = () => {
                         
                         {/* Search Bar Container */}
                         {fornecedores.length > 0 && (
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm relative z-10 flex-grow">
-                                <div className="relative w-full max-w-md">
+                            <label className="flex flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm relative z-10 flex-grow cursor-text">
+                                <div className="relative flex-1 min-w-0">
                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input
                                         type="text"
@@ -400,7 +400,7 @@ const Fornecedores = () => {
                                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium px-4 whitespace-nowrap hidden sm:block">
                                     <span className="font-bold text-slate-700 dark:text-slate-300">{filteredFornecedores.length}</span> / <span className="font-bold text-slate-700 dark:text-slate-300">{fornecedores.length}</span> fornecedores
                                 </div>
-                            </div>
+                            </label>
                         )}
 
                         {/* Filtros Container */}

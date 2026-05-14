@@ -101,11 +101,11 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     const navLinkClass = ({ isActive }: { isActive: boolean }) =>
         `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${isActive
             ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
-            : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            : 'text-white hover:bg-slate-800'
         } ${isCollapsed ? 'justify-center' : ''}`;
 
     return (
-        <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50`}>
+        <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50 relative shadow-[12px_0_35px_-5px_rgba(0,0,0,0.2)] dark:shadow-none`}>
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 dark:border-slate-800/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
@@ -135,7 +135,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                             className="shrink-0 p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 dark:hover:bg-slate-900 rounded-lg transition-colors focus:outline-none"
                             title="Desconectar"
                         >
-                            <LogOut size={20} />
+                            <LogOut size={16} />
                         </button>
                     </div>
                 )}
@@ -205,42 +205,45 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto py-4">
+            <nav className="flex-1 py-4">
                 <ul className="space-y-1 px-3">
                     {filteredItems.map((item) => (
-                        <li key={item.to}>
+                        <li key={item.to} className="relative group">
                             <NavLink
                                 to={item.to}
-                                onClick={() => { if (isCollapsed) onToggle(); }}
                                 className={navLinkClass}
-                                title={isCollapsed ? item.label : ""}
                             >
-                                <item.icon size={22} className="shrink-0" />
+                                <item.icon size={18} className="shrink-0 text-white" />
                                 {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
                             </NavLink>
+                            
+                            {/* Hover Tooltip for normal items */}
+                            {isCollapsed && (
+                                <div className="absolute left-full top-1/2 -translate-y-1/2 ml-4 px-3 py-2 bg-slate-800 text-white text-sm font-medium rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap shadow-xl z-[60]">
+                                    {item.label}
+                                </div>
+                            )}
                         </li>
                     ))}
 
                     {/* Grupo Compras */}
                     {showCompras && (
-                        <li>
+                        <li className="relative group">
                             {/* Group header */}
                             <button
                                 onClick={() => {
-                                    if (isCollapsed) { onToggle(); setComprasOpen(true); }
-                                    else setComprasOpen(prev => !prev);
+                                    setComprasOpen(prev => !prev);
                                 }}
-                                title={isCollapsed ? 'Compras' : ''}
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                                    isComprasActive && !comprasOpen
-                                        ? 'bg-emerald-600 text-white'
-                                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    isComprasActive && (isCollapsed || !comprasOpen)
+                                        ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/20'
+                                        : 'text-white hover:bg-slate-800'
                                 } ${isCollapsed ? 'justify-center' : 'justify-between'}`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className="relative shrink-0">
-                                        <ShoppingCart size={22} />
-                                        {encomendasBadge > 0 && (
+                                    <span className="relative shrink-0 text-white">
+                                        <ShoppingCart size={18} />
+                                        {encomendasBadge > 0 && isCollapsed && (
                                             <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 shadow">
                                                 +{encomendasBadge}
                                             </span>
@@ -250,43 +253,41 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                                 </div>
                                 {!isCollapsed && (
                                     <ChevronDown
-                                        size={16}
-                                        className={`transition-transform duration-200 ${comprasOpen ? 'rotate-180' : ''}`}
+                                        size={12}
+                                        className={`text-white transition-transform duration-200 ${comprasOpen ? 'rotate-180' : ''}`}
                                     />
                                 )}
                             </button>
 
-                            {/* Sub-items */}
+                            {/* Sub-items (Inline when expanded) */}
                             {!isCollapsed && comprasOpen && (
                                 <ul className="mt-1 ml-4 pl-3 border-l border-slate-700 space-y-1">
                                     <li>
                                         <NavLink
                                             to="/pedidos"
-                                            onClick={() => { if (isCollapsed) onToggle(); }}
                                             className={({ isActive }) =>
                                                 `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isActive
                                                     ? 'bg-emerald-600/80 text-white'
-                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                                    : 'text-white hover:bg-slate-800'
                                                 }`
                                             }
                                         >
-                                            <ClipboardList size={17} className="shrink-0" />
+                                            <ClipboardList size={13} className="shrink-0 text-white" />
                                             <span className="font-medium">Pedidos</span>
                                         </NavLink>
                                     </li>
                                     <li>
                                         <NavLink
                                             to="/encomendas"
-                                            onClick={() => { if (isCollapsed) onToggle(); }}
                                             className={({ isActive }) =>
                                                 `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all ${isActive
                                                     ? 'bg-emerald-600/80 text-white'
-                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                                    : 'text-white hover:bg-slate-800'
                                                 }`
                                             }
                                         >
-                                            <span className="relative shrink-0">
-                                                <PackageCheck size={17} />
+                                            <span className="relative shrink-0 text-white">
+                                                <PackageCheck size={13} />
                                                 {encomendasBadge > 0 && (
                                                     <span className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 shadow">
                                                         +{encomendasBadge}
@@ -298,20 +299,50 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                                     </li>
                                 </ul>
                             )}
+
+                            {/* Hover Sub-menu for Compras (when collapsed) */}
+                            {isCollapsed && (
+                                <div className="absolute left-full top-0 ml-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all shadow-[0_8px_30px_rgb(0,0,0,0.12)] z-[60] w-52">
+                                    <div className="px-4 pb-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                                        COMPRAS
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <NavLink 
+                                            to="/pedidos" 
+                                            className={({ isActive }) => 
+                                                `px-4 py-2 text-sm transition-colors ${isActive ? 'text-emerald-600 dark:text-emerald-400 font-medium bg-slate-50 dark:bg-slate-700/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`
+                                            }
+                                        >
+                                            Pedidos
+                                        </NavLink>
+                                        <NavLink 
+                                            to="/encomendas" 
+                                            className={({ isActive }) => 
+                                                `px-4 py-2 text-sm flex justify-between items-center transition-colors ${isActive ? 'text-emerald-600 dark:text-emerald-400 font-medium bg-slate-50 dark:bg-slate-700/50' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'}`
+                                            }
+                                        >
+                                            Encomendas
+                                            {encomendasBadge > 0 && (
+                                                <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                                    {encomendasBadge}
+                                                </span>
+                                            )}
+                                        </NavLink>
+                                    </div>
+                                </div>
+                            )}
                         </li>
                     )}
                 </ul>
             </nav>
 
-            {/* Collapse Toggle Button */}
-            <div className="p-4 border-t border-slate-800 flex flex-col gap-4">
-                <button
-                    onClick={onToggle}
-                    className="flex items-center justify-center w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all border border-slate-700"
-                    title={isCollapsed ? "Expandir" : "Recolher"}
-                >
-                    {isCollapsed ? <ChevronRight size={20} /> : <div className="flex items-center gap-2"><ChevronLeft size={20} /> <span className="text-[10px] font-bold uppercase tracking-widest">Recolher</span></div>}
-                </button>
+            {/* Minimalist Collapse Toggle Button */}
+            <div 
+                className="absolute top-1/2 -right-7 -translate-y-1/2 w-8 h-16 flex items-center justify-center cursor-pointer group"
+                onClick={onToggle}
+                title={isCollapsed ? "Expandir" : "Recolher"}
+            >
+                <div className="w-2 h-10 bg-slate-400 group-hover:bg-emerald-500 dark:bg-slate-700 dark:group-hover:bg-emerald-500 rounded-full transition-colors shadow-sm" />
             </div>
         </aside>
     );

@@ -283,8 +283,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
 
                 {/* Filters Row */}
                 <div className="flex flex-col xl:flex-row gap-3 items-stretch">
-                    <div className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow">
-                        <div className="relative w-full max-w-md">
+                    <label className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow cursor-text">
+                        <div className="relative flex-1 min-w-0 w-full">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
@@ -347,7 +347,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </label>
                 </div>
             </div>
 

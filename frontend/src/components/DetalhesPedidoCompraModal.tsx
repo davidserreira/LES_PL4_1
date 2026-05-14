@@ -1,4 +1,4 @@
-import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, ShieldCheck, PackagePlus, Undo2, ClipboardList } from 'lucide-react';
+import { X, Calendar, User, Tag, Hash, Package, FileText, Lock, Building2, PackagePlus, Undo2, ClipboardList, CheckCircle2, XCircle, AlertCircle, Truck } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import type { Utilizador } from '../services/utilizadorService';
 
@@ -29,6 +29,22 @@ interface LinhaPedido {
     fornecedorId?: number;
 }
 
+interface LinhaEncomenda {
+    id: number;
+    produtoId: number;
+    quantidade: number;
+    quantidadeRecebida: number;
+}
+
+interface Encomenda {
+    id: number;
+    codigoFormatado: string;
+    estado: string;
+    fornecedorId: number;
+    fornecedor?: Fornecedor;
+    linhas?: LinhaEncomenda[];
+}
+
 interface PedidoCompra {
     id: number;
     estado: string;
@@ -41,6 +57,7 @@ interface PedidoCompra {
         role: Utilizador['role'];
     } | null;
     linhas?: LinhaPedido[];
+    encomendas?: Encomenda[];
     tipo: string;
     codigoFormatado: string;
     observacoes?: string;
@@ -63,9 +80,9 @@ const formatCurrency = (value: number) => {
 
 const formatDate = (value: string | Date) => {
     try {
-        return new Date(value).toLocaleDateString('pt-PT', { 
-            year: 'numeric', 
-            month: 'short', 
+        return new Date(value).toLocaleDateString('pt-PT', {
+            year: 'numeric',
+            month: 'short',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
@@ -89,7 +106,6 @@ const getPriorityStyle = (priority: string) => {
         case 'URGENTE': return 'bg-red-50 dark:bg-red-500/10 text-red-700 border-red-100 dark:border-red-500/20';
         case 'ALTA': return 'bg-amber-50 dark:bg-amber-500/10 text-amber-700 border-amber-100 dark:border-amber-500/20';
         case 'NORMAL': return 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 border-blue-100 dark:border-blue-500/20';
-        case 'BAIXA': return 'bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
         default: return 'bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700';
     }
 };
@@ -101,292 +117,243 @@ const getStatusStyle = (status: string) => {
         case 'CANCELADO':
         case 'RECUSADO': return 'text-red-700 bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20';
         case 'ENTREGUE': return 'text-blue-700 bg-blue-50 dark:bg-blue-500/10 border-blue-100 dark:border-blue-500/20';
+        case 'CONCLUÍDO': return 'text-emerald-800 bg-emerald-100 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20';
+        case 'ENCERRADO': return 'text-slate-600 bg-slate-100 dark:bg-slate-500/10 border-slate-200 dark:border-slate-500/20';
         default: return 'text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
+    }
+};
+
+const getEncEstadoConfig = (estado: string): { label: string; cls: string; Icon: any } => {
+    switch (estado?.toUpperCase()) {
+        case 'ENTREGUE': return { label: 'Entregue', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200', Icon: CheckCircle2 };
+        case 'CANCELADA': return { label: 'Cancelada', cls: 'text-red-600 bg-red-50 border-red-200', Icon: XCircle };
+        case 'ENCERRADA': return { label: 'Encerrada', cls: 'text-amber-700 bg-amber-50 border-amber-200', Icon: AlertCircle };
+        case 'ENTREGUE_PARCIAL': return { label: 'Parcial', cls: 'text-amber-700 bg-amber-50 border-amber-200', Icon: AlertCircle };
+        case 'ENVIADA': return { label: 'Em trânsito', cls: 'text-blue-600 bg-blue-50 border-blue-200', Icon: Truck };
+        case 'EMITIDA': return { label: 'Emitida', cls: 'text-slate-600 bg-slate-100 border-slate-200', Icon: Package };
+        default: return { label: estado, cls: 'text-slate-600 bg-slate-100 border-slate-200', Icon: Package };
     }
 };
 
 export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, userRole, onAprovar, onRecusar, onEmitirEncomenda, onReverter }: DetalhesPedidoModalProps) {
     if (!isOpen || !pedido) return null;
 
-    const handleEmitir = () => {
-        if (!pedido || !onEmitirEncomenda) return;
-        onEmitirEncomenda(pedido.id);
-    };
-
-    const handleReverter = () => {
-        if (!pedido || !onReverter) return;
-        onReverter(pedido.id);
-    };
+    const handleEmitir = () => { if (onEmitirEncomenda) onEmitirEncomenda(pedido.id); };
+    const handleReverter = () => { if (onReverter) onReverter(pedido.id); };
 
     const totalProdutos = pedido.linhas?.reduce((acc, l) => acc + l.quantidade, 0) || 0;
     const isAprovado = pedido.estado === 'APROVADO';
     const isProcessado = pedido.estado === 'PROCESSADO';
-    const isLocked = isAprovado || isProcessado;
+    const isConcluido = pedido.estado === 'CONCLUÍDO';
+    const isEncerrado = pedido.estado === 'ENCERRADO';
+    const isLocked = isAprovado || isProcessado || isConcluido || isEncerrado;
+    const isFinished = isConcluido || isEncerrado;
+
+    const getEncomendaParaLinha = (linha: LinhaPedido): Encomenda | undefined => {
+        if (!pedido.encomendas || !linha.fornecedorId || !linha.produto) return undefined;
+        return pedido.encomendas.find(e =>
+            e.fornecedorId === linha.fornecedorId &&
+            e.linhas?.some(el => el.produtoId === linha.produto!.id)
+        );
+    };
 
     return createPortal(
-        <div 
+        <div
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200"
-            onMouseDown={(e) => {
-                if (e.target === e.currentTarget) {
-                    onClose();
-                }
-            }}
+            onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
         >
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
-                
-                {/* Header Modal */}
-                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden border border-slate-100 dark:border-slate-700/50">
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-700/50">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-full flex items-center justify-center shadow-sm">
-                            <ClipboardList size={20} className="text-blue-600 dark:text-blue-400" />
+                        <div className="w-8 h-8 bg-blue-50 dark:bg-blue-500/10 rounded-lg flex items-center justify-center">
+                            <ClipboardList size={16} className="text-blue-500" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight flex items-center gap-3">
+                            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                                 Detalhes do Pedido
-                                <span className="text-sm font-black bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                                <span className="text-xs font-mono font-semibold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded">
                                     {pedido.codigoFormatado}
                                 </span>
                             </h2>
-                            {isAprovado && (
-                                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-0.5 flex items-center gap-1">
-                                    <Lock size={10} />
-                                    Pedido aprovado e bloqueado — fornecedores alocados definitivamente
-                                </p>
-                            )}
-                            {isProcessado && (
-                                <p className="text-xs text-purple-600 font-medium mt-0.5 flex items-center gap-1">
-                                    <Lock size={10} />
-                                    Pedido processado — encomendas emitidas com sucesso
-                                </p>
-                            )}
                         </div>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
-                    >
-                        <X size={20} />
+                    <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <X size={18} />
                     </button>
                 </div>
 
-                {/* Body Content */}
-                <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900 space-y-6">
-                    {/* Resumo Geral */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm flex flex-col sm:flex-row gap-6 justify-between">
-                        <div className="space-y-4 flex-1">
-                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest flex items-center gap-2">
-                                <Package size={16} /> Resumo
-                            </h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5"><Calendar size={12}/> Data</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatDate(pedido.criadoEm)}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5"><User size={12}/> Emitido por</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                                        {pedido.criadoPor?.username || '—'}
-                                        {pedido.criadoPor && <span className="block text-[10px] text-slate-400 font-normal">{getRoleLabel(pedido.criadoPor.role)}</span>}
-                                    </p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5"><Tag size={12}/> Tipo</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{pedido.tipo}</p>
-                                </div>
-                                <div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1 flex items-center gap-1.5"><Hash size={12}/> Qtd Total Itens</p>
-                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{totalProdutos} un</p>
-                                </div>
-                            </div>
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-900">
+
+                    {/* Resumo strip */}
+                    <div className="px-6 py-4 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700/50 flex flex-wrap items-center gap-6">
+                        <div>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-0.5 flex items-center gap-1"><Calendar size={9} /> Data</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{formatDate(pedido.criadoEm)}</p>
                         </div>
-                        
-                        <div className="space-y-4 min-w-[140px] border-t sm:border-t-0 sm:border-l border-slate-100 dark:border-slate-700/50 pt-4 sm:pt-0 sm:pl-6">
-                            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-widest hidden sm:block mb-4">&nbsp;</h3>
-                            <div className="space-y-3">
-                                <div>
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border ${getPriorityStyle(pedido.prioridade)}`}>
-                                        Prioridade {pedido.prioridade}
-                                    </span>
-                                </div>
-                                <div>
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border ${getStatusStyle(pedido.estado)}`}>
-                                        <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
-                                        {pedido.estado}
-                                    </span>
-                                </div>
-                                {isLocked && (
-                                    <div>
-                                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
-                                            <Lock size={9} /> {isProcessado ? 'Efetuado' : 'Bloqueado'}
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
+                        <div>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-0.5 flex items-center gap-1"><User size={9} /> Emitido por</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                                {pedido.criadoPor?.username || '—'}
+                                {pedido.criadoPor && <span className="text-[10px] text-slate-400 font-normal ml-1">({getRoleLabel(pedido.criadoPor.role)})</span>}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-0.5 flex items-center gap-1"><Tag size={9} /> Tipo</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{pedido.tipo}</p>
+                        </div>
+                        <div>
+                            <p className="text-[9px] uppercase tracking-widest text-slate-400 mb-0.5 flex items-center gap-1"><Hash size={9} /> Itens</p>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{totalProdutos} un</p>
+                        </div>
+                        <div className="ml-auto flex items-center gap-2">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border ${getPriorityStyle(pedido.prioridade)}`}>
+                                {pedido.prioridade}
+                            </span>
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider font-black border ${getStatusStyle(pedido.estado)}`}>
+                                <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-70" />
+                                {pedido.estado}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Produtos List — LOCKED: vista locked premium */}
-                    {isLocked ? (
-                        <div className="bg-white dark:bg-slate-800 rounded-xl border border-emerald-200 overflow-hidden shadow-sm">
-                            <div className="p-5 border-b border-emerald-100 dark:border-emerald-500/20 flex items-center justify-between bg-gradient-to-r from-emerald-50/60 dark:from-emerald-900/20 to-teal-50/40 dark:to-teal-900/20">
-                                <div className="flex items-center gap-2">
-                                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Linhas Aprovadas ({pedido.linhas?.length || 0})</h3>
-                                    <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                        <Lock size={8} /> Fornecedores Alocados
+                    {/* Products table */}
+                    <div className="p-5">
+                        <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-700/50">
+                            <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-3">
+                                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                    {isFinished ? 'Resultado da Entrega' : isLocked ? 'Linhas Aprovadas' : 'Linhas do Pedido'}
+                                </h3>
+                                <span className="text-xs text-slate-400">({pedido.linhas?.length || 0} produtos)</span>
+                                {isFinished && (
+                                    <span className={`ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                        isConcluido ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'
+                                    }`}>
+                                        {isConcluido ? <CheckCircle2 size={9} /> : <AlertCircle size={9} />}
+                                        {isConcluido ? 'Totalmente entregue' : 'Entrega incompleta'}
                                     </span>
-                                </div>
-                            </div>
-                            <div className="divide-y divide-slate-100">
-                                {pedido.linhas && pedido.linhas.length > 0 ? (
-                                    pedido.linhas.map((linha, index) => (
-                                        <div key={linha.id || index} className="flex items-center justify-between px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors">
-                                            {/* Left: Product info */}
-                                            <div className="flex items-center gap-4 flex-1 min-w-0">
-                                                <div className="w-9 h-9 bg-gradient-to-br from-slate-100 dark:from-slate-800 to-slate-50 dark:to-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
-                                                    <Package size={15} />
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm truncate">{linha.produto?.nome || `Produto #${linha.id}`}</h4>
-                                                    <div className="flex items-center gap-2 mt-0.5">
-                                                        <span className="inline-flex px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] uppercase font-bold tracking-wider">
-                                                            {linha.produto?.categoria || 'Sem categoria'}
-                                                        </span>
-                                                        <span className="text-[10px] text-slate-400 font-medium">{linha.quantidade} un × {formatCurrency(linha.precoUnitario)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Right: Supplier locked + subtotal */}
-                                            <div className="flex items-center gap-6 shrink-0">
-                                                {/* Supplier locked badge */}
-                                                <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2.5 text-right min-w-[160px]">
-                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 flex items-center gap-1 justify-end">
-                                                        <Building2 size={9} /> Fornecedor Alocado
-                                                    </p>
-                                                    {linha.fornecedor ? (
-                                                        <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{linha.fornecedor.nome}</p>
-                                                    ) : (
-                                                        <p className="text-sm font-medium text-slate-400 italic">Não definido</p>
-                                                    )}
-                                                </div>
-                                                {/* Subtotal */}
-                                                <div className="text-right min-w-[90px]">
-                                                    <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Subtotal</p>
-                                                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{formatCurrency(linha.valorTotal)}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <div className="px-6 py-10 text-center text-slate-400">
-                                        Nenhuma linha encontrada.
-                                    </div>
+                                )}
+                                {isLocked && !isFinished && (
+                                    <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border text-slate-500 bg-slate-50 border-slate-200">
+                                        <Lock size={8} /> Fornecedores alocados
+                                    </span>
                                 )}
                             </div>
-                            <div className="bg-emerald-50 dark:bg-emerald-500/10 px-6 py-4 flex items-center justify-end gap-6 border-t border-emerald-100 dark:border-emerald-500/20">
-                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total:</span>
-                                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(pedido.valorTotalEstimado)}</span>
-                            </div>
-                        </div>
-                    ) : (
-                        /* PENDENTE / RECUSADO / CANCELADO: tabela standard */
-                        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-                            <div className="p-5 border-b border-slate-100 dark:border-slate-700/50 flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Linhas do Pedido ({pedido.linhas?.length || 0})</h3>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm">
-                                    <thead className="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 text-xs border-b border-slate-100 dark:border-slate-700/50 uppercase tracking-wider">
-                                        <tr>
-                                            <th className="px-5 py-3 font-semibold">Produto</th>
-                                            <th className="px-5 py-3 font-semibold">Categoria</th>
-                                            <th className="px-5 py-3 font-semibold text-center">Quantidade</th>
-                                            <th className="px-5 py-3 font-semibold text-right">Preço Unit.</th>
-                                            <th className="px-5 py-3 font-semibold text-right">Subtotal</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {pedido.linhas && pedido.linhas.length > 0 ? (
-                                            pedido.linhas.map((linha, index) => (
-                                                <tr key={linha.id || index} className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors">
-                                                    <td className="px-5 py-3 font-medium text-slate-900 dark:text-slate-100">
+
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-[9px] uppercase tracking-widest text-slate-400 bg-slate-50/80 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-700/30">
+                                        <th className="px-5 py-2 text-left font-semibold">Produto</th>
+                                        <th className="px-4 py-2 text-center font-semibold">Qtd</th>
+                                        {!isLocked && <th className="px-4 py-2 text-right font-semibold">Preço unit.</th>}
+                                        {isLocked && <th className="px-4 py-2 text-left font-semibold"><Building2 size={8} className="inline mr-0.5" />Fornecedor</th>}
+                                        {isFinished && <th className="px-4 py-2 text-left font-semibold">Estado</th>}
+                                        <th className="px-5 py-2 text-right font-semibold">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pedido.linhas && pedido.linhas.length > 0 ? pedido.linhas.map((linha, index) => {
+                                        const enc = isFinished ? getEncomendaParaLinha(linha) : undefined;
+                                        const encCfg = enc ? getEncEstadoConfig(enc.estado) : null;
+                                        const isCancelled = enc?.estado === 'CANCELADA';
+                                        return (
+                                            <tr key={linha.id || index} className={`border-b border-slate-50 dark:border-slate-700/20 last:border-0 transition-colors ${isCancelled ? 'opacity-40' : 'hover:bg-slate-50/60 dark:hover:bg-slate-700/10'}`}>
+                                                <td className="px-5 py-3">
+                                                    <p className={`font-semibold ${isCancelled ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-100'}`}>
                                                         {linha.produto?.nome || `Produto #${linha.id}`}
+                                                    </p>
+                                                    {linha.produto?.categoria && (
+                                                        <p className="text-[9px] text-slate-400 mt-0.5 uppercase tracking-wide">{linha.produto.categoria}</p>
+                                                    )}
+                                                </td>
+                                                <td className="px-4 py-3 text-center text-slate-600 dark:text-slate-300">
+                                                    <span className="font-semibold">{linha.quantidade}</span>
+                                                    <span className="text-[10px] text-slate-400 ml-0.5">un</span>
+                                                </td>
+                                                {!isLocked && (
+                                                    <td className="px-4 py-3 text-right text-slate-400">{formatCurrency(linha.precoUnitario)}</td>
+                                                )}
+                                                {isLocked && (
+                                                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                                                        {linha.fornecedor?.nome || <span className="text-slate-300 italic text-xs">—</span>}
                                                     </td>
-                                                    <td className="px-5 py-3">
-                                                        <span className="inline-flex px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[10px] uppercase font-bold tracking-wider">
-                                                            {linha.produto?.categoria || 'Sem categoria'}
-                                                        </span>
+                                                )}
+                                                {isFinished && (
+                                                    <td className="px-4 py-3">
+                                                        {encCfg ? (
+                                                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${encCfg.cls}`}>
+                                                                <encCfg.Icon size={9} /> {encCfg.label}
+                                                            </span>
+                                                        ) : <span className="text-slate-300 text-xs">—</span>}
                                                     </td>
-                                                    <td className="px-5 py-3 text-center font-bold text-slate-700 dark:text-slate-300 w-24">{linha.quantidade}</td>
-                                                    <td className="px-5 py-3 text-right text-slate-500 dark:text-slate-400 w-32">{formatCurrency(linha.precoUnitario)}</td>
-                                                    <td className="px-5 py-3 text-right font-bold text-slate-900 dark:text-slate-100 w-32">{formatCurrency(linha.valorTotal)}</td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan={5} className="px-5 py-8 text-center text-slate-400">
-                                                    Nenhuma linha encontrada.
+                                                )}
+                                                <td className="px-5 py-3 text-right">
+                                                    <span className={`font-bold ${isCancelled ? 'line-through text-slate-300' : 'text-slate-800 dark:text-slate-100'}`}>
+                                                        {formatCurrency(linha.valorTotal)}
+                                                    </span>
                                                 </td>
                                             </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div className="bg-emerald-50 dark:bg-emerald-500/10 px-6 py-4 flex items-center justify-end gap-6 border-t border-slate-200 dark:border-slate-700/60">
-                                <span className="text-sm font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Total:</span>
-                                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(pedido.valorTotalEstimado)}</span>
-                            </div>
-                        </div>
-                    )}
-                    
-                    {/* Observações Display */}
-                    {pedido.observacoes && (
-                        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50 flex items-center gap-2">
-                                <FileText size={16} className="text-slate-400" />
-                                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">Observações</h3>
-                            </div>
-                            <div className="p-6 text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">
-                                {pedido.observacoes}
+                                        );
+                                    }) : (
+                                        <tr><td colSpan={6} className="px-5 py-8 text-center text-slate-400 text-sm">Nenhuma linha encontrada.</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+
+                            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-700/50 flex justify-end items-center gap-3 bg-slate-50/40 dark:bg-slate-900/20">
+                                <span className="text-[9px] font-semibold text-slate-400 uppercase tracking-widest">Total estimado</span>
+                                <span className="text-base font-bold text-slate-900 dark:text-slate-100">{formatCurrency(pedido.valorTotalEstimado)}</span>
                             </div>
                         </div>
-                    )}
+
+                        {/* Observações */}
+                        {pedido.observacoes && (
+                            <div className="mt-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700/50 overflow-hidden">
+                                <div className="px-5 py-3 border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-2">
+                                    <FileText size={13} className="text-slate-400" />
+                                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">Observações</h3>
+                                </div>
+                                <p className="px-5 py-4 text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">
+                                    {pedido.observacoes}
+                                </p>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Footer */}
-                <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between">
-                    {/* Left side */}
-                    <div className="flex gap-3">
-                        <button 
+                <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800 flex items-center justify-between">
+                    <div className="flex gap-2">
+                        <button
                             onClick={onClose}
-                            className="px-6 py-2.5 bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-sm font-bold rounded-xl transition-colors shadow-sm"
+                            className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                         >
                             Fechar
                         </button>
                         {isAprovado && onReverter && (
-                            <button 
+                            <button
                                 onClick={handleReverter}
-                                className="px-5 py-2.5 bg-white dark:bg-slate-800 border border-red-200 hover:bg-red-50 dark:bg-red-500/10 hover:border-red-300 text-red-600 dark:text-red-400 text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
+                                className="px-4 py-2 bg-white dark:bg-slate-800 border border-red-200 hover:bg-red-50 hover:border-red-300 text-red-600 text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5"
                             >
-                                <Undo2 size={15} />
-                                Reverter
+                                <Undo2 size={14} /> Reverter
                             </button>
                         )}
                     </div>
 
-                    {/* Right side */}
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         {pedido.estado === 'PENDENTE' && userRole && (userRole === 'RESPONSAVEL_FINANCEIRO' || userRole === 'ADMINISTRADOR') && (
                             <>
                                 <button
                                     onClick={() => onAprovar && onAprovar(pedido.id)}
-                                    className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2"
+                                    className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm"
                                 >
                                     Aprovar
                                 </button>
                                 <button
                                     onClick={() => onRecusar && onRecusar(pedido.id)}
-                                    className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl transition-colors shadow-sm flex items-center gap-2"
+                                    className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm"
                                 >
                                     Recusar
                                 </button>
@@ -395,14 +362,14 @@ export default function DetalhesPedidoCompraModal({ isOpen, onClose, pedido, use
                         {isAprovado && onEmitirEncomenda && (
                             <button
                                 onClick={handleEmitir}
-                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl transition-colors shadow-lg flex items-center gap-2"
+                                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm flex items-center gap-1.5"
                             >
-                                <PackagePlus size={15} />
-                                Emitir Encomenda
+                                <PackagePlus size={14} /> Emitir Encomenda
                             </button>
                         )}
                     </div>
                 </div>
+
             </div>
         </div>,
         document.body
