@@ -1,7 +1,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList, PackageCheck, ChevronDown, ShoppingCart } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList, PackageCheck, ChevronDown, ShoppingCart, ShieldCheck, Boxes, Landmark, UserRound } from 'lucide-react';
 import { Utilizador } from '../services/utilizadorService';
 
 interface SidebarProps {
@@ -76,14 +77,13 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
         return () => document.removeEventListener('mousedown', handleClick);
     }, [isCollapsed, onToggle]);
 
-    const getRoleLabel = (role: string) => {
-        switch (role) {
-            case 'ADMINISTRADOR': return 'Admin';
-            case 'RESPONSAVEL_STOCK': return 'Gestor Stock';
-            case 'RESPONSAVEL_FINANCEIRO': return 'Financeiro';
-            default: return 'Utilizador';
-        }
+    const roleMeta: Record<string, { label: string; Icon: LucideIcon }> = {
+        ADMINISTRADOR: { label: 'Admin', Icon: ShieldCheck },
+        RESPONSAVEL_STOCK: { label: 'Gestor stock', Icon: Boxes },
+        RESPONSAVEL_FINANCEIRO: { label: 'Financeiro', Icon: Landmark },
     };
+
+    const { label: roleLabel, Icon: RoleIcon } = roleMeta[user.role] ?? { label: 'Utilizador', Icon: UserRound };
 
     const comprasRoles = ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'];
     const showCompras = comprasRoles.includes(user.role);
@@ -109,15 +109,30 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 dark:border-slate-800/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
-                    <div className="flex items-center justify-between w-full">
-                        <span className="text-xl font-bold tracking-tight text-emerald-400 px-1 line-clamp-1">
-                            {getRoleLabel(user.role)}
-                        </span>
+                    <div className="flex items-center justify-between w-full gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div
+                                className={`shrink-0 flex items-center justify-center w-11 h-11 rounded-xl border shadow-inner ${
+                                    user.role === 'ADMINISTRADOR'
+                                        ? 'bg-gradient-to-br from-emerald-500/25 via-emerald-600/10 to-slate-900 border-emerald-500/35 text-emerald-300 shadow-emerald-900/20'
+                                        : 'bg-slate-800/80 border-slate-600/50 text-emerald-400'
+                                }`}
+                                aria-hidden
+                            >
+                                <RoleIcon size={22} strokeWidth={user.role === 'ADMINISTRADOR' ? 2.25 : 2} className={user.role === 'ADMINISTRADOR' ? 'drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]' : ''} />
+                            </div>
+                            <div className="min-w-0 flex flex-col gap-0.5">
+                                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Perfil</span>
+                                <span className="text-base font-semibold tracking-tight text-slate-100 leading-snug line-clamp-2">
+                                    {roleLabel}
+                                </span>
+                            </div>
+                        </div>
                         <button
                             type="button"
                             onClick={() => setShowLogout((prev) => !prev)}
                             data-logout-toggle
-                            className="p-1.5 text-white hover:text-red-400 hover:bg-slate-800 dark:hover:bg-slate-900 rounded-lg transition-colors focus:outline-none"
+                            className="shrink-0 p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 dark:hover:bg-slate-900 rounded-lg transition-colors focus:outline-none"
                             title="Desconectar"
                         >
                             <LogOut size={16} />
@@ -136,10 +151,17 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                             }
                         }}
                         data-logout-toggle
-                        className="w-8 h-8 bg-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border dark:border-emerald-500/30 rounded-lg flex items-center justify-center font-bold text-white hover:bg-emerald-500 dark:hover:bg-emerald-500/30 focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
-                        title={getRoleLabel(user.role)}
+                        className={`group relative w-11 h-11 rounded-xl flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all ${
+                            user.role === 'ADMINISTRADOR'
+                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-950/40 border border-emerald-400/30 hover:from-emerald-400 hover:to-emerald-600 hover:shadow-emerald-900/50'
+                                : 'bg-slate-800 text-emerald-400 border border-slate-600/60 hover:bg-slate-700/90 hover:border-emerald-500/40 hover:text-emerald-300 shadow-md shadow-black/20'
+                        }`}
+                        title={roleLabel}
                     >
-                        {getRoleLabel(user.role).charAt(0)}
+                        <RoleIcon size={20} strokeWidth={user.role === 'ADMINISTRADOR' ? 2.25 : 2} className={user.role === 'ADMINISTRADOR' ? 'drop-shadow-sm' : ''} />
+                        {user.role === 'ADMINISTRADOR' && (
+                            <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/10 group-hover:ring-white/20 transition-[box-shadow]" />
+                        )}
                     </button>
                 )}
             </div>
