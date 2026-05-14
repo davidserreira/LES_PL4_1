@@ -857,8 +857,8 @@ export default function PedidosCompra() {
 
                 <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
                     {pedidos.length > 0 && (
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 flex-grow">
-                            <div className="relative w-full max-w-md">
+                        <label className="flex flex-row justify-between items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 flex-grow cursor-text">
+                            <div className="relative flex-1 min-w-0">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                 <input
                                     type="text"
@@ -871,7 +871,7 @@ export default function PedidosCompra() {
                             <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-3 whitespace-nowrap hidden sm:block">
                                 A mostrar <span className="font-bold text-slate-700 dark:text-slate-300">{filteredPedidos.length}</span> / <span className="font-bold text-slate-700 dark:text-slate-300">{pedidos.length}</span> pedidos
                             </div>
-                        </div>
+                        </label>
                     )}
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
