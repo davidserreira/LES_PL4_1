@@ -105,7 +105,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
         } ${isCollapsed ? 'justify-center' : ''}`;
 
     return (
-        <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50`}>
+        <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50 relative shadow-[12px_0_35px_-5px_rgba(0,0,0,0.2)] dark:shadow-none`}>
             {/* Logo/Header */}
             <div className={`p-6 border-b border-slate-800 dark:border-slate-800/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                 {!isCollapsed && (
@@ -281,15 +281,13 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                 </ul>
             </nav>
 
-            {/* Collapse Toggle Button */}
-            <div className="p-4 border-t border-slate-800 flex flex-col gap-4">
-                <button
-                    onClick={onToggle}
-                    className="flex items-center justify-center w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-lg transition-all border border-slate-700"
-                    title={isCollapsed ? "Expandir" : "Recolher"}
-                >
-                    {isCollapsed ? <ChevronRight size={20} /> : <div className="flex items-center gap-2"><ChevronLeft size={20} /> <span className="text-[10px] font-bold uppercase tracking-widest">Recolher</span></div>}
-                </button>
+            {/* Minimalist Collapse Toggle Button */}
+            <div 
+                className="absolute top-1/2 -right-8 -translate-y-1/2 w-8 h-16 flex items-center justify-center cursor-pointer group"
+                onClick={onToggle}
+                title={isCollapsed ? "Expandir" : "Recolher"}
+            >
+                <div className="w-2.5 h-10 bg-slate-400 group-hover:bg-emerald-500 dark:bg-slate-700 dark:group-hover:bg-emerald-500 rounded-full transition-colors shadow-sm" />
             </div>
         </aside>
     );
