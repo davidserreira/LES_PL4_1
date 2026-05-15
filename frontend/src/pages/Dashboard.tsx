@@ -23,6 +23,8 @@ import { fornecedorService } from '../services/fornecedorService';
 import { 
     Coins, 
     ShoppingCart,
+    PackageCheck,
+    Landmark
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -474,28 +476,27 @@ const Dashboard = () => {
 
     // --- Widgets Configuration Content ---
     const MappedWidgets: Record<SectionKey, React.ReactNode> = {
-        quickEntry: (
-            <div className={`grid gap-4 p-5 ${
-                [
-                    { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
-                    { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10', roles: ['ADMINISTRADOR'] },
-                ].filter(l => l.roles.includes(user.role)).length >= 4 ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-4' : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2'
-            }`}>
-                {[
-                    { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
-                    { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
-                    { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10', roles: ['ADMINISTRADOR'] },
-                ].filter(l => l.roles.includes(user.role)).map((l, i) => (
-                    <button key={i} onClick={() => navigate(l.to)} className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-lg hover:border-blue-300 transition-all group">
-                        <div className={`p-4 rounded-full ${l.bg} ${l.color} mb-3 group-hover:scale-110 transition-transform`}><l.icon size={28} /></div>
-                        <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{l.label}</span>
-                    </button>
-                ))}
-            </div>
-        ),
+        quickEntry: (() => {
+            const items = [
+                { to: '/relatorios', label: 'Financeiro', icon: Landmark, color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
+                { to: '/catalogo', label: 'Stock', icon: Package, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
+                { to: '/fornecedores', label: 'Fornecedores', icon: Factory, color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
+                { to: '/utilizadores', label: 'Utilizadores', icon: Users, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-500/10', roles: ['ADMINISTRADOR'] },
+                { to: '/pedidos', label: 'Pedidos Compra', icon: ClipboardList, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+                { to: '/encomendas', label: 'Encomendas', icon: PackageCheck, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-500/10', roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+            ].filter(l => l.roles.includes(user.role));
+
+            return (
+                <div className={`grid gap-4 p-5 ${items.length >= 4 ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3'}`}>
+                    {items.map((l, i) => (
+                        <button key={i} onClick={() => navigate(l.to)} className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:shadow-lg hover:border-blue-300 transition-all group">
+                            <div className={`p-4 rounded-full ${l.bg} ${l.color} mb-3 group-hover:scale-110 transition-transform`}><l.icon size={28} /></div>
+                            <span className="font-bold text-sm text-slate-800 dark:text-slate-200">{l.label}</span>
+                        </button>
+                    ))}
+                </div>
+            );
+        })(),
         cards: (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-slate-50 dark:bg-slate-900">
                 {[
@@ -678,22 +679,48 @@ const Dashboard = () => {
                     <button onClick={() => setSettingsOpen(!settingsOpen)} className="p-2 border rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900">
                         <MoreHorizontal size={20} />
                     </button>
-                    {settingsOpen && (
-                        <div className="absolute right-0 top-12 z-50 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl">
-                            <div className="p-3 bg-slate-50 dark:bg-slate-900 border-b text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">Visibilidade dos Módulos</div>
-                            <ul className="py-2">
-                                {SECTIONS.map(s => (
-                                    <li key={s.key} className="px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 cursor-pointer flex items-center gap-3" onClick={() => toggleSection(s.key)}>
-                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${visible[s.key] ? 'border-blue-500 bg-blue-500' : 'border-slate-300 dark:border-slate-600'}`}>
-                                            {visible[s.key] && <Check size={12} className="text-white" />}
-                                        </div>
-                                        <s.icon size={16} className={visible[s.key] ? "text-slate-800 dark:text-slate-200" : "text-slate-400"} />
-                                        <span className={`text-sm ${visible[s.key] ? 'text-slate-800 dark:text-slate-200 font-semibold' : 'text-slate-500 dark:text-slate-400'}`}>{s.label}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
+                            {settingsOpen && (
+                                <div className="absolute right-0 top-12 z-50 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] dark:shadow-none animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="p-4 border-b border-slate-100 dark:border-slate-800">
+                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Painel de Controlo</h4>
+                                        <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">Personalize a visibilidade dos módulos</p>
+                                    </div>
+                                    <div className="p-2 max-h-[400px] overflow-y-auto">
+                                        {SECTIONS.map(s => (
+                                            <div 
+                                                key={s.key} 
+                                                className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${visible[s.key] ? 'bg-blue-50/50 dark:bg-blue-500/5 hover:bg-blue-100/50 dark:hover:bg-blue-500/10' : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}
+                                                onClick={() => toggleSection(s.key)}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-lg ${visible[s.key] ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                                                        <s.icon size={16} />
+                                                    </div>
+                                                    <div className="flex flex-col">
+                                                        <span className={`text-sm font-bold ${visible[s.key] ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
+                                                            {s.label}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 font-medium">
+                                                            {visible[s.key] ? 'Visível' : 'Oculto'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className={`w-10 h-5 rounded-full transition-colors relative ${visible[s.key] ? 'bg-blue-500' : 'bg-slate-200 dark:bg-slate-700'}`}>
+                                                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${visible[s.key] ? 'left-6' : 'left-1'}`} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 rounded-b-2xl">
+                                        <button 
+                                            onClick={() => setVisible(Object.keys(visible).reduce((acc, k) => ({ ...acc, [k]: true }), {} as any))}
+                                            className="w-full py-2 text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-tight hover:bg-blue-100/50 dark:hover:bg-blue-400/10 rounded-lg transition-colors"
+                                        >
+                                            Mostrar Todos os Módulos
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                 </div>
             </div>
 

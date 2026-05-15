@@ -67,15 +67,11 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
             if (!isToggle && !isPanel) {
                 setShowLogout(false);
             }
-
-            if (sidebarRef.current && !sidebarRef.current.contains(target) && !isCollapsed) {
-                onToggle();
-            }
         };
 
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
-    }, [isCollapsed, onToggle]);
+    }, []);
 
     const roleMeta: Record<string, { label: string; Icon: LucideIcon }> = {
         ADMINISTRADOR: { label: 'Admin', Icon: ShieldCheck },
@@ -91,6 +87,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
 
     const menuItems = [
         { to: '/', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK', 'RESPONSAVEL_FINANCEIRO'] },
+        { to: '/relatorios', label: 'Financeiro', icon: Landmark, roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
         { to: '/catalogo', label: 'Stock', icon: BookOpen, roles: ['ADMINISTRADOR', 'RESPONSAVEL_STOCK'] },
         { to: '/fornecedores', label: 'Fornecedores', icon: Factory, roles: ['ADMINISTRADOR', 'RESPONSAVEL_FINANCEIRO'] },
         { to: '/utilizadores', label: 'Utilizadores', icon: Users, roles: ['ADMINISTRADOR'] },

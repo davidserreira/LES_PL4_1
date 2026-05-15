@@ -4,6 +4,7 @@ import {
     ClipboardList, Euro, XCircle, FileText, ShieldAlert, RotateCcw
 } from 'lucide-react';
 import { createPortal } from 'react-dom';
+import { generateNotaCreditoPDF } from '../utils/pdfGenerator';
 
 interface LinhaEncomenda {
     id: number;
@@ -128,6 +129,16 @@ export default function DetalhesEncomendaModal({ isOpen, onClose, encomenda, onU
                     </div>
                     {/* Header right: Repetir (se aplicável) + X fechar */}
                     <div className="flex items-center gap-2">
+                        {/* PDF Download Button */}
+                        {(encomenda.estado === 'ENTREGUE' || encomenda.estado === 'ENTREGUE_PARCIAL') && (
+                            <button
+                                onClick={() => generateNotaCreditoPDF(encomenda)}
+                                title="Download Nota de Crédito"
+                                className="p-2 text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                            >
+                                <FileText size={18} />
+                            </button>
+                        )}
                         {onReordenar && (
                             <button
                                 onClick={() => onReordenar(

@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { 
     PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, 
     Building2, ClipboardList, AlertTriangle, ChevronDown, Package,
-    Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Euro, RotateCcw, ShieldAlert
+    Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Euro, RotateCcw, ShieldAlert,
+    FileText
 } from 'lucide-react';
+import { generateNotaCreditoPDF } from '../utils/pdfGenerator';
 import { encomendaService } from '../services/encomendaService';
 import RececaoModal from '../components/RececaoModal';
 import DetalhesEncomendaModal from '../components/DetalhesEncomendaModal';
@@ -550,6 +552,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                         <span className="text-[11px] text-slate-400 font-bold italic">
                                                             {enc.estado === 'ENTREGUE' ? 'Concluída' : enc.estado === 'ENCERRADA' ? 'Encerrada' : 'Cancelada'}
                                                         </span>
+                                                    )}
+
+                                                    {/* DOWNLOAD PDF — só recebidas */}
+                                                    {(isEntregue || isParcial) && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                generateNotaCreditoPDF(enc);
+                                                            }}
+                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
+                                                            title="Download Nota de Crédito"
+                                                        >
+                                                            <FileText size={13} />
+                                                            PDF
+                                                        </button>
                                                     )}
 
                                                     {/* REPETIR — sempre disponível */}

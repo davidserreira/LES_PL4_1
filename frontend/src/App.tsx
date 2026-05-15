@@ -8,6 +8,7 @@ import Utilizadores from './pages/Utilizadores';
 import Login from './pages/Login';
 import PedidosCompra from './pages/PedidosCompra';
 import Encomendas from './pages/Encomendas';
+import RelatoriosFinanceiros from './pages/Relatorios';
 import { Utilizador } from './services/utilizadorService';
 import ThemeToggle from './components/ThemeToggle';
 
@@ -46,6 +47,7 @@ function App() {
                             <Route path="/pedidos" element={<PedidosCompra />} />
                             <Route path="/encomendas" element={<Encomendas user={user} />} />
                             <Route path="/fornecedores" element={<Fornecedores />} />
+                            <Route path="/relatorios" element={<RelatoriosFinanceiros />} />
                             <Route path="/utilizadores" element={<Utilizadores />} />
                             <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
