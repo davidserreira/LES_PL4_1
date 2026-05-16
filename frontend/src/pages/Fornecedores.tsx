@@ -25,6 +25,11 @@ interface Fornecedor {
         categoria: string;
         stock: number;
     }[];
+    precosProdutos?: {
+        produtoId: number;
+        fornecedorId: number;
+        preco: number;
+    }[];
     // Condições Comerciais
     valorMinimoEncomenda?: number | null;
     prazoMedioEntrega?: number | null;
@@ -145,10 +150,10 @@ const Fornecedores = () => {
     };
 
     const getSortIcon = (field: SortField) => {
-        if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-400 group-hover:text-slate-600" />;
+        if (sortField !== field) return <ArrowUpDown size={14} className="text-slate-400 group-hover:text-slate-600 dark:text-slate-400" />;
         return sortOrder === 'asc'
-            ? <ArrowUp size={14} className="text-emerald-600" />
-            : <ArrowDown size={14} className="text-emerald-600" />;
+            ? <ArrowUp size={14} className="text-emerald-600 dark:text-emerald-400" />
+            : <ArrowDown size={14} className="text-emerald-600 dark:text-emerald-400" />;
     };
 
     const handleActionMouseDown = async (id: number, e: React.MouseEvent) => {
@@ -187,7 +192,7 @@ const Fornecedores = () => {
                     }}
                 />
                 <div
-                    className="fixed w-44 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-[81] animate-in fade-in zoom-in-95 duration-100"
+                    className="fixed w-44 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-100 dark:border-slate-700/50 py-1.5 z-[81] animate-in fade-in zoom-in-95 duration-100"
                     style={{ top, left, transform: 'translateY(-50%)' }}
                     onClick={(e) => e.stopPropagation()}
                 >
@@ -197,7 +202,7 @@ const Fornecedores = () => {
                             setOpenDropdownId(null);
                             setDropdownAnchor(null);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400 transition-colors"
                     >
                         Ver Detalhes
                     </button>
@@ -207,7 +212,7 @@ const Fornecedores = () => {
                             setOpenDropdownId(null);
                             setDropdownAnchor(null);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400 transition-colors"
                     >
                         Editar Fornecedor
                     </button>
@@ -217,7 +222,7 @@ const Fornecedores = () => {
                             setOpenDropdownId(null);
                             setDropdownAnchor(null);
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400 transition-colors"
                     >
                         {user?.id && hasMyAvaliacao[fornecedor.id] ? 'Editar avaliação' : 'Avaliar Fornecedor'}
                     </button>
@@ -227,7 +232,7 @@ const Fornecedores = () => {
                             setOpenDropdownId(null);
                             setDropdownAnchor(null);
                         }}
-                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${fornecedor.estado ? 'text-red-600 hover:bg-red-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                        className={`w-full text-left px-4 py-2.5 text-sm font-medium transition-colors ${fornecedor.estado ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10' : 'text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:bg-emerald-500/10'}`}
                     >
                         {fornecedor.estado ? 'Inativar Fornecedor' : 'Ativar Fornecedor'}
                     </button>
@@ -259,6 +264,41 @@ const Fornecedores = () => {
             showToast('Erro ao guardar observações.', 'error');
         } finally {
             setSavingObs(false);
+        }
+    };
+
+    const handleUpdatePreco = async (produtoId: number, novoPreco: string) => {
+        if (!detalhesFornecedor) return;
+        const precoNum = parseFloat(novoPreco);
+        if (isNaN(precoNum)) return;
+
+        try {
+            await fornecedorService.updateProdutoPreco(detalhesFornecedor.id, produtoId, precoNum);
+            
+            // Atualizar estado local do modal
+            const updatedPrecos = detalhesFornecedor.precosProdutos?.map(p => 
+                p.produtoId === produtoId ? { ...p, preco: precoNum } : p
+            ) || [];
+            
+            if (!detalhesFornecedor.precosProdutos?.some(p => p.produtoId === produtoId)) {
+                updatedPrecos.push({ produtoId, fornecedorId: detalhesFornecedor.id, preco: precoNum });
+            }
+
+            setDetalhesFornecedor({
+                ...detalhesFornecedor,
+                precosProdutos: updatedPrecos
+            });
+
+            // Atualizar também na lista principal
+            setFornecedores(fornecedores.map(f => 
+                f.id === detalhesFornecedor.id 
+                ? { ...f, precosProdutos: updatedPrecos } 
+                : f
+            ));
+
+            showToast('Preço acordado atualizado!', 'success');
+        } catch (error) {
+            showToast('Erro ao atualizar preço.', 'error');
         }
     };
 
@@ -309,8 +349,8 @@ const Fornecedores = () => {
             {toast && (
                 <div className="fixed bottom-6 right-6 z-[60] animate-in slide-in-from-right-full duration-300">
                     <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border ${toast.type === 'success'
-                        ? 'bg-emerald-50 border-emerald-100 text-emerald-800'
-                        : 'bg-red-50 border-red-100 text-red-800'
+                        ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-800'
+                        : 'bg-red-50 dark:bg-red-500/10 border-red-100 dark:border-red-500/20 text-red-800'
                         }`}>
                         {toast.type === 'success' ? <CheckCircle2 size={20} className="text-emerald-500" /> : <AlertCircle size={20} className="text-red-500" />}
                         <span className="text-sm font-bold">{toast.message}</span>
@@ -322,13 +362,13 @@ const Fornecedores = () => {
             )}
 
             {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
-            <div className="sticky top-0 z-40 bg-slate-50/90 backdrop-blur-xl border-b border-slate-200/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
+            <div className="sticky top-0 z-40 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
                 <div className="space-y-5">
                     {/* Linha 1: Título e Botões de ação lado a lado */}
                     <div className="flex justify-between items-center">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Fornecedores</h1>
-                            <p className="mt-2 text-sm text-slate-500">
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Fornecedores</h1>
+                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                                 Gerencie as entidades fornecedoras da clínica nesta secção.
                             </p>
                         </div>
@@ -346,8 +386,8 @@ const Fornecedores = () => {
                         
                         {/* Search Bar Container */}
                         {fornecedores.length > 0 && (
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/80 p-2 rounded-xl border border-slate-200/60 shadow-sm relative z-10 flex-grow">
-                                <div className="relative w-full max-w-md">
+                            <label className="flex flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800/80 p-2 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm relative z-10 flex-grow cursor-text">
+                                <div className="relative flex-1 min-w-0">
                                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input
                                         type="text"
@@ -357,58 +397,58 @@ const Fornecedores = () => {
                                         className="w-full pl-10 pr-4 py-2 bg-transparent border-0 outline-none text-sm placeholder:text-slate-400"
                                     />
                                 </div>
-                                <div className="text-xs text-slate-500 font-medium px-4 whitespace-nowrap hidden sm:block">
-                                    <span className="font-bold text-slate-700">{filteredFornecedores.length}</span> / <span className="font-bold text-slate-700">{fornecedores.length}</span> fornecedores
+                                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium px-4 whitespace-nowrap hidden sm:block">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">{filteredFornecedores.length}</span> / <span className="font-bold text-slate-700 dark:text-slate-300">{fornecedores.length}</span> fornecedores
                                 </div>
-                            </div>
+                            </label>
                         )}
 
                         {/* Filtros Container */}
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white/80 p-3 rounded-xl border border-slate-200/60 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
-                            <div className="flex items-center gap-2 text-slate-500 font-medium text-sm mr-2 hidden sm:flex">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-800/80 p-3 rounded-xl border border-slate-200 dark:border-slate-700/60 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                            <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm mr-2 hidden sm:flex">
                                 <Filter size={16} />
                                 Filtros
                             </div>
 
                             {/* Status Segmented Control */}
-                            <div className="flex p-1 bg-slate-100/50 rounded-lg border border-slate-200/60 w-full sm:w-auto">
+                            <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700/60 w-full sm:w-auto">
                                 <button
                                     onClick={() => setFilterStatus('todos')}
-                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'todos' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                 >
                                     Todos
                                 </button>
                                 <button
                                     onClick={() => setFilterStatus('ativos')}
-                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'ativos' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'ativos' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                 >
                                     Ativos
                                 </button>
                                 <button
                                     onClick={() => setFilterStatus('inativos')}
-                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'inativos' ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-600 hover:text-slate-900'} `}
+                                    className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${filterStatus === 'inativos' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'} `}
                                 >
                                     Inativos
                                 </button>
                             </div>
 
-                            <div className="w-px h-6 bg-slate-200 hidden sm:block"></div>
+                            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
                             {/* Category Dropdown */}
                             <div className="relative min-w-[150px] w-full sm:w-auto">
                                 <button
                                     onClick={() => setIsFilterCategoryOpen(!isFilterCategoryOpen)}
-                                    className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white border rounded-lg text-sm font-medium transition-all ${filterCategoria ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 text-slate-700 hover:border-slate-300'}`}
+                                    className={`w-full flex items-center justify-between gap-2 px-4 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterCategoria ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10' : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'}`}
                                 >
                                     {filterCategoria || 'Todas as Categorias'}
                                     <ChevronDown size={14} className={`text-slate-400 transition-transform ${isFilterCategoryOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 {isFilterCategoryOpen && (
-                                    <div className="absolute top-full right-0 mt-2 w-full bg-white border border-slate-200 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                    <div className="absolute top-full right-0 mt-2 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                                         <button
                                             onClick={() => { setFilterCategoria(''); setIsFilterCategoryOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategoria ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${!filterCategoria ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                         >
                                             Todas as Categorias
                                         </button>
@@ -416,7 +456,7 @@ const Fornecedores = () => {
                                             <button
                                                 key={cat}
                                                 onClick={() => { setFilterCategoria(cat); setIsFilterCategoryOpen(false); }}
-                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategoria === cat ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterCategoria === cat ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
                                             >
                                                 {cat}
                                             </button>
@@ -429,7 +469,7 @@ const Fornecedores = () => {
                             {(filterStatus !== 'todos' || filterCategoria !== '' || searchQuery !== '') && (
                                 <button
                                     onClick={() => { setFilterStatus('todos'); setFilterCategoria(''); setSearchQuery(''); }}
-                                    className="ml-auto text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors px-2"
+                                    className="ml-auto text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors px-2"
                                 >
                                     Limpar
                                 </button>
@@ -445,14 +485,14 @@ const Fornecedores = () => {
                 </div>
             ) : fornecedores.length > 0 ? (
                 filteredFornecedores.length > 0 ? (
-                    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden relative z-0">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden relative z-0">
                         <div className="w-full overflow-auto max-h-[calc(100vh-280px)] custom-scrollbar">
                             <table className="w-full text-left border-collapse relative">
-                                <thead className="sticky top-0 z-30 bg-slate-50/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+                                <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
                                     <tr>
                                     <th
                                         onClick={() => handleSort('nome')}
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none"
                                     >
                                         <div className="flex items-center gap-2">
                                             Fornecedor
@@ -461,7 +501,7 @@ const Fornecedores = () => {
                                     </th>
                                     <th
                                         onClick={() => handleSort('categoria')}
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none"
                                     >
                                         <div className="flex items-center gap-2">
                                             Categoria
@@ -470,7 +510,7 @@ const Fornecedores = () => {
                                     </th>
                                     <th
                                         onClick={() => handleSort('contacto')}
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none"
                                     >
                                         <div className="flex items-center gap-2">
                                             Contacto
@@ -479,14 +519,14 @@ const Fornecedores = () => {
                                     </th>
                                     <th
                                         onClick={() => handleSort('estado')}
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 transition-colors group select-none"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none"
                                     >
                                         <div className="flex items-center gap-2">
                                             Estado
                                             {getSortIcon('estado')}
                                         </div>
                                     </th>
-                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Ações</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
                             <tbody className="">
@@ -494,31 +534,31 @@ const Fornecedores = () => {
                                     <tr 
                                         key={fornecedor.id} 
                                         onClick={() => setDetalhesFornecedor(fornecedor)}
-                                        className="hover:bg-slate-50/80 transition-all group cursor-pointer border-b border-slate-100 last:border-b-0"
+                                        className="hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/80 transition-all group cursor-pointer border-b border-slate-100 dark:border-slate-700/50 last:border-b-0"
                                     >
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-4">
-                                                <div className="p-2.5 bg-white border border-slate-100 shadow-sm rounded-xl text-slate-600 group-hover:text-blue-600 transition-colors">
+                                                <div className="p-2.5 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/50 shadow-sm rounded-xl text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:text-blue-400 transition-colors">
                                                     <Factory size={20} />
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="block font-bold text-slate-900">{fornecedor.nome}</span>
-                                                    <span className="block text-sm font-medium text-slate-500">{fornecedor.email}</span>
+                                                    <span className="block font-bold text-slate-900 dark:text-slate-100">{fornecedor.nome}</span>
+                                                    <span className="block text-sm font-medium text-slate-500 dark:text-slate-400">{fornecedor.email}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-left">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400">
                                                 {fornecedor.categoria}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-left">
-                                            <span className="font-medium text-slate-600">
+                                            <span className="font-medium text-slate-600 dark:text-slate-400">
                                                 {fornecedor.contacto}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-left">
-                                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${fornecedor.estado ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${fornecedor.estado ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 border-emerald-100 dark:border-emerald-500/20' : 'bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'}`}>
                                                 {fornecedor.estado ? 'Ativo' : 'Inativo'}
                                             </span>
                                         </td>
@@ -526,7 +566,7 @@ const Fornecedores = () => {
                                             <button
                                                 onMouseDown={(e) => handleActionMouseDown(fornecedor.id, e)}
                                                 onClick={(e) => e.stopPropagation()}
-                                                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
+                                                className="p-2 text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 rounded-lg transition-colors"
                                             >
                                                 <MoreVertical size={18} />
                                             </button>
@@ -540,20 +580,20 @@ const Fornecedores = () => {
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-white p-16 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                        <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                    <div className="bg-white dark:bg-slate-800 p-16 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center text-center">
+                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-900 text-slate-400 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
                             <Search size={40} />
                         </div>
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">Nenhum fornecedor encontrado</h3>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">Nenhum fornecedor encontrado</h3>
                     </div>
                 )
             ) : (
-                <div className="bg-white p-20 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center text-center">
-                    <div className="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
+                <div className="bg-white dark:bg-slate-800 p-20 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center text-center">
+                    <div className="w-24 h-24 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mb-6 shadow-inner">
                         <Factory size={48} />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 mb-2">Sem Fornecedores</h3>
-                    <p className="text-slate-500 max-w-sm font-medium mb-8">
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-2">Sem Fornecedores</h3>
+                    <p className="text-slate-500 dark:text-slate-400 max-w-sm font-medium mb-8">
                         Ainda não existem fornecedores registados no sistema. Comece por adicionar o seu primeiro fornecedor.
                     </p>
                     <button
@@ -618,25 +658,25 @@ const Fornecedores = () => {
             {detalhesFornecedor && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setDetalhesFornecedor(null)} />
-                    <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="relative bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                         {/* Header Modal - Light Version (Like Stock Details) */}
-                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 bg-slate-50/80">
+                        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 shadow-sm border border-indigo-100">
                                     <Factory size={20} />
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                                    <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
                                         {detalhesFornecedor.nome}
                                     </h2>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200/70 text-slate-600 uppercase tracking-wider">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                             ID: {detalhesFornecedor.id}
                                         </span>
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 tracking-wider">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 tracking-wider">
                                             {detalhesFornecedor.categoria}
                                         </span>
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-500 tracking-wider">
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 tracking-wider">
                                             {detalhesFornecedor.email}
                                         </span>
                                     </div>
@@ -644,22 +684,22 @@ const Fornecedores = () => {
                             </div>
                             <button 
                                 onClick={() => { setDetalhesFornecedor(null); setActiveTab('geral'); }}
-                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-lg transition-colors"
+                                className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
                         {/* Tabs Header */}
-                        <div className="flex border-b border-slate-200 bg-slate-50/80 px-6">
+                        <div className="flex border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 px-6">
                             <button 
-                                className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === 'geral' ? 'border-emerald-500 text-emerald-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'}`}
+                                className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === 'geral' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-800' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50'}`}
                                 onClick={() => setActiveTab('geral')}
                             >
                                 Info Geral
                             </button>
                             <button 
-                                className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === 'condicoes' ? 'border-emerald-500 text-emerald-600 bg-white' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50'}`}
+                                className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${activeTab === 'condicoes' ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-white dark:bg-slate-800' : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50'}`}
                                 onClick={() => setActiveTab('condicoes')}
                             >
                                 Condições de Compra
@@ -667,53 +707,53 @@ const Fornecedores = () => {
                         </div>
 
                         {/* Modal Body */}
-                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative custom-scrollbar space-y-6">
+                        <div className="flex-1 overflow-y-auto p-6 bg-slate-50 dark:bg-slate-900 relative custom-scrollbar space-y-6">
                             {activeTab === 'geral' && (
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Card: Identificação */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                 <FileText size={14} /> Identificação
                                             </h3>
                                             <div>
-                                                <p className="text-sm text-slate-500 mb-0.5">NIF</p>
-                                                <p className="text-xl font-black text-slate-900 font-mono tracking-tight">{detalhesFornecedor.nif}</p>
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">NIF</p>
+                                                <p className="text-xl font-black text-slate-900 dark:text-slate-100 font-mono tracking-tight">{detalhesFornecedor.nif}</p>
                                             </div>
-                                            <div className="pt-2 border-t border-slate-100">
-                                                <p className="text-sm text-slate-500 mb-0.5">Contacto Telefónico</p>
-                                                <p className="text-lg font-bold text-slate-700">{detalhesFornecedor.contacto}</p>
+                                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Contacto Telefónico</p>
+                                                <p className="text-lg font-bold text-slate-700 dark:text-slate-300">{detalhesFornecedor.contacto}</p>
                                             </div>
                                         </div>
 
                                         {/* Card: Ficha de Fornecedor */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                 <Database size={14} /> Ficha de Fornecedor
                                             </h3>
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <p className="text-sm text-slate-500 mb-0.5">Tipo de Produtos</p>
-                                                    <p className="text-lg font-bold text-slate-900">{detalhesFornecedor.categoria}</p>
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Tipo de Produtos</p>
+                                                    <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{detalhesFornecedor.categoria}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-sm text-slate-500 mb-0.5">Estado</p>
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Estado</p>
                                                     {detalhesFornecedor.estado ? (
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20">
                                                             <CheckCircle2 size={12} />
                                                             ATIVO
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+                                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-black bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                                                             <X size={12} />
                                                             INATIVO
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="pt-2 border-t border-slate-100">
-                                                <p className="text-sm text-slate-500 mb-0.5">Parceiro Desde</p>
-                                                <p className="text-base font-bold text-slate-700">
+                                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Parceiro Desde</p>
+                                                <p className="text-base font-bold text-slate-700 dark:text-slate-300">
                                                     {new Date(detalhesFornecedor.criadoEm).toLocaleDateString('pt-PT', { year: 'numeric', month: 'long', day: 'numeric' })}
                                                 </p>
                                             </div>
@@ -722,7 +762,7 @@ const Fornecedores = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Avaliação */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                                             <div className="flex justify-between items-center">
                                                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                     <AlertCircle size={14} /> Pontuação Média
@@ -730,22 +770,22 @@ const Fornecedores = () => {
                                                 {avaliacaoMedia && avaliacaoMedia.totalAvaliacoes > 0 && (
                                                     <button
                                                         onClick={() => setIsListAvaliacoesOpen(true)}
-                                                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline uppercase tracking-wider"
+                                                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 hover:underline uppercase tracking-wider"
                                                     >
                                                         {avaliacaoMedia.totalAvaliacoes} {avaliacaoMedia.totalAvaliacoes === 1 ? 'avaliação' : 'avaliações'}
                                                     </button>
                                                 )}
                                             </div>
                                             <div>
-                                                <p className="text-2xl font-black text-slate-900">
+                                                <p className="text-2xl font-black text-slate-900 dark:text-slate-100">
                                                     {avaliacaoMedia && avaliacaoMedia.totalAvaliacoes > 0 ? `${avaliacaoMedia.media?.toFixed(1)} / 5` : 'N/A'}
                                                 </p>
-                                                <p className="text-xs font-medium text-slate-500 mt-0.5">classificação global</p>
+                                                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">classificação global</p>
                                             </div>
                                         </div>
 
                                         {/* Observações */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col">
                                             <div className="flex justify-between items-center mb-2">
                                                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                     <FileText size={14} /> Observações
@@ -756,7 +796,7 @@ const Fornecedores = () => {
                                                     <button
                                                         onClick={() => handleSaveObservacoes(detalhesFornecedor.id)}
                                                         disabled={detalhesFornecedor.observacoes === (detalhesFornecedor.observacoes || '') && false /* Wait! Previous code used detalhesFornecedor.observacoes, the old logic was: onChange={(e) => setDetalhesFornecedor({ ...detalhesFornecedor, observacoes: e.target.value })} */}
-                                                        className="text-[10px] font-bold text-blue-600 hover:text-blue-700 disabled:text-transparent transition-colors uppercase tracking-wider disabled:opacity-50"
+                                                        className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 disabled:text-transparent transition-colors uppercase tracking-wider disabled:opacity-50"
                                                     >
                                                         Guardar
                                                     </button>
@@ -766,7 +806,7 @@ const Fornecedores = () => {
                                                 value={detalhesFornecedor.observacoes || ''}
                                                 onChange={(e) => setDetalhesFornecedor({ ...detalhesFornecedor, observacoes: e.target.value })}
                                                 rows={2}
-                                                className="w-full flex-1 p-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar text-slate-700"
+                                                className="w-full flex-1 p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar text-slate-700 dark:text-slate-300"
                                                 placeholder="Informação adicional opcional..."
                                             />
                                         </div>
@@ -778,13 +818,13 @@ const Fornecedores = () => {
                                         <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-violet-400/10 blur-2xl" />
                                         <div className="relative flex flex-wrap items-center justify-between gap-3">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900/70 flex items-center gap-2">
-                                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm ring-1 ring-indigo-100 text-indigo-600">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-sm ring-1 ring-indigo-100 text-indigo-600">
                                                     <Pill size={16} strokeWidth={2} />
                                                 </span>
                                                 Medicamentos e produtos
                                             </h3>
                                             {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 && (
-                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-white/80 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur-sm">
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-white dark:bg-slate-800/80 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur-sm">
                                                     <Package size={12} className="text-indigo-500" />
                                                     {detalhesFornecedor.produtos.length}{' '}
                                                     {detalhesFornecedor.produtos.length === 1 ? 'artigo' : 'artigos'}
@@ -792,67 +832,64 @@ const Fornecedores = () => {
                                             )}
                                         </div>
                                         {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 ? (
-                                            <div className="relative mt-4 grid max-h-[min(22rem,50vh)] grid-cols-1 gap-3 overflow-y-auto custom-scrollbar pr-1 sm:grid-cols-2">
-                                                {detalhesFornecedor.produtos.map((prod, index) => {
+                                            <div className="relative mt-4 space-y-2 max-h-[min(22rem,50vh)] overflow-y-auto custom-scrollbar pr-1">
+                                                {detalhesFornecedor.produtos.map((prod) => {
+                                                    const precoObj = detalhesFornecedor.precosProdutos?.find(p => p.produtoId === prod.id);
+                                                    const currentPreco = precoObj ? precoObj.preco : 0;
                                                     const stockNum = Number(prod.stock);
-                                                    const accentClasses = [
-                                                        'from-teal-500/[0.12] to-cyan-500/[0.06] ring-teal-200/60',
-                                                        'from-violet-500/[0.12] to-indigo-500/[0.06] ring-violet-200/60',
-                                                        'from-emerald-500/[0.12] to-teal-500/[0.06] ring-emerald-200/60',
-                                                    ];
-                                                    const accent = accentClasses[index % accentClasses.length];
                                                     const stockLow = stockNum <= 0;
+
                                                     return (
                                                         <div
                                                             key={prod.id}
-                                                            className="group relative overflow-hidden rounded-2xl border border-white/80 bg-white/90 p-3.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200/80 hover:shadow-md"
+                                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-all group"
                                                         >
-                                                            <div
-                                                                className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent} opacity-90`}
-                                                                aria-hidden
-                                                            />
-                                                            <div className="relative flex gap-3">
-                                                                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/95 text-indigo-600 shadow-inner ring-1 ring-slate-100 transition-transform duration-200 group-hover:scale-105">
-                                                                    <Pill size={22} strokeWidth={1.5} />
+                                                            <div className="flex items-center gap-4 flex-1">
+                                                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                    <Pill size={20} />
                                                                 </div>
-                                                                <div className="min-w-0 flex-1">
-                                                                    <p className="text-sm font-bold leading-snug text-slate-900 line-clamp-2">
+                                                                <div className="min-w-0">
+                                                                    <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
                                                                         {prod.nome}
-                                                                    </p>
-                                                                    <span className="mt-1.5 inline-flex max-w-full truncate rounded-md bg-slate-900/[0.04] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-slate-500 ring-1 ring-slate-200/60">
-                                                                        {prod.categoria || 'Sem categoria'}
-                                                                    </span>
+                                                                    </h4>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                                                            {prod.categoria || 'Sem categoria'}
+                                                                        </span>
+                                                                        <span className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded ${stockLow ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-700' : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700'}`}>
+                                                                            {stockLow ? 'Sem Stock' : `${stockNum} un.`}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="relative mt-3 flex items-center justify-between gap-2 border-t border-slate-200/60 pt-2.5">
-                                                                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                                                                    Inventário
-                                                                </span>
-                                                                <span
-                                                                    className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-wider tabular-nums shadow-sm ring-1 ${
-                                                                        stockLow
-                                                                            ? 'bg-amber-50 text-amber-800 ring-amber-200/80'
-                                                                            : 'bg-emerald-50 text-emerald-800 ring-emerald-200/80'
-                                                                    }`}
-                                                                >
-                                                                    {stockLow ? (
-                                                                        <AlertCircle size={12} className="shrink-0 text-amber-600" />
-                                                                    ) : (
-                                                                        <CheckCircle2 size={12} className="shrink-0 text-emerald-600" />
-                                                                    )}
-                                                                    {stockLow ? 'Sem stock' : `${stockNum} un.`}
-                                                                </span>
+
+                                                            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-colors">
+                                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">Preço:</span>
+                                                                <div className="relative w-28">
+                                                                    <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        defaultValue={currentPreco}
+                                                                        onBlur={(e) => {
+                                                                            if (parseFloat(e.target.value) !== currentPreco) {
+                                                                                handleUpdatePreco(prod.id, e.target.value);
+                                                                            }
+                                                                        }}
+                                                                        className="w-full pl-6 pr-2 py-1 text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all"
+                                                                    />
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     );
                                                 })}
                                             </div>
                                         ) : (
-                                            <div className="relative mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-indigo-200/70 bg-white/50 py-10 text-center">
+                                            <div className="relative mt-4 flex flex-col items-center justify-center rounded-xl border border-dashed border-indigo-200/70 bg-white dark:bg-slate-800/50 py-10 text-center">
                                                 <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-300 ring-4 ring-indigo-100/80">
                                                     <Package size={28} strokeWidth={1.25} />
                                                 </div>
-                                                <p className="max-w-xs text-sm font-medium text-slate-600">
+                                                <p className="max-w-xs text-sm font-medium text-slate-600 dark:text-slate-400">
                                                     Ainda não há medicamentos ou produtos associados a este fornecedor.
                                                 </p>
                                                 <p className="mt-1 max-w-xs text-xs text-slate-400">
@@ -871,7 +908,7 @@ const Fornecedores = () => {
                                         <div className="flex justify-end pb-2">
                                             <button 
                                                 onClick={() => setFornecedorCondicoesAEditar(detalhesFornecedor)}
-                                                className="px-4 py-2 bg-emerald-50 text-emerald-700 font-bold rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
+                                                className="px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 font-bold rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors flex items-center gap-2 text-sm shadow-sm"
                                             >
                                                 <Edit size={16} />
                                                 Editar Condições
@@ -881,38 +918,38 @@ const Fornecedores = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Card: Condições Financeiras */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                 <DollarSign size={14} /> Condições Financeiras
                                             </h3>
                                             <div>
-                                                <p className="text-sm text-slate-500 mb-0.5">Valor mínimo por encomenda</p>
-                                                <p className="text-2xl font-black text-slate-900">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Valor mínimo por encomenda</p>
+                                                <p className="text-2xl font-black text-slate-900 dark:text-slate-100">
                                                     {detalhesFornecedor.valorMinimoEncomenda != null ? `${Number(detalhesFornecedor.valorMinimoEncomenda).toFixed(2)} €` : '--'}
                                                 </p>
                                             </div>
-                                            <div className="pt-2 border-t border-slate-100">
-                                                <p className="text-sm text-slate-500 mb-0.5">Custo de transporte</p>
-                                                <p className="text-lg font-bold text-slate-700">
+                                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Custo de transporte</p>
+                                                <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
                                                     {detalhesFornecedor.custoTransporte != null ? `${Number(detalhesFornecedor.custoTransporte).toFixed(2)} €` : '--'}
                                                 </p>
                                             </div>
                                         </div>
 
                                         {/* Card: Logística */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                 <Truck size={14} /> Logística
                                             </h3>
                                             <div>
-                                                <p className="text-sm text-slate-500 mb-0.5">Prazo médio de entrega</p>
-                                                <p className="text-2xl font-black text-slate-900">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Prazo médio de entrega</p>
+                                                <p className="text-2xl font-black text-slate-900 dark:text-slate-100">
                                                     {detalhesFornecedor.prazoMedioEntrega != null ? `${detalhesFornecedor.prazoMedioEntrega} dias` : '--'}
                                                 </p>
                                             </div>
-                                            <div className="pt-2 border-t border-slate-100">
-                                                <p className="text-sm text-slate-500 mb-0.5">Dias de entrega</p>
-                                                <p className="text-lg font-bold text-slate-700">
+                                            <div className="pt-2 border-t border-slate-100 dark:border-slate-700/50">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Dias de entrega</p>
+                                                <p className="text-lg font-bold text-slate-700 dark:text-slate-300">
                                                     {detalhesFornecedor.diasEntrega || '--'}
                                                 </p>
                                             </div>
@@ -921,13 +958,13 @@ const Fornecedores = () => {
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {/* Card: Pagamento */}
-                                        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                                        <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
                                                 <HandCoins size={14} /> Pagamento
                                             </h3>
                                             <div>
-                                                <p className="text-sm text-slate-500 mb-0.5">Método de pagamento</p>
-                                                <p className="text-xl font-black text-slate-900">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Método de pagamento</p>
+                                                <p className="text-xl font-black text-slate-900 dark:text-slate-100">
                                                     {detalhesFornecedor.metodoPagamento || '--'}
                                                 </p>
                                             </div>

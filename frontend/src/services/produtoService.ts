@@ -16,7 +16,8 @@ export const produtoService = {
         preco?: number;
         categoria?: string;
         descricao?: string;
-        fornecedorIds?: number[];
+        fornecedoresData?: { id: number; preco: number }[];
+        fornecedorPreferencialId?: number;
     }) => {
         const response = await api.post('/produtos', produto);
         return response.data;
@@ -28,7 +29,8 @@ export const produtoService = {
         preco?: number;
         categoria?: string;
         descricao?: string;
-        fornecedorIds?: number[];
+        fornecedoresData?: { id: number; preco: number }[];
+        fornecedorPreferencialId?: number;
     }) => {
         const response = await api.put(`/produtos/${id}`, produto);
         return response.data;

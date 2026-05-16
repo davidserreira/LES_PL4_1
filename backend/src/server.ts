@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+// Reloading server to pick up Prisma 7 changes...
 dotenv.config();
 
 import express from 'express';
@@ -9,6 +10,7 @@ import fornecedorRoutes from './routes/fornecedorRoutes';
 import utilizadorRoutes from './routes/utilizadorRoutes';
 import pedidoCompraRoutes from './routes/pedidoCompraRoutes';
 import encomendaRoutes from './routes/encomendaRoutes';
+import relatorioRoutes from './routes/relatorioRoutes';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21,6 +23,7 @@ app.use('/api/fornecedores', fornecedorRoutes);
 app.use('/api/utilizadores', utilizadorRoutes);
 app.use('/api/pedidos', pedidoCompraRoutes);
 app.use('/api/encomendas', encomendaRoutes);
+app.use('/api/relatorios', relatorioRoutes);
 
 app.get('/', (req, res) => {
     res.send('API REST da Clínica Veterinária a funcionar!');

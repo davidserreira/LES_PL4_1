@@ -179,42 +179,48 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, utilizadorId, onClose, onS
                 onClick={handleClose}
             />
 
-            <div className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
-                <div className="bg-slate-900 p-6">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <CheckCircle2 size={20} className="text-emerald-400" />
-                            {isEditing ? 'Editar avaliação' : 'Avaliar Fornecedor'}
-                        </h2>
-                        <button
-                            onClick={handleClose}
-                            className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                        >
-                            <X size={20} />
-                        </button>
+            <div className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 shadow-sm border border-amber-100 dark:border-amber-500/20">
+                            <Star size={20} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">
+                                {isEditing ? 'Editar Avaliação' : 'Avaliar Fornecedor'}
+                            </h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{fornecedor.nome}</p>
+                        </div>
                     </div>
+                    <button
+                        onClick={handleClose}
+                        className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                    >
+                        <X size={20} />
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
                     {loadingExisting && (
-                        <div className="rounded-lg bg-slate-50 border border-slate-100 p-3 flex gap-3 items-center">
-                            <Loader2 className="animate-spin text-slate-500 shrink-0" size={18} />
-                            <p className="text-sm font-medium text-slate-700">A carregar a tua avaliação...</p>
+                        <div className="rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 p-3 flex gap-3 items-center">
+                            <Loader2 className="animate-spin text-slate-500 dark:text-slate-400 shrink-0" size={18} />
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">A carregar a tua avaliação...</p>
                         </div>
                     )}
                     {error && (
-                        <div className="animate-shake rounded-lg bg-red-50 border border-red-100 p-3 flex gap-3 items-center">
+                        <div className="animate-shake rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-3 flex gap-3 items-center">
                             <AlertCircle className="text-red-500 shrink-0" size={18} />
                             <p className="text-sm font-medium text-red-800">{error}</p>
                         </div>
                     )}
 
-                    <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                    <div className="bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-700/50 rounded-2xl p-4">
                         <div className="text-xs font-bold uppercase tracking-widest text-slate-400">Fornecedor</div>
-                        <div className="mt-1 text-lg font-bold text-slate-900">{fornecedor.nome}</div>
-                        <div className="mt-2 text-sm font-semibold text-slate-600 flex items-center gap-2">
+                        <div className="mt-1 text-lg font-bold text-slate-900 dark:text-slate-100">{fornecedor.nome}</div>
+                        <div className="mt-2 text-sm font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-2">
                             <span className="text-slate-400">Média desta avaliação:</span>
-                            <span className="text-amber-600 font-bold">
+                            <span className="text-amber-600 dark:text-amber-400 font-bold">
                                 {Object.values(ratings).every(isValidRating) ? mediaPreview.toFixed(1) : '—'}
                             </span>
                             <Star size={16} className="text-amber-500 fill-current" />
@@ -225,8 +231,8 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, utilizadorId, onClose, onS
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400">Critérios (1–5)</h3>
                         <div className="space-y-3">
                             {CRITERIOS.map((c) => (
-                                <div key={c.key} className="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200">
-                                    <div className="text-sm font-semibold text-slate-800">{c.label}</div>
+                                <div key={c.key} className="flex items-center justify-between gap-4 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <div className="text-sm font-semibold text-slate-800 dark:text-slate-200">{c.label}</div>
                                     <div className="flex items-center gap-3">
                                         <StarsRating
                                             value={ratings[c.key]}
@@ -235,7 +241,7 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, utilizadorId, onClose, onS
                                         <select
                                             value={ratings[c.key]}
                                             onChange={(e) => setRatings((prev) => ({ ...prev, [c.key]: Number(e.target.value) }))}
-                                            className="px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 bg-white"
+                                            className="px-3 py-2 text-sm font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
                                         >
                                             <option value={0} disabled>—</option>
                                             {[1, 2, 3, 4, 5].map((n) => (
@@ -249,12 +255,12 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, utilizadorId, onClose, onS
                     </div>
 
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-slate-700 ml-0.5">Comentário (opcional)</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Comentário (opcional)</label>
                         <textarea
                             value={comentario}
                             onChange={(e) => setComentario(e.target.value)}
                             rows={3}
-                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
+                            className="w-full px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none custom-scrollbar"
                             placeholder="Observações adicionais sobre o fornecedor..."
                         />
                     </div>
@@ -263,7 +269,7 @@ const AvaliarFornecedorModal = ({ isOpen, fornecedor, utilizadorId, onClose, onS
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all text-sm"
+                            className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-all text-sm"
                         >
                             Cancelar
                         </button>

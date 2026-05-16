@@ -109,7 +109,8 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
                             include: {
                                 fornecedores: {
                                     include: { avaliacoes: true }
-                                }
+                                },
+                                precosFornecedores: true
                             }
                         },
                         fornecedor: {
@@ -118,6 +119,12 @@ export const getAllPedidosCompra = async (req: Request, res: Response): Promise<
                     }
                 },
                 criadoPor: true,
+                encomendas: {
+                    include: {
+                        linhas: true,
+                        fornecedor: true
+                    }
+                }
             },
             orderBy: { id: 'desc' },
         });
@@ -142,7 +149,8 @@ export const getPedidoById = async (req: Request, res: Response): Promise<any> =
                             include: {
                                 fornecedores: {
                                     include: { avaliacoes: true }
-                                }
+                                },
+                                precosFornecedores: true
                             }
                         },
                         fornecedor: {
@@ -274,18 +282,37 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
                 }
             });
 
-            // 2. Atualizar as linhas sobreviventes com o Fornecedor escolhido na Fase 2
+            // 2. Atualizar as linhas sobreviventes com o Fornecedor escolhido na Fase 2 e opcionalmente nova Quantidade
+            let novoValorTotal = 0;
             for (const linha of linhasAprovadas) {
+                const dbLinha = await tx.linhaPedidoCompra.findUnique({
+                    where: { id: linha.id }
+                });
+                if (!dbLinha) continue;
+
+                // Validate new quantity if provided (or default to existing)
+                const newQuantidade = linha.quantidade && linha.quantidade > 0 ? linha.quantidade : dbLinha.quantidade;
+                const newValorTotalLinha = newQuantidade * dbLinha.precoUnitario;
+
                 await tx.linhaPedidoCompra.update({
                     where: { id: linha.id },
-                    data: { fornecedorId: linha.fornecedorId }
+                    data: { 
+                        fornecedorId: linha.fornecedorId,
+                        quantidade: newQuantidade,
+                        valorTotal: newValorTotalLinha
+                    }
                 });
+
+                novoValorTotal += newValorTotalLinha;
             }
 
             // 3. Modificar o estado final na Tabela PedidoCompra
             return await tx.pedidoCompra.update({
                 where: { id },
-                data: { estado: 'APROVADO' },
+                data: { 
+                    estado: 'APROVADO',
+                    valorTotalEstimado: novoValorTotal
+                },
                 include: {
                     linhas: {
                         include: {
@@ -545,7 +572,7 @@ export const updateStatusAdmin = async (req: Request, res: Response): Promise<an
             return res.status(403).json({ error: 'Apenas Administradores podem alterar o estado manualmente.' });
         }
 
-        const estadosValidos = ['PENDENTE', 'APROVADO', 'RECUSADO', 'CANCELADO', 'ENTREGUE'];
+        const estadosValidos = ['PENDENTE', 'APROVADO', 'PROCESSADO', 'RECUSADO', 'CANCELADO', 'CONCLUÍDO', 'ENCERRADO'];
         if (!novoEstado || !estadosValidos.includes(novoEstado.toUpperCase())) {
             return res.status(400).json({ error: 'Estado inválido.' });
         }
@@ -589,7 +616,10 @@ export const reverterPedido = async (req: Request, res: Response): Promise<any> 
 
         if (!pedido) return res.status(404).json({ error: 'Pedido não encontrado.' });
         if (pedido.estado !== 'APROVADO') return res.status(400).json({ error: 'Apenas pedidos APROVADOS podem ser revertidos.' });
-        if (pedido.encomendas.length > 0) return res.status(400).json({ error: 'Não é possível reverter um pedido com encomendas geradas.' });
+
+        // Só bloqueia se houver encomendas ATIVAS (não canceladas)
+        const encomendasAtivas = pedido.encomendas.filter((e: any) => e.estado !== 'CANCELADA');
+        if (encomendasAtivas.length > 0) return res.status(400).json({ error: 'Não é possível reverter um pedido com encomendas activas. Cancele primeiro todas as encomendas.' });
 
         await prisma.$transaction([
             // Limpar fornecedorId de todas as linhas

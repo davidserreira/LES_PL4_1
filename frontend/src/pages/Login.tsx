@@ -66,7 +66,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                             </div>
                             <p>Login restrito a utilizadores administradores autorizados.</p>
                         </div>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
                             Utilize as suas credenciais de acesso corporativas.
                         </p>
                     </div>
@@ -104,12 +104,12 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-slate-200">Username</label>
                             <div className="relative">
-                                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
                                 <input
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 placeholder:text-slate-500"
+                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 placeholder:text-slate-500 dark:text-slate-400"
                                     placeholder="admin"
                                     autoComplete="username"
                                 />
@@ -119,12 +119,12 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                         <div className="space-y-1.5">
                             <label className="text-sm font-medium text-slate-200">Password</label>
                             <div className="relative">
-                                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 placeholder:text-slate-500"
+                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900/80 border border-slate-700 text-slate-100 text-sm outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-400 placeholder:text-slate-500 dark:text-slate-400"
                                     placeholder="••••"
                                     autoComplete="current-password"
                                 />
@@ -149,7 +149,7 @@ const Login = ({ onLoginSuccess }: LoginProps) => {
                             )}
                         </button>
 
-                        <p className="text-[11px] text-slate-500 mt-3">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-3">
                             Problemas no acesso? Contacte o administrador do sistema.
                         </p>
                     </form>

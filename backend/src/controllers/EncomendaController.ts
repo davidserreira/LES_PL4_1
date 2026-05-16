@@ -50,7 +50,8 @@ export const gerarEncomendas = async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Só é possível gerar encomendas a partir de pedidos APROVADOS.' });
         }
 
-        if (pedido.encomendas.length > 0) {
+        const encomendasAtivas = pedido.encomendas.filter(e => e.estado !== 'CANCELADA');
+        if (encomendasAtivas.length > 0) {
             return res.status(400).json({ error: 'Este pedido já tem encomendas geradas.' });
         }
 
@@ -125,9 +126,10 @@ export const gerarEncomendas = async (req: Request, res: Response) => {
             }
 
             // Mudar estado do Pedido para PROCESSADO após emitir encomendas
+            // Limpar o flag revertido — o pedido está a ser reprocessado
             await tx.pedidoCompra.update({
                 where: { id: pedidoId },
-                data: { estado: 'PROCESSADO' }
+                data: { estado: 'PROCESSADO', revertido: false }
             });
 
             return criadas;
@@ -231,13 +233,16 @@ export const atualizarEstado = async (req: Request, res: Response) => {
                 }
             }
 
-            return await tx.encomenda.update({
+            const updatedEncomenda = await tx.encomenda.update({
                 where: { id },
                 data: { 
                     estado,
                     dataEntregaReal: estado === 'ENTREGUE' ? new Date() : undefined
                 }
             });
+
+            await verificarEstadoPedidoCompra(tx, updatedEncomenda.pedidoCompraId);
+            return updatedEncomenda;
         });
 
         return res.json(updated);
@@ -320,7 +325,7 @@ export const receberEncomenda = async (req: Request, res: Response) => {
             const todasCompletas = linhasAtualizadas.every(l => l.quantidadeRecebida >= l.quantidade);
             const novoEstado = todasCompletas ? 'ENTREGUE' : 'ENTREGUE_PARCIAL';
 
-            await tx.encomenda.update({
+            const updatedEncomenda = await tx.encomenda.update({
                 where: { id },
                 data: {
                     estado: novoEstado,
@@ -329,6 +334,7 @@ export const receberEncomenda = async (req: Request, res: Response) => {
             });
 
             console.log(`[RECECAO] Encomenda #${id} → ${novoEstado}`);
+            await verificarEstadoPedidoCompra(tx, updatedEncomenda.pedidoCompraId);
         });
 
         return res.json({ message: 'Receção registada com sucesso!' });
@@ -340,3 +346,129 @@ export const receberEncomenda = async (req: Request, res: Response) => {
         });
     }
 };
+
+
+// GET /encomendas/historico
+export const getHistoricoStock = async (req: Request, res: Response) => {
+    try {
+        const linhas = await prisma.linhaEncomenda.findMany({
+            where: {
+                quantidadeRecebida: { gt: 0 }
+            },
+            include: {
+                produto: {
+                    select: { id: true, nome: true, categoria: true, preco: true }
+                },
+                encomenda: {
+                    select: {
+                        id: true,
+                        codigoFormatado: true,
+                        estado: true,
+                        dataEmissao: true,
+                        dataEntregaPrevista: true,
+                        dataEntregaReal: true,
+                        fornecedor: {
+                            select: { id: true, nome: true }
+                        }
+                    }
+                }
+            },
+            orderBy: [
+                { encomenda: { dataEmissao: 'desc' } },
+                { id: 'asc' }
+            ]
+        });
+
+        return res.json(linhas);
+    } catch (err: any) {
+        console.error('[HISTORICO] Erro:', err);
+        return res.status(500).json({ error: 'Erro ao obter histórico de stock.', details: err.message });
+    }
+};
+
+// PATCH /encomendas/:id/encerrar
+export const encerrarEncomenda = async (req: Request, res: Response) => {
+    const id = parseInt(req.params.id);
+    const { observacoes } = req.body;
+
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+    if (!observacoes) return res.status(400).json({ error: 'É necessário fornecer um motivo para encerrar a encomenda.' });
+
+    try {
+        const encomenda = await prisma.encomenda.findUnique({ where: { id } });
+        if (!encomenda) return res.status(404).json({ error: 'Encomenda não encontrada.' });
+
+        if (encomenda.estado !== 'ENTREGUE_PARCIAL') {
+            return res.status(400).json({ error: 'Só é possível encerrar encomendas que tenham sido parcialmente entregues.' });
+        }
+
+        const novaObservacao = encomenda.observacoes 
+            ? `${encomenda.observacoes}\n[Encerrado Manualmente]: ${observacoes}`
+            : `[Encerrado Manualmente]: ${observacoes}`;
+
+        const updated = await prisma.$transaction(async (tx) => {
+            const enc = await tx.encomenda.update({
+                where: { id },
+                data: { 
+                    estado: 'ENCERRADA',
+                    observacoes: novaObservacao
+                }
+            });
+
+            await verificarEstadoPedidoCompra(tx, enc.pedidoCompraId);
+            return enc;
+        });
+
+        return res.json(updated);
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Erro ao encerrar encomenda.' });
+    }
+};
+
+// --- FUNÇÃO AUXILIAR ---
+async function verificarEstadoPedidoCompra(tx: any, pedidoId: number) {
+    const todasEncomendas = await tx.encomenda.findMany({ where: { pedidoCompraId: pedidoId } });
+    if (todasEncomendas.length === 0) return;
+
+    // Se TODAS as encomendas associadas estão canceladas
+    const todasCanceladas = todasEncomendas.every((e: any) => e.estado === 'CANCELADA');
+    if (todasCanceladas) {
+        const pedido = await tx.pedidoCompra.findUnique({ where: { id: pedidoId } });
+        if (pedido && pedido.estado !== 'PENDENTE') {
+            console.log(`[CICLO DE VIDA] Pedido #${pedidoId} revertido para PENDENTE`);
+            // Pedidos NORMAIS sobem para ALTA; URGENTES mantêm prioridade
+            // Em ambos os casos, marcamos revertido=true para sinalização visual
+            const novaPrioridade = pedido.prioridade === 'URGENTE' ? 'URGENTE' : 'ALTA';
+            await tx.pedidoCompra.update({
+                where: { id: pedidoId },
+                data: { estado: 'PENDENTE', prioridade: novaPrioridade, revertido: true }
+            });
+        }
+        return;
+    }
+
+    // Filtrar as canceladas do cálculo normal
+    const encomendasAtivas = todasEncomendas.filter((e: any) => e.estado !== 'CANCELADA');
+    if (encomendasAtivas.length === 0) return;
+
+    // Verificar se todas as ativas estão em estados terminais
+    const estadosTerminais = ['ENTREGUE', 'ENCERRADA'];
+    const todasAtivasTerminais = encomendasAtivas.every((e: any) => estadosTerminais.includes(e.estado));
+
+    if (!todasAtivasTerminais) return; // Ainda há encomendas a processar
+
+    // Se todas as ativas estão ENTREGUE sem exceção (incluindo nenhuma cancelada), o pedido é CONCLUÍDO.
+    // Se houver alguma cancelada ou encerrada no mix, é ENCERRADO (entrega incompleta).
+    const todasEntregues = todasEncomendas.every((e: any) => e.estado === 'ENTREGUE');
+    const novoEstadoPedido = todasEntregues ? 'CONCLUÍDO' : 'ENCERRADO';
+
+    const pedido = await tx.pedidoCompra.findUnique({ where: { id: pedidoId } });
+    if (pedido && pedido.estado !== novoEstadoPedido) {
+        console.log(`[CICLO DE VIDA] Pedido #${pedidoId} transitou para ${novoEstadoPedido}`);
+        await tx.pedidoCompra.update({
+            where: { id: pedidoId },
+            data: { estado: novoEstadoPedido }
+        });
+    }
+}

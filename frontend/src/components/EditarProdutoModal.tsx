@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
     X, Database, AlertCircle, CheckCircle2,
     DollarSign, Tag, FileText, Edit2, Loader2,
-    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle
+    Pill, Syringe, Bath, Stethoscope, Layers, ChevronDown, Trash2, Factory, Check, AlertTriangle, Star
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import { fornecedorService } from '../services/fornecedorService';
@@ -16,6 +16,8 @@ interface Produto {
     categoria?: string;
     descricao?: string;
     fornecedores?: { id: number; nome: string }[];
+    fornecedorPreferencial?: { id: number; nome: string } | null;
+    precosFornecedores?: { fornecedorId: number; preco: number }[];
     linhasPedido?: {
         pedidoCompra: {
             id: number;
@@ -39,7 +41,7 @@ const CATEGORIES = [
     { name: 'Vacinas', icon: Syringe, color: 'text-emerald-500' },
     { name: 'Higiene', icon: Bath, color: 'text-sky-500' },
     { name: 'Equipamento', icon: Stethoscope, color: 'text-violet-500' },
-    { name: 'Outros', icon: Layers, color: 'text-slate-500' },
+    { name: 'Outros', icon: Layers, color: 'text-slate-500 dark:text-slate-400' },
 ];
 
 const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: EditarProdutoModalProps) => {
@@ -58,6 +60,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
     // Fornecedores State
     const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean }[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
+    const [fornecedorPrecos, setFornecedorPrecos] = useState<Record<number, string>>({});
+    const [fornecedorPreferencialId, setFornecedorPreferencialId] = useState<number | null>(null);
     const [isFornecedoresOpen, setIsFornecedoresOpen] = useState(false);
 
     // Deletion visual state
@@ -77,6 +81,16 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
         }
     }, [isOpen]);
 
+    // Update preferential supplier automatically
+    useEffect(() => {
+        if (fornecedorPreferencialId && !selectedFornecedores.includes(fornecedorPreferencialId)) {
+            setFornecedorPreferencialId(null);
+        }
+        if (selectedFornecedores.length === 1) {
+            setFornecedorPreferencialId(selectedFornecedores[0]);
+        }
+    }, [selectedFornecedores, fornecedorPreferencialId]);
+
     useEffect(() => {
         if (isOpen && produto) {
             setNome(produto.nome);
@@ -91,6 +105,22 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 setSelectedFornecedores(produto.fornecedores.map(f => f.id));
             } else {
                 setSelectedFornecedores([]);
+            }
+            
+            if (produto.precosFornecedores && Array.isArray(produto.precosFornecedores)) {
+                const map: Record<number, string> = {};
+                produto.precosFornecedores.forEach(pf => {
+                    map[pf.fornecedorId] = pf.preco.toString();
+                });
+                setFornecedorPrecos(map);
+            } else {
+                setFornecedorPrecos({});
+            }
+            
+            if (produto.fornecedorPreferencial) {
+                setFornecedorPreferencialId(produto.fornecedorPreferencial.id);
+            } else {
+                setFornecedorPreferencialId(null);
             }
             
             setIsClosing(false);
@@ -154,6 +184,16 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             return;
         }
 
+        if (selectedFornecedores.length > 1 && !fornecedorPreferencialId) {
+            setError('Deve selecionar um fornecedor preferencial (estrela) quando existem múltiplos fornecedores associados.');
+            return;
+        }
+
+        const fornecedoresData = selectedFornecedores.map(id => ({
+            id,
+            preco: parseFloat(fornecedorPrecos[id] || preco) || 0
+        }));
+
         setError(null);
         setLoading(true);
         try {
@@ -164,7 +204,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 preco: precoNumber,
                 categoria: categoria || undefined,
                 descricao: descricao || undefined,
-                fornecedorIds: selectedFornecedores, // Can be empty array if all are removed
+                fornecedoresData: fornecedoresData.length > 0 ? fornecedoresData : undefined,
+                fornecedorPreferencialId: fornecedorPreferencialId || undefined,
             });
             onSuccess();
             handleClose();
@@ -190,68 +231,69 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
             {/* Modal Content */}
             <div
-                className={`relative bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
+                className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden transform transition-all duration-300 ${isClosing ? 'scale-95 translate-y-4' : 'scale-100 translate-y-0'}`}
             >
-                {/* Minimal Header */}
-                <div className="bg-slate-900 p-6">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Edit2 size={20} className="text-blue-400" />
-                                Editar Produto
-                            </h2>
+                {/* Header */}
+                <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/80">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 flex items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-100 dark:border-emerald-500/20">
+                            <Edit2 size={20} />
                         </div>
-                        <div className="flex items-center gap-2">
-                            {showDeleteConfirm ? (
-                                <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20 mr-2 animate-in slide-in-from-right-2">
-                                    <span className="text-xs font-bold text-red-400 mr-2">Certeza?</span>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowDeleteConfirm(false)}
-                                        className="text-xs px-2 py-1 bg-slate-800 text-slate-300 font-medium rounded hover:bg-slate-700 transition-colors"
-                                    >
-                                        Não
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={deleteLoading}
-                                        onClick={async () => {
-                                            setDeleteLoading(true);
-                                            const success = await onDelete(produto.id, false);
-                                            setDeleteLoading(false);
-                                            if (success === false) {
-                                                setShowDeleteConfirm(false);
-                                                setShowForceDeleteConfirm(true);
-                                            }
-                                        }}
-                                        className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
-                                    >
-                                        Sim, Apagar
-                                    </button>
-                                </div>
-                            ) : (
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 leading-tight">Editar Produto</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{produto.nome}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {showDeleteConfirm ? (
+                            <div className="flex items-center gap-2 bg-red-50 dark:bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-500/20 mr-2 animate-in slide-in-from-right-2">
+                                <span className="text-xs font-bold text-red-600 dark:text-red-400 mr-2">Certeza?</span>
                                 <button
                                     type="button"
-                                    onClick={() => setShowDeleteConfirm(true)}
-                                    className="p-1.5 mr-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                                    title="Apagar produto"
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="text-xs px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium rounded hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                                 >
-                                    <Trash2 size={18} />
+                                    Não
                                 </button>
-                            )}
+                                <button
+                                    type="button"
+                                    disabled={deleteLoading}
+                                    onClick={async () => {
+                                        setDeleteLoading(true);
+                                        const success = await onDelete(produto.id, false);
+                                        setDeleteLoading(false);
+                                        if (success === false) {
+                                            setShowDeleteConfirm(false);
+                                            setShowForceDeleteConfirm(true);
+                                        }
+                                    }}
+                                    className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
+                                >
+                                    Sim, Apagar
+                                </button>
+                            </div>
+                        ) : (
                             <button
-                                onClick={handleClose}
-                                className="p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                                type="button"
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className="p-2 mr-1 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
+                                title="Apagar produto"
                             >
-                                <X size={20} />
+                                <Trash2 size={18} />
                             </button>
-                        </div>
+                        )}
+                        <button
+                            onClick={handleClose}
+                            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[85vh] overflow-y-auto custom-scrollbar">
                     {error && (
-                        <div className="animate-shake rounded-lg bg-red-50 border border-red-100 p-3 flex gap-3 items-center">
+                        <div className="animate-shake rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 p-3 flex gap-3 items-center">
                             <AlertCircle className="text-red-500 shrink-0" size={18} />
                             <p className="text-sm font-medium text-red-800">{error}</p>
                         </div>
@@ -262,14 +304,14 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Informações do Item</h3>
 
                         <div className="space-y-1.5">
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Nome do Produto</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Nome do Produto</label>
                             <div className="relative group">
                                 <input
                                     type="text"
                                     required
                                     value={nome}
                                     onChange={(e) => setNome(e.target.value)}
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
+                                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm"
                                     placeholder="Ex: Vacina Nobivac L4"
                                 />
                             </div>
@@ -277,15 +319,15 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-1.5 relative" ref={categoryRef}>
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Categoria</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Categoria</label>
                                 <button
                                     type="button"
                                     onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
+                                    className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
                                 >
                                     <div className="flex items-center gap-2">
                                         <SelectedCategoryIcon size={16} className={categoria ? "text-blue-500" : "text-slate-400"} />
-                                        <span className={categoria ? "text-slate-900" : "text-slate-400"}>
+                                        <span className={categoria ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
                                             {categoria || "Selecionar..."}
                                         </span>
                                     </div>
@@ -293,7 +335,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                 </button>
 
                                 {isCategoryOpen && (
-                                    <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
+                                    <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
                                         {CATEGORIES.map((item) => (
                                             <button
                                                 key={item.name}
@@ -302,7 +344,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                                     setCategoria(item.name);
                                                     setIsCategoryOpen(false);
                                                 }}
-                                                className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600'}`}
+                                                className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 dark:bg-blue-500/10 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-medium' : 'text-slate-600 dark:text-slate-400'}`}
                                             >
                                                 <item.icon size={16} className={item.color} />
                                                 {item.name}
@@ -312,7 +354,9 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                 )}
                             </div>
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Preço (€)</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">
+                                    Preço Base (€)
+                                </label>
                                 <div className="relative">
                                     <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -321,7 +365,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                         min="0"
                                         value={preco}
                                         onChange={(e) => setPreco(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm"
                                         placeholder="0,00"
                                     />
                                 </div>
@@ -330,15 +374,20 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
                         {/* Suppliers Select */}
                         <div className="space-y-1.5 relative" ref={fornecedoresRef}>
-                            <label className="text-sm font-medium text-slate-700 ml-0.5">Fornecedores Vinculados (Opcional)</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Fornecedores Vinculados (Opcional)</label>
+                                {selectedFornecedores.length > 1 && (
+                                    <span className="text-[10px] text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 px-2 py-0.5 rounded-full font-bold">Requer Preferencial ★</span>
+                                )}
+                            </div>
                             <button
                                 type="button"
                                 onClick={() => setIsFornecedoresOpen(!isFornecedoresOpen)}
-                                className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
+                                className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
                             >
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <Factory size={16} className={selectedFornecedores.length > 0 ? "text-emerald-500 shrink-0" : "text-slate-400 shrink-0"} />
-                                    <span className={`truncate ${selectedFornecedores.length > 0 ? "text-slate-900" : "text-slate-400"}`}>
+                                    <span className={`truncate ${selectedFornecedores.length > 0 ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}`}>
                                         {selectedFornecedores.length > 0 
                                             ? `${selectedFornecedores.length} fornecedor(es) selecionado(s)` 
                                             : "Selecionar fornecedores..."}
@@ -348,7 +397,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                             </button>
 
                             {isFornecedoresOpen && (
-                                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white border border-slate-200 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200 max-h-48 overflow-y-auto custom-scrollbar">
+                                <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200 max-h-48 overflow-y-auto custom-scrollbar">
                                     {fornecedores.length > 0 ? (
                                         fornecedores.map((fornecedor) => {
                                             const isSelected = selectedFornecedores.includes(fornecedor.id);
@@ -362,25 +411,75 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                                             isSelected ? prev.filter(id => id !== fornecedor.id) : [...prev, fornecedor.id]
                                                         );
                                                     }}
-                                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors text-sm text-left group"
+                                                    className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-sm text-left group"
                                                 >
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 group-hover:border-emerald-400'}`}>
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isSelected ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 dark:border-slate-600 group-hover:border-emerald-400'}`}>
                                                         {isSelected && <Check size={12} strokeWidth={3} />}
                                                     </div>
-                                                    <span className={`truncate ${isSelected ? 'text-slate-900 font-medium' : 'text-slate-600'}`}>
+                                                    <span className={`truncate flex-1 ${isSelected ? 'text-slate-900 dark:text-slate-100 font-medium' : 'text-slate-600 dark:text-slate-400'}`}>
                                                         {fornecedor.nome}
                                                     </span>
+                                                    {isSelected && selectedFornecedores.length > 1 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setFornecedorPreferencialId(fornecedor.id);
+                                                            }}
+                                                            className={`p-1 rounded-md transition-colors shrink-0 ${fornecedorPreferencialId === fornecedor.id ? 'text-amber-500 bg-amber-50 dark:bg-amber-500/10' : 'text-slate-300 hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50'}`}
+                                                            title={fornecedorPreferencialId === fornecedor.id ? 'Fornecedor Preferencial' : 'Marcar como Preferencial'}
+                                                        >
+                                                            <Star size={16} className={fornecedorPreferencialId === fornecedor.id ? 'fill-current' : ''} />
+                                                        </button>
+                                                    )}
                                                 </button>
                                             );
                                         })
                                     ) : (
-                                        <div className="px-4 py-3 text-sm text-slate-500 text-center italic">
+                                        <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center italic">
                                             Nenhum fornecedor ativo disponível.
                                         </div>
                                     )}
                                 </div>
                             )}
                         </div>
+
+                        {/* List of selected suppliers to define price */}
+                        {selectedFornecedores.length > 0 && (
+                            <div className="space-y-2 mt-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">
+                                    Preços Acordados por Fornecedor
+                                </h4>
+                                {selectedFornecedores.map(fId => {
+                                    const fNome = fornecedores.find(f => f.id === fId)?.nome || '';
+                                    return (
+                                        <div key={fId} className="flex items-center justify-between p-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm">
+                                            <div className="flex items-center gap-2">
+                                                <div className={`w-1.5 h-1.5 rounded-full ${fornecedorPreferencialId === fId ? 'bg-amber-400' : 'bg-emerald-400'}`}></div>
+                                                <span className={`text-sm font-medium ${fornecedorPreferencialId === fId ? 'text-amber-700 font-bold' : 'text-slate-700 dark:text-slate-300'}`}>{fNome}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="relative w-24">
+                                                    <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        value={fornecedorPrecos[fId] || ''}
+                                                        onChange={(e) => setFornecedorPrecos(prev => ({ ...prev, [fId]: e.target.value }))}
+                                                        placeholder={preco || '0.00'}
+                                                        className="w-full pl-6 pr-2 py-1 text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                                <p className="text-[10px] text-slate-400 mt-2">
+                                    O preço do fornecedor <strong className="text-amber-500">★ Preferencial</strong> substituirá o preço base do produto.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Section: Stock */}
@@ -388,7 +487,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                         <h3 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Níveis de Inventário</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Stock Atual</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Stock Atual</label>
                                 <div className="relative">
                                     <Database className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -397,12 +496,12 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                         min="0"
                                         value={stock}
                                         onChange={(e) => setStock(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm font-medium"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm font-medium"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-1.5 pt-1">
-                                <label className="text-sm font-medium text-slate-700 ml-0.5">Stock Mínimo</label>
+                                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Stock Mínimo</label>
                                 <div className="relative">
                                     <AlertCircle className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                                     <input
@@ -411,7 +510,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                         min="0"
                                         value={stockMinimo}
                                         onChange={(e) => setStockMinimo(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm font-medium"
+                                        className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all text-sm font-medium"
                                     />
                                 </div>
                             </div>
@@ -420,14 +519,14 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
                     {/* Section: Description */}
                     <div className="space-y-1.5">
-                        <label className="text-sm font-medium text-slate-700 ml-0.5">Descrição Curta</label>
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Descrição Curta</label>
                         <div className="relative">
                             <FileText className="absolute left-3.5 top-3 text-slate-400" size={16} />
                             <textarea
                                 value={descricao}
                                 onChange={(e) => setDescricao(e.target.value)}
                                 rows={2}
-                                className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none"
+                                className="w-full pl-9 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all placeholder:text-slate-400 text-sm resize-none"
                                 placeholder="Informação adicional opcional..."
                             />
                         </div>
@@ -438,7 +537,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                         <button
                             type="button"
                             onClick={handleClose}
-                            className="flex-1 px-4 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 transition-all text-sm"
+                            className="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-all text-sm"
                         >
                             Cancelar
                         </button>
@@ -473,22 +572,22 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                         }
                     }}
                 >
-                    <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6">
-                            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-4">
-                                <AlertTriangle size={24} className="text-red-600" />
+                            <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
+                                <AlertTriangle size={24} className="text-red-600 dark:text-red-400" />
                             </div>
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">Atenção!</h3>
-                            <p className="text-sm text-slate-500">
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Atenção!</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
                                 Este produto está associado a uma ou mais encomendas. Tem a certeza que pretende apagá-lo? Será também removido das referidas encomendas.
                             </p>
                         </div>
-                        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-end gap-3">
                             <button
                                 type="button"
                                 onClick={() => setShowForceDeleteConfirm(false)}
                                 disabled={deleteLoading}
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-800 transition-colors disabled:opacity-50 focus:outline-none"
+                                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50 focus:outline-none"
                             >
                                 Voltar
                             </button>
