@@ -8,7 +8,7 @@ A aplicação está dividida numa arquitetura desacoplada:
 *   **Base de Dados:** Relacional **PostgreSQL** intermediada pelo **Prisma ORM**.
 *   **Ambiente:** Totalmente contentorizado em **Docker** para execução reprodutível instantânea.
 
-O site está disponível online e em produção no domínio permanente: **[stockvet.ONLINE](http://stockvet.ONLINE)**
+O site está disponível online e em produção no domínio permanente: **[vetstock.online](http://vetstock.online)**
 
 ---
 
