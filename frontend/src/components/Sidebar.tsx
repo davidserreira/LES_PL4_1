@@ -4,6 +4,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { LayoutDashboard, BookOpen, ChevronLeft, ChevronRight, Factory, LogOut, Users, ClipboardList, PackageCheck, ChevronDown, ShoppingCart, ShieldCheck, Boxes, Landmark, UserRound } from 'lucide-react';
 import { Utilizador } from '../services/utilizadorService';
+import logoImg from '../assets/logo.png';
 
 interface SidebarProps {
     user: Utilizador;
@@ -74,7 +75,7 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     }, []);
 
     const roleMeta: Record<string, { label: string; Icon: LucideIcon }> = {
-        ADMINISTRADOR: { label: 'Admin', Icon: ShieldCheck },
+        ADMINISTRADOR: { label: 'Admin', Icon: UserRound },
         RESPONSAVEL_STOCK: { label: 'Gestor stock', Icon: Boxes },
         RESPONSAVEL_FINANCEIRO: { label: 'Financeiro', Icon: Landmark },
     };
@@ -104,101 +105,19 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     return (
         <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50 relative shadow-[12px_0_35px_-5px_rgba(0,0,0,0.2)] dark:shadow-none`}>
             {/* Logo/Header */}
-            <div className={`p-6 border-b border-slate-800 dark:border-slate-800/50 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
-                {!isCollapsed && (
-                    <div className="flex items-center justify-between w-full gap-3 min-w-0">
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                            <div
-                                className={`shrink-0 flex items-center justify-center w-11 h-11 rounded-xl border shadow-inner ${
-                                    user.role === 'ADMINISTRADOR'
-                                        ? 'bg-gradient-to-br from-emerald-500/25 via-emerald-600/10 to-slate-900 border-emerald-500/35 text-emerald-300 shadow-emerald-900/20'
-                                        : 'bg-slate-800/80 border-slate-600/50 text-emerald-400'
-                                }`}
-                                aria-hidden
-                            >
-                                <RoleIcon size={22} strokeWidth={user.role === 'ADMINISTRADOR' ? 2.25 : 2} className={user.role === 'ADMINISTRADOR' ? 'drop-shadow-[0_0_8px_rgba(52,211,153,0.35)]' : ''} />
-                            </div>
-                            <div className="min-w-0 flex flex-col gap-0.5">
-                                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Perfil</span>
-                                <span className="text-base font-semibold tracking-tight text-slate-100 leading-snug line-clamp-2">
-                                    {roleLabel}
-                                </span>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setShowLogout((prev) => !prev)}
-                            data-logout-toggle
-                            className="shrink-0 p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 dark:hover:bg-slate-900 rounded-lg transition-colors focus:outline-none"
-                            title="Desconectar"
-                        >
-                            <LogOut size={16} />
-                        </button>
-                    </div>
-                )}
-                {isCollapsed && (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            if (isCollapsed) {
-                                onToggle();
-                                setShowLogout(true);
-                            } else {
-                                setShowLogout((prev) => !prev);
-                            }
-                        }}
-                        data-logout-toggle
-                        className={`group relative w-11 h-11 rounded-xl flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all ${
-                            user.role === 'ADMINISTRADOR'
-                                ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 text-white shadow-lg shadow-emerald-950/40 border border-emerald-400/30 hover:from-emerald-400 hover:to-emerald-600 hover:shadow-emerald-900/50'
-                                : 'bg-slate-800 text-emerald-400 border border-slate-600/60 hover:bg-slate-700/90 hover:border-emerald-500/40 hover:text-emerald-300 shadow-md shadow-black/20'
-                        }`}
-                        title={roleLabel}
-                    >
-                        <RoleIcon size={20} strokeWidth={user.role === 'ADMINISTRADOR' ? 2.25 : 2} className={user.role === 'ADMINISTRADOR' ? 'drop-shadow-sm' : ''} />
-                        {user.role === 'ADMINISTRADOR' && (
-                            <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-white/10 group-hover:ring-white/20 transition-[box-shadow]" />
-                        )}
-                    </button>
-                )}
-            </div>
-
-            {/* Logout Panel */}
-            <div
-                data-logout-panel
-                className={`px-4 pt-3 transition-all duration-200 ${showLogout ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 pointer-events-none'
-                    }`}
-            >
-                <div className="bg-slate-900 dark:bg-slate-900/80 border border-slate-700 dark:border-slate-800 rounded-2xl shadow-2xl p-4 space-y-3">
-                    <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/40 flex items-center justify-center">
-                            <LogOut size={18} className="text-red-400" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-semibold text-slate-50">Sair do sistema</p>
-                            <p className="text-[10px] text-slate-400 leading-tight">Olá, {user.username}. Deseja terminar a sessão?</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                        <button
-                            type="button"
-                            onClick={() => setShowLogout(false)}
-                            className="flex-1 px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-slate-700 text-slate-400 hover:bg-slate-800 transition-colors"
-                        >
-                            Voltar
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setShowLogout(false);
-                                onLogout();
-                            }}
-                            className="flex-1 px-2 py-2 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-red-600 text-white hover:bg-red-500 transition-colors"
-                        >
-                            Sair
-                        </button>
-                    </div>
+            <div className={`p-5 border-b border-slate-800 dark:border-slate-800/50 flex items-center min-h-[85px] transition-all overflow-hidden ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                <div className="shrink-0 flex items-center justify-center relative">
+                    <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-20 rounded-full" />
+                    <img src={logoImg} alt="Logo" className={`relative ${isCollapsed ? 'w-10 h-10' : 'w-12 h-12'} object-contain drop-shadow-[0_0_15px_rgba(52,211,153,0.3)] transition-all`} />
                 </div>
+                {!isCollapsed && (
+                    <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
+                        <span className="text-xl font-black tracking-tight text-white leading-tight">
+                            Vet<span className="text-emerald-400">ERP</span>
+                        </span>
+                        <span className="text-[9px] text-emerald-500/80 font-bold uppercase tracking-[0.2em] leading-none mt-0.5">Management</span>
+                    </div>
+                )}
             </div>
 
             {/* Navigation */}
@@ -332,6 +251,108 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
                     )}
                 </ul>
             </nav>
+
+            {/* Profile and Logout Section */}
+            <div className="mt-auto flex flex-col justify-end border-t border-slate-800 dark:border-slate-800/50">
+                {/* Logout Panel (Static flow above Profile) */}
+                <div
+                    data-logout-panel
+                    className={`transition-all duration-300 overflow-hidden ${showLogout ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+                >
+                    <div className="bg-slate-900/95 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-800/50 p-5 space-y-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0 shadow-inner">
+                                <LogOut size={18} className="text-red-400 drop-shadow-sm" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-slate-100 truncate">Sair do sistema</p>
+                                <p className="text-[10px] font-medium text-slate-400 leading-tight truncate">Terminar sessão atual?</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowLogout(false)}
+                                className="flex-1 px-3 py-2.5 text-xs font-bold rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white transition-all active:scale-95"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setShowLogout(false);
+                                    onLogout();
+                                }}
+                                className="flex-1 px-3 py-2.5 text-xs font-bold rounded-lg bg-red-600 text-white hover:bg-red-500 transition-all shadow-md shadow-red-900/20 active:scale-95 border border-red-500"
+                            >
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Profile Bar */}
+                <div className={`p-4 flex items-center transition-all ${isCollapsed ? 'justify-center' : 'justify-between hover:bg-slate-800/30'}`}>
+                    {!isCollapsed && (
+                        <div className="flex items-center justify-between w-full gap-3 min-w-0">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                                <div
+                                    className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-full border shadow-inner ${
+                                        user.role === 'ADMINISTRADOR'
+                                            ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800 border-emerald-400/50 text-white shadow-emerald-900/40'
+                                            : 'bg-slate-800 border-slate-600 text-emerald-400'
+                                    }`}
+                                    aria-hidden
+                                >
+                                    <RoleIcon size={20} strokeWidth={2.5} className="drop-shadow-sm" />
+                                </div>
+                                <div className="min-w-0 flex flex-col justify-center">
+                                    <span className="text-sm font-bold tracking-tight text-slate-100 leading-tight truncate">
+                                        {user.username}
+                                    </span>
+                                    <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-widest mt-0.5">
+                                        {roleLabel}
+                                    </span>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowLogout((prev) => !prev)}
+                                data-logout-toggle
+                                className="shrink-0 p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 dark:hover:bg-slate-900 rounded-xl transition-all focus:outline-none"
+                                title="Desconectar"
+                            >
+                                <LogOut size={18} />
+                            </button>
+                        </div>
+                    )}
+                    {isCollapsed && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (isCollapsed) {
+                                    onToggle();
+                                    setShowLogout(true);
+                                } else {
+                                    setShowLogout((prev) => !prev);
+                                }
+                            }}
+                            data-logout-toggle
+                            className={`group relative w-10 h-10 rounded-full flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all ${
+                                user.role === 'ADMINISTRADOR'
+                                    ? 'bg-gradient-to-br from-emerald-500 via-emerald-600 to-emerald-800 text-white shadow-lg shadow-emerald-900/40 border border-emerald-400/50 hover:from-emerald-400 hover:to-emerald-600'
+                                    : 'bg-slate-800 text-emerald-400 border border-slate-600/60 hover:bg-slate-700/90 hover:border-emerald-500/40 hover:text-emerald-300 shadow-md shadow-black/20'
+                            }`}
+                            title={roleLabel}
+                        >
+                            <RoleIcon size={18} strokeWidth={2.5} className="drop-shadow-sm" />
+                            {user.role === 'ADMINISTRADOR' && (
+                                <span className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-white/10 group-hover:ring-white/20 transition-[box-shadow]" />
+                            )}
+                        </button>
+                    )}
+                </div>
+            </div>
 
             {/* Minimalist Collapse Toggle Button */}
             <div 

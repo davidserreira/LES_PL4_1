@@ -361,26 +361,32 @@ const Fornecedores = () => {
                 </div>
             )}
 
-            {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
-            <div className="sticky top-0 z-40 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
-                <div className="space-y-5">
-                    {/* Linha 1: Título e Botões de ação lado a lado */}
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Fornecedores</h1>
-                            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                                Gerencie as entidades fornecedoras da clínica nesta secção.
-                            </p>
-                        </div>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-                        >
-                            <Plus size={18} />
-                            Adicionar Fornecedor
-                        </button>
+            {/* ── Header Principal (Premium Box) ── */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <Factory className="text-emerald-600 dark:text-emerald-400" size={24} />
                     </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Fornecedores</h1>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Gerencie as entidades fornecedoras da clínica nesta secção.</p>
+                    </div>
+                </div>
 
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all text-sm font-bold focus:ring-2 focus:ring-emerald-500/50 active:scale-95"
+                    >
+                        <Plus size={18} />
+                        Adicionar Fornecedor
+                    </button>
+                </div>
+            </div>
+
+            {/* ── Bloco sticky integrado (Layout Filtros) ── */}
+            <div className="sticky top-0 z-40 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all mb-2">
+                <div className="space-y-5">
                     {/* ── Linha 2: 2 Blocks Separados (Pesquisa + Filtros) ── */}
                     <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
                         

@@ -257,18 +257,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in duration-300 relative space-y-4">
             
-            {/* Command Center */}
-            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-sm flex flex-col gap-4 z-40">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* ── Header Principal (Premium Box) ── */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4 relative z-40">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <PackageCheck className="text-emerald-600 dark:text-emerald-400" size={24} />
+                    </div>
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                            <PackageCheck size={28} className="text-emerald-600 dark:text-emerald-400" />
-                            Gestão de Encomendas
-                        </h1>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">Controlo de receção e trânsito de mercadorias.</p>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Encomendas</h1>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Controlo de receção e trânsito de mercadorias.</p>
                     </div>
                 </div>
+            </div>
 
+            {/* Command Center */}
+            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all flex flex-col gap-4 mb-4 z-40">
                 {/* Dashboard Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <button 
