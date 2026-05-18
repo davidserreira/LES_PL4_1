@@ -457,43 +457,31 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 <col style={{ width: '9%' }} />   {/* Emissão */}
                                 <col style={{ width: '27%' }} />  {/* Ações */}
                             </colgroup>
-                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+                            <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
                                 <tr>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('codigoFormatado')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Código <SortIcon field="codigoFormatado" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('codigoFormatado')}>
+                                        <div className="flex items-center gap-2">Código <SortIcon field="codigoFormatado" /></div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('fornecedor')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Fornecedor <SortIcon field="fornecedor" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('fornecedor')}>
+                                        <div className="flex items-center gap-2">Fornecedor <SortIcon field="fornecedor" /></div>
                                     </th>
-                                    <th className="px-5 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Itens</th>
-                                    <th className="px-5 py-4 cursor-pointer group text-right" onClick={() => handleSort('valorTotal')}>
-                                        <div className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Total <SortIcon field="valorTotal" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Itens</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('valorTotal')}>
+                                        <div className="flex items-center justify-end gap-2"><SortIcon field="valorTotal" /> Total</div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('dataEntregaPrevista')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Entrega <SortIcon field="dataEntregaPrevista" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('dataEntregaPrevista')}>
+                                        <div className="flex items-center gap-2">Entrega <SortIcon field="dataEntregaPrevista" /></div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('estado')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Estado <SortIcon field="estado" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('estado')}>
+                                        <div className="flex items-center gap-2">Estado <SortIcon field="estado" /></div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('dataEmissao')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Emissão <SortIcon field="dataEmissao" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('dataEmissao')}>
+                                        <div className="flex items-center gap-2">Emissão <SortIcon field="dataEmissao" /></div>
                                     </th>
-                                    <th className="px-5 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Ações</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody>
                                 {filteredEncomendas.map((enc) => {
                                     const cfg = ESTADO_CONFIG[enc.estado] || ESTADO_CONFIG.EMITIDA;
                                     const EstadoIcon = cfg.icon;
@@ -517,154 +505,148 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                         <tr 
                                             key={enc.id} 
                                             onClick={() => handleOpenDetails(enc)}
-                                            className={`group hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/80 transition-colors cursor-pointer ${
-                                                isEntregue ? 'bg-emerald-50 dark:bg-emerald-500/10' : ''
-                                            } ${
+                                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 cursor-pointer ${
                                                 isHighlighted 
                                                     ? 'bg-gradient-to-r from-emerald-50/90 dark:from-emerald-500/10 via-white dark:via-slate-800 to-emerald-50/90 dark:to-emerald-500/10 border-l-4 border-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-500/20 shadow-[0_12px_35px_rgba(16,185,129,0.14)] animate-in fade-in duration-300' 
                                                     : ''
                                             }`}
                                         >
-                                            <td className="px-5 py-4">
+                                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-slate-900 dark:text-slate-100 tracking-wide text-xs">{enc.codigoFormatado}</span>
-                                                    <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase">
-                                                        <ClipboardList size={10} />
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{enc.codigoFormatado}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 font-medium bg-slate-100 dark:bg-slate-700/50 inline-block px-1.5 rounded mt-0.5 w-fit">
                                                         {enc.pedidoCompra?.codigoFormatado || `#${enc.pedidoCompraId}`}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300 text-xs">
-                                                    <Building2 size={12} className="text-slate-400 shrink-0" />
-                                                    {enc.fornecedor?.nome || '—'}
-                                                </span>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
+                                                {enc.fornecedor?.nome || '—'}
                                             </td>
-                                            <td className="px-5 py-4 text-slate-600 dark:text-slate-400 font-bold text-xs">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium text-right">
                                                 {enc.linhas?.length ?? 0}
                                             </td>
-                                            <td className="px-5 py-4 text-right">
-                                                <span className="font-black text-slate-900 dark:text-slate-100 text-xs">{formatCurrency(enc.valorTotal)}</span>
+                                            <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-slate-100">
+                                                {formatCurrency(enc.valorTotal)}
                                             </td>
-                                            <td className="px-5 py-4">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                                                 {isEntregue && enc.dataEntregaReal ? (
-                                                    <span className="flex items-center gap-1.5 text-emerald-700 font-black text-[11px] bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                                                    <span className="flex items-center gap-1.5 text-emerald-700 font-black text-[11px] bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-500/20 w-fit">
                                                         <CheckCircle2 size={12} />
                                                         {formatDate(enc.dataEntregaReal)}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-slate-600 dark:text-slate-400 font-bold text-[11px] flex items-center gap-1.5">
-                                                        <Calendar size={12} className="text-slate-400" />
-                                                        {formatDate(enc.dataEntregaPrevista)}
-                                                    </span>
+                                                    formatDate(enc.dataEntregaPrevista)
                                                 )}
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm ${cfg.color}`}>
-                                                    <EstadoIcon size={10} />
+                                            <td className="px-6 py-4 relative">
+                                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border shadow-sm ${cfg.color}`}>
+                                                    <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
                                                     {cfg.label}
                                                 </span>
                                             </td>
-                                            <td className="px-5 py-4 text-slate-400 font-bold text-[10px]">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                                                 {formatDate(enc.dataEmissao)}
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <div className="flex flex-wrap items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                                    {/* CANCELAR — só emitida ou enviada */}
-                                                    {podeCancelar && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95"
-                                                            title="Cancelar encomenda"
-                                                        >
-                                                            <XCircle size={13} />
-                                                            Cancelar
-                                                        </button>
-                                                    )}
+                                            <td className="px-6 py-4 relative">
+                                                <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                                                    
+                                                    {/* PRIMARY ACTIONS ZONE */}
+                                                    <div className="flex items-center justify-end gap-1.5 min-w-[140px]">
+                                                        {podeCancelar && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95"
+                                                                title="Cancelar encomenda"
+                                                            >
+                                                                <XCircle size={13} /> Cancelar
+                                                            </button>
+                                                        )}
 
-                                                    {/* ENCERRAR — só parcialmente entregue */}
-                                                    {podeEncerrar && (
+                                                        {podeEncerrar && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEncerrarDirectEnc(enc);
+                                                                    setEncerrarDirectMotivo('');
+                                                                }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
+                                                                title="Encerrar encomenda"
+                                                            >
+                                                                <ClipboardList size={13} /> Encerrar
+                                                            </button>
+                                                        )}
+
+                                                        {isEmitida && isAdmin && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleMudarEstado(enc.id, 'ENVIADA');
+                                                                }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
+                                                                title="Marcar como Enviada"
+                                                            >
+                                                                <Truck size={13} /> Enviar
+                                                            </button>
+                                                        )}
+
+                                                        {podeReceber && (
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleOpenRececao(enc);
+                                                                }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
+                                                                title="Registar receção"
+                                                            >
+                                                                <Package size={13} /> Receber
+                                                            </button>
+                                                        )}
+
+                                                        {isFinalizada && (
+                                                            <span className="text-[11px] text-slate-400 font-bold italic">
+                                                                {enc.estado === 'ENTREGUE' ? 'Concluída' : enc.estado === 'ENCERRADA' ? 'Encerrada' : 'Cancelada'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* VERTICAL DIVIDER */}
+                                                    <div className="w-px h-5 bg-slate-200 dark:bg-slate-700/50"></div>
+
+                                                    {/* SECONDARY ACTIONS ZONE */}
+                                                    <div className="flex items-center justify-end gap-1.5 w-[76px] shrink-0">
+                                                        {(isEntregue || isParcial || enc.estado === 'ENCERRADA') ? (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    generateNotaCreditoPDF(enc);
+                                                                }}
+                                                                className="flex items-center justify-center p-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
+                                                                title="Download PDF"
+                                                            >
+                                                                <FileText size={14} />
+                                                            </button>
+                                                        ) : (
+                                                            <div className="w-[34px] h-[34px]"></div>
+                                                        )}
+
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setEncerrarDirectEnc(enc);
-                                                                setEncerrarDirectMotivo('');
+                                                                handleReordenar(
+                                                                    (enc.linhas || []).map((l: any) => ({
+                                                                        produtoId: l.produtoId ?? l.produto?.id,
+                                                                        quantidade: l.quantidade
+                                                                    }))
+                                                                );
                                                             }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
-                                                            title="Encerrar encomenda"
+                                                            className="flex items-center justify-center p-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300 active:scale-95"
+                                                            title="Repetir Encomenda"
                                                         >
-                                                            <ClipboardList size={13} />
-                                                            Encerrar
+                                                            <RotateCcw size={14} strokeWidth={2.5} />
                                                         </button>
-                                                    )}
-
-                                                    {/* MARCAR ENVIADA — só admin em emitida */}
-                                                    {isEmitida && isAdmin && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleMudarEstado(enc.id, 'ENVIADA');
-                                                            }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
-                                                            title="Marcar como Enviada"
-                                                        >
-                                                            <Truck size={13} />
-                                                            Enviar
-                                                        </button>
-                                                    )}
-
-                                                    {/* RECEBER */}
-                                                    {podeReceber && (
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleOpenRececao(enc);
-                                                            }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
-                                                            title="Registar receção"
-                                                        >
-                                                            <Package size={13} />
-                                                            Receber
-                                                        </button>
-                                                    )}
-
-                                                    {/* Estado final — sem ações */}
-                                                    {isFinalizada && (
-                                                        <span className="text-[11px] text-slate-400 font-bold italic">
-                                                            {enc.estado === 'ENTREGUE' ? 'Concluída' : enc.estado === 'ENCERRADA' ? 'Encerrada' : 'Cancelada'}
-                                                        </span>
-                                                    )}
-
-                                                    {/* DOWNLOAD PDF — só recebidas */}
-                                                    {(isEntregue || isParcial) && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                generateNotaCreditoPDF(enc);
-                                                            }}
-                                                            className="flex items-center justify-center p-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
-                                                            title="Download PDF"
-                                                        >
-                                                            <FileText size={14} />
-                                                        </button>
-                                                    )}
-
-                                                    {/* REPETIR — sempre disponível */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleReordenar(
-                                                                (enc.linhas || []).map((l: any) => ({
-                                                                    produtoId: l.produtoId ?? l.produto?.id,
-                                                                    quantidade: l.quantidade
-                                                                }))
-                                                            );
-                                                        }}
-                                                        className="flex items-center justify-center p-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300 active:scale-95"
-                                                        title="Repetir Encomenda"
-                                                    >
-                                                        <RotateCcw size={14} strokeWidth={2.5} />
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
