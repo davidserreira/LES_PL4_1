@@ -105,17 +105,17 @@ const Sidebar = ({ user, isCollapsed, onToggle, onLogout }: SidebarProps) => {
     return (
         <aside ref={sidebarRef} className={`bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen sticky top-0 transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} z-50 dark:border-r dark:border-slate-800/50 relative shadow-[12px_0_35px_-5px_rgba(0,0,0,0.2)] dark:shadow-none`}>
             {/* Logo/Header */}
-            <div className={`p-5 border-b border-slate-800 dark:border-slate-800/50 flex items-center min-h-[85px] transition-all overflow-hidden ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+            <div className={`p-4 border-b border-slate-800 dark:border-slate-800/50 flex items-center min-h-[96px] transition-all overflow-hidden ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
                 <div className="shrink-0 flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-emerald-500 blur-xl opacity-20 rounded-full" />
-                    <img src={logoImg} alt="Logo" className={`relative ${isCollapsed ? 'w-10 h-10' : 'w-12 h-12'} object-contain drop-shadow-[0_0_15px_rgba(52,211,153,0.3)] transition-all`} />
+                    <div className="absolute inset-0 bg-emerald-500 blur-[24px] opacity-30 rounded-full scale-125" />
+                    <img src={logoImg} alt="Logo" className={`relative ${isCollapsed ? 'w-[3.25rem] h-[3.25rem]' : 'w-20 h-20'} object-contain drop-shadow-[0_0_20px_rgba(52,211,153,0.4)] transition-all duration-300`} />
                 </div>
                 {!isCollapsed && (
                     <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                        <span className="text-xl font-black tracking-tight text-white leading-tight">
-                            Vet<span className="text-emerald-400">ERP</span>
+                        <span className="text-[1.65rem] font-black tracking-tight text-white leading-none drop-shadow-sm">
+                            Vet<span className="text-emerald-400">Stock</span>
                         </span>
-                        <span className="text-[9px] text-emerald-500/80 font-bold uppercase tracking-[0.2em] leading-none mt-0.5">Management</span>
+                        <span className="text-[10px] text-emerald-500/90 font-black uppercase tracking-[0.25em] mt-1.5 drop-shadow-sm">System</span>
                     </div>
                 )}
             </div>
