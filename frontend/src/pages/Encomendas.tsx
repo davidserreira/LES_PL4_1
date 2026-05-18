@@ -43,6 +43,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
 
     // Filtros e Pesquisa
     const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState<'LISTA' | 'HISTORICO'>('LISTA');
     const [filterEstado, setFilterEstado] = useState('Todos');
     const [filterFornecedor, setFilterFornecedor] = useState('Todos');
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
@@ -284,21 +285,57 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                 </div>
 
                 {/* Filters Row */}
-                <div className="flex flex-col xl:flex-row gap-3 items-stretch">
-                    <label className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow cursor-text">
-                        <div className="relative flex-1 min-w-0 w-full">
+                <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
+                    <label className="flex flex-row justify-between items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 flex-grow cursor-text">
+                        <div className="relative flex-1 min-w-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Pesquisar encomenda, fornecedor ou pedido..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-3 py-1.5 bg-transparent border-0 outline-none text-xs font-medium placeholder:text-slate-400"
+                                className="w-full pl-9 pr-3 py-1.5 bg-transparent border-0 outline-none text-xs placeholder:text-slate-400"
                             />
                         </div>
-                        <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-                        <div className="flex items-center gap-2 px-3">
-                            <Filter size={14} className="text-slate-400" />
+                    </label>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm mr-2 hidden sm:flex">
+                            <Filter size={16} />
+                            Filtros
+                        </div>
+
+                        {/* View Mode Toggle */}
+                        <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700/60 w-full sm:w-auto">
+                            <button
+                                onClick={() => {
+                                    setViewMode('LISTA');
+                                    setFilterEstado('Todos');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    }`}
+                            >
+                                Lista
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setViewMode('HISTORICO');
+                                    setFilterEstado('Todos');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    }`}
+                            >
+                                Histórico
+                            </button>
+                        </div>
+
+                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+
+                        <div className="flex items-center gap-3">
                             <div className="relative">
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); setIsFilterEstadoOpen(!isFilterEstadoOpen); setIsFilterFornecedorOpen(false); }}
@@ -307,7 +344,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                     Estado: {filterEstado} <ChevronDown size={12} />
                                 </button>
                                 {isFilterEstadoOpen && (
-                                    <div className="absolute left-0 mt-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                    <div className="absolute right-0 sm:left-0 mt-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                                         {['Todos', 'EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL', 'ENTREGUE', 'CANCELADA'].map(est => (
                                             <button
                                                 key={est}
@@ -326,10 +363,10 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                     onClick={(e) => { e.stopPropagation(); setIsFilterFornecedorOpen(!isFilterFornecedorOpen); setIsFilterEstadoOpen(false); }}
                                     className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1 hover:text-slate-900 dark:text-slate-100 transition-colors"
                                 >
-                                    Fornecedor: {filterFornecedor} <ChevronDown size={12} />
+                                    Fornecedor: {filterFornecedor === 'Todos' ? 'Todos' : filterFornecedor.substring(0, 10) + '...'} <ChevronDown size={12} />
                                 </button>
                                 {isFilterFornecedorOpen && (
-                                    <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                    <div className="absolute right-0 sm:left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
                                         <button
                                             onClick={() => { setFilterFornecedor('Todos'); setIsFilterFornecedorOpen(false); }}
                                             className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterFornecedor === 'Todos' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
@@ -349,7 +386,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 )}
                             </div>
                         </div>
-                    </label>
+                    </div>
                 </div>
             </div>
 
