@@ -108,8 +108,27 @@ export default function Encomendas({ user }: { user: Utilizador }) {
             setIsFilterFornecedorOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const historicoStatuses = useMemo(() => new Set(['ENTREGUE', 'CANCELADA', 'ENCERRADA']), []);
+    const estadoOptions = useMemo(() => ['EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL'], []);
+    const historicoEstadoOptions = useMemo(() => ['ENTREGUE', 'CANCELADA', 'ENCERRADA'], []);
+    const allEstadoOptions = useMemo(() => ['EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL', 'ENTREGUE', 'ENCERRADA', 'CANCELADA'], []);
+    const geralStatuses = useMemo(() => new Set(['EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL']), []);
+
+    // Opções do dropdown Estado conforme role + tab
+    const estadoFilterOptions = useMemo(() => {
+        if (viewMode === 'HISTORICO') return historicoEstadoOptions;
+        if (isAdmin) return allEstadoOptions;          // admin na lista vê todos
+        return estadoOptions;                           // outros users na lista só vêem activos
+    }, [isAdmin, viewMode, historicoEstadoOptions, allEstadoOptions, estadoOptions]);
+
+    useEffect(() => {
+        // Limpa filtro inválido ao trocar de tab
+        setFilterEstado('Todos');
+    }, [viewMode]);
 
     const fornecedoresDisponiveis = useMemo(() => {
         const unique = new Set(encomendas.map(e => e.fornecedor?.nome).filter(Boolean));
@@ -118,6 +137,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
 
     const filteredEncomendas = useMemo(() => {
         let result = [...encomendas];
+
+        const status = (e: any) => (e.estado || '').toUpperCase();
+
+        if (!isAdmin) {
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(e => historicoStatuses.has(status(e)));
+            } else {
+                result = result.filter(e => geralStatuses.has(status(e)));
+            }
+        } else {
+            // Admin vê todos os estados na LISTA; no histórico apenas finais
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(e => historicoStatuses.has(status(e)));
+            }
+        }
 
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -153,7 +187,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
         });
 
         return result;
-    }, [encomendas, searchQuery, filterEstado, filterFornecedor, sortField, sortOrder]);
+    }, [encomendas, searchQuery, filterEstado, filterFornecedor, sortField, sortOrder, viewMode, isAdmin, historicoStatuses, geralStatuses]);
 
     const handleMudarEstado = async (id: number, novoEstado: string) => {
         try {
@@ -345,7 +379,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 </button>
                                 {isFilterEstadoOpen && (
                                     <div className="absolute right-0 sm:left-0 mt-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
-                                        {['Todos', 'EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL', 'ENTREGUE', 'CANCELADA'].map(est => (
+                                        {['Todos', ...estadoFilterOptions].map(est => (
                                             <button
                                                 key={est}
                                                 onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
@@ -412,7 +446,17 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                     </div>
                 ) : (
                     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <table className="w-full text-sm text-left">
+                        <table className="w-full text-sm text-left table-fixed">
+                            <colgroup>
+                                <col style={{ width: '12%' }} />  {/* Código */}
+                                <col style={{ width: '15%' }} />  {/* Fornecedor */}
+                                <col style={{ width: '6%' }} />   {/* Itens */}
+                                <col style={{ width: '8%' }} />   {/* Total */}
+                                <col style={{ width: '11%' }} />  {/* Entrega */}
+                                <col style={{ width: '12%' }} />  {/* Estado */}
+                                <col style={{ width: '9%' }} />   {/* Emissão */}
+                                <col style={{ width: '27%' }} />  {/* Ações */}
+                            </colgroup>
                             <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
                                 <tr>
                                     <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('codigoFormatado')}>
@@ -525,7 +569,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                 {formatDate(enc.dataEmissao)}
                                             </td>
                                             <td className="px-5 py-4">
-                                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex flex-wrap items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                                     {/* CANCELAR — só emitida ou enviada */}
                                                     {podeCancelar && (
                                                         <button
@@ -561,11 +605,11 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                                 e.stopPropagation();
                                                                 handleMudarEstado(enc.id, 'ENVIADA');
                                                             }}
-                                                            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
+                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
                                                             title="Marcar como Enviada"
                                                         >
-                                                            <Truck size={14} />
-                                                            Marcar Enviada
+                                                            <Truck size={13} />
+                                                            Enviar
                                                         </button>
                                                     )}
 
@@ -576,11 +620,11 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                                 e.stopPropagation();
                                                                 handleOpenRececao(enc);
                                                             }}
-                                                            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
+                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
                                                             title="Registar receção"
                                                         >
-                                                            <Package size={14} />
-                                                            {isParcial ? 'Receber Restante' : 'Receber Encomenda'}
+                                                            <Package size={13} />
+                                                            Receber
                                                         </button>
                                                     )}
 
@@ -598,11 +642,10 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                                 e.stopPropagation();
                                                                 generateNotaCreditoPDF(enc);
                                                             }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
-                                                            title="Download Nota de Crédito"
+                                                            className="flex items-center justify-center p-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
+                                                            title="Download PDF"
                                                         >
-                                                            <FileText size={13} />
-                                                            PDF
+                                                            <FileText size={14} />
                                                         </button>
                                                     )}
 
@@ -617,11 +660,10 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                                 }))
                                                             );
                                                         }}
-                                                        className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300"
-                                                        title="Repetir encomenda"
+                                                        className="flex items-center justify-center p-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300 active:scale-95"
+                                                        title="Repetir Encomenda"
                                                     >
-                                                        <RotateCcw size={13} />
-                                                        Repetir
+                                                        <RotateCcw size={14} strokeWidth={2.5} />
                                                     </button>
                                                 </div>
                                             </td>
