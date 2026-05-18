@@ -4,7 +4,7 @@ import {
     PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, 
     Building2, ClipboardList, AlertTriangle, ChevronDown, Package,
     Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Euro, RotateCcw, ShieldAlert,
-    FileText
+    FileText, X
 } from 'lucide-react';
 import { generateNotaCreditoPDF } from '../utils/pdfGenerator';
 import { encomendaService } from '../services/encomendaService';
@@ -331,6 +331,9 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 className="w-full pl-9 pr-3 py-1.5 bg-transparent border-0 outline-none text-xs placeholder:text-slate-400"
                             />
                         </div>
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-3 whitespace-nowrap hidden sm:block">
+                            A mostrar <span className="font-bold text-slate-700 dark:text-slate-300">{filteredEncomendas.length}</span> / <span className="font-bold text-slate-700 dark:text-slate-300">{encomendas.length}</span> encomendas
+                        </div>
                     </label>
 
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
@@ -369,49 +372,103 @@ export default function Encomendas({ user }: { user: Utilizador }) {
 
                         <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
 
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); setIsFilterEstadoOpen(!isFilterEstadoOpen); setIsFilterFornecedorOpen(false); }}
-                                    className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1 hover:text-slate-900 dark:text-slate-100 transition-colors"
+                        <div className="flex w-full sm:w-auto gap-2">
+                            <div className="relative flex-1 sm:min-w-[150px]">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsFilterFornecedorOpen(false);
+                                        setIsFilterEstadoOpen(!isFilterEstadoOpen);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos'
+                                        ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
+                                        }`}
                                 >
-                                    Estado: {filterEstado} <ChevronDown size={12} />
+                                    <span className="truncate">{filterEstado === 'Todos' ? 'Estado' : (ESTADO_CONFIG[filterEstado]?.label || filterEstado)}</span>
+                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
                                 </button>
+
                                 {isFilterEstadoOpen && (
-                                    <div className="absolute right-0 sm:left-0 mt-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
-                                        {['Todos', ...estadoFilterOptions].map(est => (
+                                    <div
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
+                                        <button
+                                            onClick={() => {
+                                                setFilterEstado('Todos');
+                                                setIsFilterEstadoOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                }`}
+                                        >
+                                            Todos os estados
+                                        </button>
+                                        {estadoFilterOptions.map(est => (
                                             <button
                                                 key={est}
-                                                onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
-                                                className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterEstado === est ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
+                                                onClick={() => {
+                                                    setFilterEstado(est);
+                                                    setIsFilterEstadoOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                    }`}
                                             >
-                                                {est === 'Todos' ? 'Todos os estados' : (ESTADO_CONFIG[est]?.label || est)}
+                                                {ESTADO_CONFIG[est]?.label || est}
                                             </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            <div className="w-px h-3 bg-slate-100 dark:bg-slate-700/50 mx-1"></div>
-                            <div className="relative">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); setIsFilterFornecedorOpen(!isFilterFornecedorOpen); setIsFilterEstadoOpen(false); }}
-                                    className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1 hover:text-slate-900 dark:text-slate-100 transition-colors"
+
+                            <div className="relative flex-1 sm:min-w-[150px]">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsFilterEstadoOpen(false);
+                                        setIsFilterFornecedorOpen(!isFilterFornecedorOpen);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterFornecedor !== 'Todos'
+                                        ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
+                                        }`}
                                 >
-                                    Fornecedor: {filterFornecedor === 'Todos' ? 'Todos' : filterFornecedor.substring(0, 10) + '...'} <ChevronDown size={12} />
+                                    <span className="truncate">{filterFornecedor === 'Todos' ? 'Fornecedor' : filterFornecedor}</span>
+                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterFornecedorOpen ? 'rotate-180' : ''}`} />
                                 </button>
+
                                 {isFilterFornecedorOpen && (
-                                    <div className="absolute right-0 sm:left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                    <div
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
                                         <button
-                                            onClick={() => { setFilterFornecedor('Todos'); setIsFilterFornecedorOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterFornecedor === 'Todos' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
+                                            onClick={() => {
+                                                setFilterFornecedor('Todos');
+                                                setIsFilterFornecedorOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterFornecedor === 'Todos'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                }`}
                                         >
                                             Todos os fornecedores
                                         </button>
                                         {fornecedoresDisponiveis.map(f => (
                                             <button
                                                 key={f}
-                                                onClick={() => { setFilterFornecedor(f); setIsFilterFornecedorOpen(false); }}
-                                                className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterFornecedor === f ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
+                                                onClick={() => {
+                                                    setFilterFornecedor(f);
+                                                    setIsFilterFornecedorOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterFornecedor === f
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                    }`}
                                             >
                                                 {f}
                                             </button>
@@ -420,6 +477,20 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 )}
                             </div>
                         </div>
+
+                        {(filterEstado !== 'Todos' || filterFornecedor !== 'Todos' || searchQuery !== '') && (
+                            <button
+                                onClick={() => {
+                                    setFilterEstado('Todos');
+                                    setFilterFornecedor('Todos');
+                                    setSearchQuery('');
+                                }}
+                                className="p-1.5 ml-auto text-slate-400 hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                                title="Limpar filtros"
+                            >
+                                <X size={18} strokeWidth={2.5} />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
