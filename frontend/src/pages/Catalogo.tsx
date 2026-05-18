@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { 
     Plus, Package, AlertTriangle, CheckCircle2, X, AlertCircle, 
     Search, Filter, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, MoreHorizontal, Check,
-    MoreVertical, Pencil, MousePointer2, History, Star
+    MoreVertical, Pencil, MousePointer2, History, Star, BookOpen
 } from 'lucide-react';
 import { produtoService } from '../services/produtoService';
 import CriarProdutoModal from '../components/CriarProdutoModal';
@@ -253,107 +253,109 @@ const Catalogo = () => {
                 </div>
             )}
 
-            {/* ── Bloco sticky integrado (Layout 2 Blocos) ── */}
-            <div className="sticky top-0 z-40 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-5 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all space-y-5 mb-2">
-                <div className="space-y-5">
-                    
-                    {/* Linha 1: Título e Botões de ação lado a lado */}
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Stock</h1>
-                            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400 hidden sm:block">
-                                Gerencie o stock de produtos nesta secção.
-                            </p>
-                        </div>
-                        {/* Normal mode buttons */}
-                        {!isSelectionMode && (
-                            <div className="flex items-center gap-3 flex-wrap justify-end">
-                                <button
-                                    onClick={() => setIsAutoOrderModalOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-sm font-black rounded-lg hover:bg-blue-50 dark:bg-blue-500/10 transition-all border-2 border-blue-100 dark:border-blue-500/20 hover:border-blue-200 shadow-sm active:scale-95"
-                                >
-                                    <ShoppingCart size={18} />
-                                    Pedidos Automáticos
-                                </button>
-
-                                <button
-                                    onClick={enterSelectionMode}
-                                    className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-                                >
-                                    <ShoppingCart size={18} />
-                                    Criar Pedido
-                                </button>
-
-                                <div className="relative" ref={actionsMenuRef}>
-                                    <button
-                                        onClick={() => setIsActionsMenuOpen(prev => !prev)}
-                                        className="flex items-center justify-center w-10 h-10 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:border-slate-300 dark:border-slate-600 transition-all shadow-sm active:scale-95"
-                                        title="Mais ações"
-                                    >
-                                        <MoreHorizontal size={20} />
-                                    </button>
-                                    {isActionsMenuOpen && (
-                                        <div className="absolute top-[calc(100%+8px)] right-0 w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-30 py-1.5 animate-in fade-in zoom-in-95 duration-150">
-                                            <button
-                                                onClick={() => { setIsActionsMenuOpen(false); setIsModalOpen(true); }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
-                                            >
-                                                <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400">
-                                                    <Package size={16} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-800 dark:text-slate-200">Adicionar Produto</p>
-                                                    <p className="text-[11px] text-slate-400 font-medium">Novo item no stock</p>
-                                                </div>
-                                            </button>
-                                            <div className="my-1 border-t border-slate-100 dark:border-slate-700/50" />
-                                            <button
-                                                onClick={() => { setIsActionsMenuOpen(false); setIsHistoricoModalOpen(true); }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
-                                            >
-                                                <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                                                    <History size={16} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-800 dark:text-slate-200">Consultar Histórico</p>
-                                                    <p className="text-[11px] text-slate-400 font-medium">Entradas de stock recebidas</p>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Selection mode controls */}
-                        {isSelectionMode && (
-                            <div className="flex items-center gap-2.5 animate-in fade-in slide-in-from-right-4 duration-200">
-                                <span className="inline-flex items-center px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-400 tabular-nums whitespace-nowrap">
-                                    {selectedIds.length} selecionados
-                                </span>
-                                <button
-                                    onClick={exitSelectionMode}
-                                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-slate-800 dark:text-slate-200 transition-all shadow-sm active:scale-95"
-                                >
-                                    <X size={15} strokeWidth={2.5} />
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={handleConfirmarPedido}
-                                    disabled={selectedIds.length === 0}
-                                    className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all shadow-sm active:scale-95 ${
-                                        selectedIds.length > 0
-                                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/25'
-                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
-                                    }`}
-                                >
-                                    <ShoppingCart size={16} strokeWidth={2} />
-                                    Criar Pedido
-                                </button>
-                            </div>
-                        )}
+            {/* ── Header Principal (Premium Box) ── */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <BookOpen className="text-emerald-600 dark:text-emerald-400" size={24} />
                     </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Stock</h1>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Gerencie o stock de produtos nesta secção.</p>
+                    </div>
+                </div>
 
+                <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto justify-end">
+                    {/* Normal mode buttons */}
+                    {!isSelectionMode ? (
+                        <>
+                            <button
+                                onClick={() => setIsAutoOrderModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-sm font-black rounded-lg hover:bg-blue-50 dark:bg-blue-500/10 transition-all border-2 border-blue-100 dark:border-blue-500/20 hover:border-blue-200 shadow-sm active:scale-95"
+                            >
+                                <ShoppingCart size={18} />
+                                Pedidos Automáticos
+                            </button>
+
+                            <button
+                                onClick={enterSelectionMode}
+                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                            >
+                                <ShoppingCart size={18} />
+                                Criar Pedido
+                            </button>
+
+                            <div className="relative" ref={actionsMenuRef}>
+                                <button
+                                    onClick={() => setIsActionsMenuOpen(prev => !prev)}
+                                    className="flex items-center justify-center w-10 h-10 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:border-slate-300 dark:border-slate-600 transition-all shadow-sm active:scale-95"
+                                    title="Mais ações"
+                                >
+                                    <MoreHorizontal size={20} />
+                                </button>
+                                {isActionsMenuOpen && (
+                                    <div className="absolute top-[calc(100%+8px)] right-0 w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-30 py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                        <button
+                                            onClick={() => { setIsActionsMenuOpen(false); setIsModalOpen(true); }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
+                                        >
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400">
+                                                <Package size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-slate-800 dark:text-slate-200">Adicionar Produto</p>
+                                                <p className="text-[11px] text-slate-400 font-medium">Novo item no stock</p>
+                                            </div>
+                                        </button>
+                                        <div className="my-1 border-t border-slate-100 dark:border-slate-700/50" />
+                                        <button
+                                            onClick={() => { setIsActionsMenuOpen(false); setIsHistoricoModalOpen(true); }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
+                                        >
+                                            <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                                                <History size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-slate-800 dark:text-slate-200">Consultar Histórico</p>
+                                                <p className="text-[11px] text-slate-400 font-medium">Entradas de stock recebidas</p>
+                                            </div>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-2.5 animate-in fade-in slide-in-from-right-4 duration-200">
+                            <span className="inline-flex items-center px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-700 text-sm font-semibold text-slate-600 dark:text-slate-400 tabular-nums whitespace-nowrap">
+                                {selectedIds.length} selecionados
+                            </span>
+                            <button
+                                onClick={exitSelectionMode}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-semibold rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-slate-800 dark:text-slate-200 transition-all shadow-sm active:scale-95"
+                            >
+                                <X size={15} strokeWidth={2.5} />
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleConfirmarPedido}
+                                disabled={selectedIds.length === 0}
+                                className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-lg transition-all shadow-sm active:scale-95 ${
+                                    selectedIds.length > 0
+                                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/25'
+                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                                }`}
+                            >
+                                <ShoppingCart size={16} strokeWidth={2} />
+                                Criar Pedido
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── Bloco sticky integrado (Layout Filtros) ── */}
+            <div className="sticky top-0 z-40 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all mb-2">
+                <div className="space-y-5">
                     {/* Linha 2: 2 Blocks (Pesquisa + Filtros separados) */}
                     <div className="flex flex-col xl:flex-row gap-4 items-stretch xl:items-center">
                         

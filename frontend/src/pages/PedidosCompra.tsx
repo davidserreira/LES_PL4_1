@@ -752,41 +752,49 @@ export default function PedidosCompra() {
                 </div>
             )}
 
-            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all flex flex-col gap-4 mb-4 z-40">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Pedidos de Compra</h1>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Visualização dos pedidos criados.</p>
+            {/* ── Header Principal (Premium Box) ── */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4 relative z-40">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <ClipboardList className="text-emerald-600 dark:text-emerald-400" size={24} />
                     </div>
-                    <div className="flex items-center gap-2">
-                        {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
-                            <button
-                                onClick={() => setIsRascunhosModalOpen(true)}
-                                className="flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-sm font-black rounded-lg hover:bg-blue-50 dark:bg-blue-500/10 transition-all border-2 border-blue-100 dark:border-blue-500/20 hover:border-blue-200 shadow-sm active:scale-95"
-                            >
-                                <span>Rascunhos</span>
-                                {draftsCount >= 0 && (
-                                    <span className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 text-blue-700 text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">
-                                        {draftsCount}
-                                    </span>
-                                )}
-                            </button>
-                        )}
-                        {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
-                            <button
-                                onClick={() => {
-                                    setEditingDraftId(null);
-                                    setPedidoToEdit(null);
-                                    setIsCreateModalOpen(true);
-                                }}
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
-                            >
-                                <Plus size={18} /> Novo pedido
-                            </button>
-                        )}
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Pedidos de Compra</h1>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Visualização dos pedidos criados.</p>
                     </div>
                 </div>
 
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                        <button
+                            onClick={() => setIsRascunhosModalOpen(true)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 text-sm font-black rounded-lg hover:bg-blue-50 dark:bg-blue-500/10 transition-all border-2 border-blue-100 dark:border-blue-500/20 hover:border-blue-200 shadow-sm active:scale-95"
+                        >
+                            <span>Rascunhos</span>
+                            {draftsCount >= 0 && (
+                                <span className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 text-blue-700 text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-black">
+                                    {draftsCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
+                    {user?.role !== 'RESPONSAVEL_FINANCEIRO' && (
+                        <button
+                            onClick={() => {
+                                setEditingDraftId(null);
+                                setPedidoToEdit(null);
+                                setIsCreateModalOpen(true);
+                            }}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-black rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-500/20 active:scale-95"
+                        >
+                            <Plus size={18} /> Novo pedido
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* ── Bloco sticky integrado (Layout Filtros) ── */}
+            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all flex flex-col gap-4 mb-4 z-40">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {(() => {
                         const role = user?.role;

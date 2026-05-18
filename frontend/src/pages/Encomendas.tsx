@@ -4,7 +4,7 @@ import {
     PackageCheck, Loader2, Clock, CheckCircle2, XCircle, Truck, 
     Building2, ClipboardList, AlertTriangle, ChevronDown, Package,
     Search, Filter, ArrowUpDown, ArrowUp, ArrowDown, Calendar, Euro, RotateCcw, ShieldAlert,
-    FileText
+    FileText, X
 } from 'lucide-react';
 import { generateNotaCreditoPDF } from '../utils/pdfGenerator';
 import { encomendaService } from '../services/encomendaService';
@@ -43,6 +43,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
 
     // Filtros e Pesquisa
     const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState<'LISTA' | 'HISTORICO'>('LISTA');
     const [filterEstado, setFilterEstado] = useState('Todos');
     const [filterFornecedor, setFilterFornecedor] = useState('Todos');
     const [isFilterEstadoOpen, setIsFilterEstadoOpen] = useState(false);
@@ -107,8 +108,27 @@ export default function Encomendas({ user }: { user: Utilizador }) {
             setIsFilterFornecedorOpen(false);
         };
         document.addEventListener('mousedown', handleClickOutside);
+        document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const historicoStatuses = useMemo(() => new Set(['ENTREGUE', 'CANCELADA', 'ENCERRADA']), []);
+    const estadoOptions = useMemo(() => ['EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL'], []);
+    const historicoEstadoOptions = useMemo(() => ['ENTREGUE', 'CANCELADA', 'ENCERRADA'], []);
+    const allEstadoOptions = useMemo(() => ['EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL', 'ENTREGUE', 'ENCERRADA', 'CANCELADA'], []);
+    const geralStatuses = useMemo(() => new Set(['EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL']), []);
+
+    // Opções do dropdown Estado conforme role + tab
+    const estadoFilterOptions = useMemo(() => {
+        if (viewMode === 'HISTORICO') return historicoEstadoOptions;
+        if (isAdmin) return allEstadoOptions;          // admin na lista vê todos
+        return estadoOptions;                           // outros users na lista só vêem activos
+    }, [isAdmin, viewMode, historicoEstadoOptions, allEstadoOptions, estadoOptions]);
+
+    useEffect(() => {
+        // Limpa filtro inválido ao trocar de tab
+        setFilterEstado('Todos');
+    }, [viewMode]);
 
     const fornecedoresDisponiveis = useMemo(() => {
         const unique = new Set(encomendas.map(e => e.fornecedor?.nome).filter(Boolean));
@@ -117,6 +137,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
 
     const filteredEncomendas = useMemo(() => {
         let result = [...encomendas];
+
+        const status = (e: any) => (e.estado || '').toUpperCase();
+
+        if (!isAdmin) {
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(e => historicoStatuses.has(status(e)));
+            } else {
+                result = result.filter(e => geralStatuses.has(status(e)));
+            }
+        } else {
+            // Admin vê todos os estados na LISTA; no histórico apenas finais
+            if (viewMode === 'HISTORICO') {
+                result = result.filter(e => historicoStatuses.has(status(e)));
+            }
+        }
 
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
@@ -152,7 +187,7 @@ export default function Encomendas({ user }: { user: Utilizador }) {
         });
 
         return result;
-    }, [encomendas, searchQuery, filterEstado, filterFornecedor, sortField, sortOrder]);
+    }, [encomendas, searchQuery, filterEstado, filterFornecedor, sortField, sortOrder, viewMode, isAdmin, historicoStatuses, geralStatuses]);
 
     const handleMudarEstado = async (id: number, novoEstado: string) => {
         try {
@@ -222,18 +257,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
     return (
         <div className="flex flex-col h-[calc(100vh-100px)] animate-in fade-in duration-300 relative space-y-4">
             
-            {/* Command Center */}
-            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-sm flex flex-col gap-4 z-40">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            {/* ── Header Principal (Premium Box) ── */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4 relative z-40">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <PackageCheck className="text-emerald-600 dark:text-emerald-400" size={24} />
+                    </div>
                     <div>
-                        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-3">
-                            <PackageCheck size={28} className="text-emerald-600 dark:text-emerald-400" />
-                            Gestão de Encomendas
-                        </h1>
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 font-medium">Controlo de receção e trânsito de mercadorias.</p>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Encomendas</h1>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Controlo de receção e trânsito de mercadorias.</p>
                     </div>
                 </div>
+            </div>
 
+            {/* Command Center */}
+            <div className="shrink-0 bg-slate-50 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200 dark:border-slate-700/50 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 pt-4 pb-4 shadow-[0_10px_30px_-15px_rgba(0,0,0,0.05)] transition-all flex flex-col gap-4 mb-4 z-40">
                 {/* Dashboard Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <button 
@@ -284,63 +322,156 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                 </div>
 
                 {/* Filters Row */}
-                <div className="flex flex-col xl:flex-row gap-3 items-stretch">
-                    <label className="flex flex-col sm:flex-row items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow cursor-text">
-                        <div className="relative flex-1 min-w-0 w-full">
+                <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center">
+                    <label className="flex flex-row justify-between items-center gap-3 bg-white dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm relative z-10 flex-grow cursor-text">
+                        <div className="relative flex-1 min-w-0">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Pesquisar encomenda, fornecedor ou pedido..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-9 pr-3 py-1.5 bg-transparent border-0 outline-none text-xs font-medium placeholder:text-slate-400"
+                                className="w-full pl-9 pr-3 py-1.5 bg-transparent border-0 outline-none text-xs placeholder:text-slate-400"
                             />
                         </div>
-                        <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
-                        <div className="flex items-center gap-2 px-3">
-                            <Filter size={14} className="text-slate-400" />
-                            <div className="relative">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); setIsFilterEstadoOpen(!isFilterEstadoOpen); setIsFilterFornecedorOpen(false); }}
-                                    className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1 hover:text-slate-900 dark:text-slate-100 transition-colors"
+                        <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium px-3 whitespace-nowrap hidden sm:block">
+                            A mostrar <span className="font-bold text-slate-700 dark:text-slate-300">{filteredEncomendas.length}</span> / <span className="font-bold text-slate-700 dark:text-slate-300">{encomendas.length}</span> encomendas
+                        </div>
+                    </label>
+
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex-grow xl:flex-grow-0 relative z-20">
+                        <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium text-sm mr-2 hidden sm:flex">
+                            <Filter size={16} />
+                            Filtros
+                        </div>
+
+                        {/* View Mode Toggle */}
+                        <div className="flex p-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg border border-slate-200 dark:border-slate-700/60 w-full sm:w-auto">
+                            <button
+                                onClick={() => {
+                                    setViewMode('LISTA');
+                                    setFilterEstado('Todos');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'LISTA'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    }`}
+                            >
+                                Lista
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setViewMode('HISTORICO');
+                                    setFilterEstado('Todos');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 py-1.5 text-sm font-medium rounded-md transition-all ${viewMode === 'HISTORICO'
+                                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-sm ring-1 ring-slate-200/50 dark:ring-slate-700/50'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100'
+                                    }`}
+                            >
+                                Histórico
+                            </button>
+                        </div>
+
+                        <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 hidden sm:block"></div>
+
+                        <div className="flex w-full sm:w-auto gap-2">
+                            <div className="relative flex-1 sm:min-w-[150px]">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsFilterFornecedorOpen(false);
+                                        setIsFilterEstadoOpen(!isFilterEstadoOpen);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterEstado !== 'Todos'
+                                        ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
+                                        }`}
                                 >
-                                    Estado: {filterEstado} <ChevronDown size={12} />
+                                    <span className="truncate">{filterEstado === 'Todos' ? 'Estado' : (ESTADO_CONFIG[filterEstado]?.label || filterEstado)}</span>
+                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterEstadoOpen ? 'rotate-180' : ''}`} />
                                 </button>
+
                                 {isFilterEstadoOpen && (
-                                    <div className="absolute left-0 mt-2 w-40 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
-                                        {['Todos', 'EMITIDA', 'ENVIADA', 'ENTREGUE_PARCIAL', 'ENTREGUE', 'CANCELADA'].map(est => (
+                                    <div
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
+                                        <button
+                                            onClick={() => {
+                                                setFilterEstado('Todos');
+                                                setIsFilterEstadoOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === 'Todos'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                }`}
+                                        >
+                                            Todos os estados
+                                        </button>
+                                        {estadoFilterOptions.map(est => (
                                             <button
                                                 key={est}
-                                                onClick={() => { setFilterEstado(est); setIsFilterEstadoOpen(false); }}
-                                                className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterEstado === est ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
+                                                onClick={() => {
+                                                    setFilterEstado(est);
+                                                    setIsFilterEstadoOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterEstado === est
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                    }`}
                                             >
-                                                {est === 'Todos' ? 'Todos os estados' : (ESTADO_CONFIG[est]?.label || est)}
+                                                {ESTADO_CONFIG[est]?.label || est}
                                             </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            <div className="w-px h-3 bg-slate-100 dark:bg-slate-700/50 mx-1"></div>
-                            <div className="relative">
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); setIsFilterFornecedorOpen(!isFilterFornecedorOpen); setIsFilterEstadoOpen(false); }}
-                                    className="text-[11px] font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1 hover:text-slate-900 dark:text-slate-100 transition-colors"
+
+                            <div className="relative flex-1 sm:min-w-[150px]">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsFilterEstadoOpen(false);
+                                        setIsFilterFornecedorOpen(!isFilterFornecedorOpen);
+                                    }}
+                                    className={`w-full flex items-center justify-between gap-2 px-3 py-2 bg-white dark:bg-slate-800 border rounded-lg text-sm font-medium transition-all ${filterFornecedor !== 'Todos'
+                                        ? 'border-blue-500 text-blue-700 ring-4 ring-blue-500/10'
+                                        : 'border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:border-slate-600'
+                                        }`}
                                 >
-                                    Fornecedor: {filterFornecedor} <ChevronDown size={12} />
+                                    <span className="truncate">{filterFornecedor === 'Todos' ? 'Fornecedor' : filterFornecedor}</span>
+                                    <ChevronDown size={14} className={`text-slate-400 shrink-0 transition-transform ${isFilterFornecedorOpen ? 'rotate-180' : ''}`} />
                                 </button>
+
                                 {isFilterFornecedorOpen && (
-                                    <div className="absolute left-0 mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95">
+                                    <div
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95"
+                                    >
                                         <button
-                                            onClick={() => { setFilterFornecedor('Todos'); setIsFilterFornecedorOpen(false); }}
-                                            className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterFornecedor === 'Todos' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
+                                            onClick={() => {
+                                                setFilterFornecedor('Todos');
+                                                setIsFilterFornecedorOpen(false);
+                                            }}
+                                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterFornecedor === 'Todos'
+                                                ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                }`}
                                         >
                                             Todos os fornecedores
                                         </button>
                                         {fornecedoresDisponiveis.map(f => (
                                             <button
                                                 key={f}
-                                                onClick={() => { setFilterFornecedor(f); setIsFilterFornecedorOpen(false); }}
-                                                className={`w-full text-left px-4 py-2 text-[11px] font-bold transition-colors ${filterFornecedor === f ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'}`}
+                                                onClick={() => {
+                                                    setFilterFornecedor(f);
+                                                    setIsFilterFornecedorOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${filterFornecedor === f
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-bold'
+                                                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900'
+                                                    }`}
                                             >
                                                 {f}
                                             </button>
@@ -349,7 +480,21 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                 )}
                             </div>
                         </div>
-                    </label>
+
+                        {(filterEstado !== 'Todos' || filterFornecedor !== 'Todos' || searchQuery !== '') && (
+                            <button
+                                onClick={() => {
+                                    setFilterEstado('Todos');
+                                    setFilterFornecedor('Todos');
+                                    setSearchQuery('');
+                                }}
+                                className="p-1.5 ml-auto text-slate-400 hover:text-red-600 dark:text-red-400 hover:bg-red-50 dark:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center shrink-0"
+                                title="Limpar filtros"
+                            >
+                                <X size={18} strokeWidth={2.5} />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -375,44 +520,42 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                     </div>
                 ) : (
                     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
-                        <table className="w-full text-sm text-left">
-                            <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
+                        <table className="w-full text-sm text-left table-fixed">
+                            <colgroup>
+                                <col style={{ width: '12%' }} />  {/* Código */}
+                                <col style={{ width: '15%' }} />  {/* Fornecedor */}
+                                <col style={{ width: '6%' }} />   {/* Itens */}
+                                <col style={{ width: '8%' }} />   {/* Total */}
+                                <col style={{ width: '11%' }} />  {/* Entrega */}
+                                <col style={{ width: '12%' }} />  {/* Estado */}
+                                <col style={{ width: '9%' }} />   {/* Emissão */}
+                                <col style={{ width: '27%' }} />  {/* Ações */}
+                            </colgroup>
+                            <thead className="sticky top-0 z-30 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-sm">
                                 <tr>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('codigoFormatado')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Código <SortIcon field="codigoFormatado" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('codigoFormatado')}>
+                                        <div className="flex items-center gap-2">Código <SortIcon field="codigoFormatado" /></div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('fornecedor')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Fornecedor <SortIcon field="fornecedor" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('fornecedor')}>
+                                        <div className="flex items-center gap-2">Fornecedor <SortIcon field="fornecedor" /></div>
                                     </th>
-                                    <th className="px-5 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Itens</th>
-                                    <th className="px-5 py-4 cursor-pointer group text-right" onClick={() => handleSort('valorTotal')}>
-                                        <div className="flex items-center justify-end gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Total <SortIcon field="valorTotal" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right">Itens</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-right cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('valorTotal')}>
+                                        <div className="flex items-center justify-end gap-2"><SortIcon field="valorTotal" /> Total</div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('dataEntregaPrevista')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Entrega <SortIcon field="dataEntregaPrevista" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('dataEntregaPrevista')}>
+                                        <div className="flex items-center gap-2">Entrega <SortIcon field="dataEntregaPrevista" /></div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('estado')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Estado <SortIcon field="estado" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('estado')}>
+                                        <div className="flex items-center gap-2">Estado <SortIcon field="estado" /></div>
                                     </th>
-                                    <th className="px-5 py-4 cursor-pointer group" onClick={() => handleSort('dataEmissao')}>
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                            Emissão <SortIcon field="dataEmissao" />
-                                        </div>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none" onClick={() => handleSort('dataEmissao')}>
+                                        <div className="flex items-center gap-2">Emissão <SortIcon field="dataEmissao" /></div>
                                     </th>
-                                    <th className="px-5 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Ações</th>
+                                    <th className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-center">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-100">
+                            <tbody>
                                 {filteredEncomendas.map((enc) => {
                                     const cfg = ESTADO_CONFIG[enc.estado] || ESTADO_CONFIG.EMITIDA;
                                     const EstadoIcon = cfg.icon;
@@ -436,156 +579,148 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                         <tr 
                                             key={enc.id} 
                                             onClick={() => handleOpenDetails(enc)}
-                                            className={`group hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/80 transition-colors cursor-pointer ${
-                                                isEntregue ? 'bg-emerald-50 dark:bg-emerald-500/10' : ''
-                                            } ${
+                                            className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 transition-colors border-b border-slate-100 dark:border-slate-700/50 last:border-b-0 cursor-pointer ${
                                                 isHighlighted 
                                                     ? 'bg-gradient-to-r from-emerald-50/90 dark:from-emerald-500/10 via-white dark:via-slate-800 to-emerald-50/90 dark:to-emerald-500/10 border-l-4 border-emerald-400 ring-1 ring-emerald-200 dark:ring-emerald-500/20 shadow-[0_12px_35px_rgba(16,185,129,0.14)] animate-in fade-in duration-300' 
                                                     : ''
                                             }`}
                                         >
-                                            <td className="px-5 py-4">
+                                            <td className="px-6 py-4 font-bold text-slate-900 dark:text-slate-100">
                                                 <div className="flex flex-col">
-                                                    <span className="font-black text-slate-900 dark:text-slate-100 tracking-wide text-xs">{enc.codigoFormatado}</span>
-                                                    <span className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase">
-                                                        <ClipboardList size={10} />
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{enc.codigoFormatado}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 font-medium bg-slate-100 dark:bg-slate-700/50 inline-block px-1.5 rounded mt-0.5 w-fit">
                                                         {enc.pedidoCompra?.codigoFormatado || `#${enc.pedidoCompraId}`}
                                                     </span>
                                                 </div>
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300 text-xs">
-                                                    <Building2 size={12} className="text-slate-400 shrink-0" />
-                                                    {enc.fornecedor?.nome || '—'}
-                                                </span>
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
+                                                {enc.fornecedor?.nome || '—'}
                                             </td>
-                                            <td className="px-5 py-4 text-slate-600 dark:text-slate-400 font-bold text-xs">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium text-right">
                                                 {enc.linhas?.length ?? 0}
                                             </td>
-                                            <td className="px-5 py-4 text-right">
-                                                <span className="font-black text-slate-900 dark:text-slate-100 text-xs">{formatCurrency(enc.valorTotal)}</span>
+                                            <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-slate-100">
+                                                {formatCurrency(enc.valorTotal)}
                                             </td>
-                                            <td className="px-5 py-4">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                                                 {isEntregue && enc.dataEntregaReal ? (
-                                                    <span className="flex items-center gap-1.5 text-emerald-700 font-black text-[11px] bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-500/20">
+                                                    <span className="flex items-center gap-1.5 text-emerald-700 font-black text-[11px] bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-100 dark:border-emerald-500/20 w-fit">
                                                         <CheckCircle2 size={12} />
                                                         {formatDate(enc.dataEntregaReal)}
                                                     </span>
                                                 ) : (
-                                                    <span className="text-slate-600 dark:text-slate-400 font-bold text-[11px] flex items-center gap-1.5">
-                                                        <Calendar size={12} className="text-slate-400" />
-                                                        {formatDate(enc.dataEntregaPrevista)}
-                                                    </span>
+                                                    formatDate(enc.dataEntregaPrevista)
                                                 )}
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <span className={`inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm ${cfg.color}`}>
-                                                    <EstadoIcon size={10} />
+                                            <td className="px-6 py-4 relative">
+                                                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-[10px] font-black border shadow-sm ${cfg.color}`}>
+                                                    <span className="w-1.5 h-1.5 rounded-full mr-1.5 currentColor bg-current opacity-70"></span>
                                                     {cfg.label}
                                                 </span>
                                             </td>
-                                            <td className="px-5 py-4 text-slate-400 font-bold text-[10px]">
+                                            <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
                                                 {formatDate(enc.dataEmissao)}
                                             </td>
-                                            <td className="px-5 py-4">
-                                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                                    {/* CANCELAR — só emitida ou enviada */}
-                                                    {podeCancelar && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95"
-                                                            title="Cancelar encomenda"
-                                                        >
-                                                            <XCircle size={13} />
-                                                            Cancelar
-                                                        </button>
-                                                    )}
+                                            <td className="px-6 py-4 relative">
+                                                <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
+                                                    
+                                                    {/* PRIMARY ACTIONS ZONE */}
+                                                    <div className="flex items-center justify-end gap-1.5 min-w-[140px]">
+                                                        {podeCancelar && (
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setCancelConfirmId(enc.id); }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 active:scale-95"
+                                                                title="Cancelar encomenda"
+                                                            >
+                                                                <XCircle size={13} /> Cancelar
+                                                            </button>
+                                                        )}
 
-                                                    {/* ENCERRAR — só parcialmente entregue */}
-                                                    {podeEncerrar && (
+                                                        {podeEncerrar && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setEncerrarDirectEnc(enc);
+                                                                    setEncerrarDirectMotivo('');
+                                                                }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
+                                                                title="Encerrar encomenda"
+                                                            >
+                                                                <ClipboardList size={13} /> Encerrar
+                                                            </button>
+                                                        )}
+
+                                                        {isEmitida && isAdmin && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleMudarEstado(enc.id, 'ENVIADA');
+                                                                }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
+                                                                title="Marcar como Enviada"
+                                                            >
+                                                                <Truck size={13} /> Enviar
+                                                            </button>
+                                                        )}
+
+                                                        {podeReceber && (
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleOpenRececao(enc);
+                                                                }}
+                                                                className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
+                                                                title="Registar receção"
+                                                            >
+                                                                <Package size={13} /> Receber
+                                                            </button>
+                                                        )}
+
+                                                        {isFinalizada && (
+                                                            <span className="text-[11px] text-slate-400 font-bold italic">
+                                                                {enc.estado === 'ENTREGUE' ? 'Concluída' : enc.estado === 'ENCERRADA' ? 'Encerrada' : 'Cancelada'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* VERTICAL DIVIDER */}
+                                                    <div className="w-px h-5 bg-slate-200 dark:bg-slate-700/50"></div>
+
+                                                    {/* SECONDARY ACTIONS ZONE */}
+                                                    <div className="flex items-center justify-end gap-1.5 w-[76px] shrink-0">
+                                                        {(isEntregue || isParcial || enc.estado === 'ENCERRADA') ? (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    generateNotaCreditoPDF(enc);
+                                                                }}
+                                                                className="flex items-center justify-center p-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
+                                                                title="Download PDF"
+                                                            >
+                                                                <FileText size={14} />
+                                                            </button>
+                                                        ) : (
+                                                            <div className="w-[34px] h-[34px]"></div>
+                                                        )}
+
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setEncerrarDirectEnc(enc);
-                                                                setEncerrarDirectMotivo('');
+                                                                handleReordenar(
+                                                                    (enc.linhas || []).map((l: any) => ({
+                                                                        produtoId: l.produtoId ?? l.produto?.id,
+                                                                        quantidade: l.quantidade
+                                                                    }))
+                                                                );
                                                             }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 active:scale-95"
-                                                            title="Encerrar encomenda"
+                                                            className="flex items-center justify-center p-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300 active:scale-95"
+                                                            title="Repetir Encomenda"
                                                         >
-                                                            <ClipboardList size={13} />
-                                                            Encerrar
+                                                            <RotateCcw size={14} strokeWidth={2.5} />
                                                         </button>
-                                                    )}
-
-                                                    {/* MARCAR ENVIADA — só admin em emitida */}
-                                                    {isEmitida && isAdmin && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleMudarEstado(enc.id, 'ENVIADA');
-                                                            }}
-                                                            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20 hover:scale-105 active:scale-95 border-blue-500/20"
-                                                            title="Marcar como Enviada"
-                                                        >
-                                                            <Truck size={14} />
-                                                            Marcar Enviada
-                                                        </button>
-                                                    )}
-
-                                                    {/* RECEBER */}
-                                                    {podeReceber && (
-                                                        <button 
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleOpenRececao(enc);
-                                                            }}
-                                                            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider px-4 py-2 rounded-xl transition-all border bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 border-emerald-500/20"
-                                                            title="Registar receção"
-                                                        >
-                                                            <Package size={14} />
-                                                            {isParcial ? 'Receber Restante' : 'Receber Encomenda'}
-                                                        </button>
-                                                    )}
-
-                                                    {/* Estado final — sem ações */}
-                                                    {isFinalizada && (
-                                                        <span className="text-[11px] text-slate-400 font-bold italic">
-                                                            {enc.estado === 'ENTREGUE' ? 'Concluída' : enc.estado === 'ENCERRADA' ? 'Encerrada' : 'Cancelada'}
-                                                        </span>
-                                                    )}
-
-                                                    {/* DOWNLOAD PDF — só recebidas */}
-                                                    {(isEntregue || isParcial) && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                generateNotaCreditoPDF(enc);
-                                                            }}
-                                                            className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
-                                                            title="Download Nota de Crédito"
-                                                        >
-                                                            <FileText size={13} />
-                                                            PDF
-                                                        </button>
-                                                    )}
-
-                                                    {/* REPETIR — sempre disponível */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleReordenar(
-                                                                (enc.linhas || []).map((l: any) => ({
-                                                                    produtoId: l.produtoId ?? l.produto?.id,
-                                                                    quantidade: l.quantidade
-                                                                }))
-                                                            );
-                                                        }}
-                                                        className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider px-3 py-2 rounded-xl transition-all border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:border-slate-300 dark:border-slate-600 hover:text-slate-700 dark:text-slate-300"
-                                                        title="Repetir encomenda"
-                                                    >
-                                                        <RotateCcw size={13} />
-                                                        Repetir
-                                                    </button>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>

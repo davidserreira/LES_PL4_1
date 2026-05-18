@@ -26,5 +26,31 @@ services:
     depends_on:
       - db
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: stockvet_backend
+    restart: always
+    environment:
+      - DATABASE_URL=postgresql://admin:adminpassword@db:5432/app_database?schema=public
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    command: sh -c "npx prisma migrate deploy && npm start"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: stockvet_frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:

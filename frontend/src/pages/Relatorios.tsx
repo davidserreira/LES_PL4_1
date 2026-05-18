@@ -86,22 +86,23 @@ export default function RelatoriosFinanceiros() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <Landmark className="text-emerald-500" />
-                        Relatórios Financeiros
-                    </h1>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        Análise de despesas, estatísticas e exportação para contabilidade
-                    </p>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <Landmark className="text-emerald-600 dark:text-emerald-400" size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Financeiro</h1>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Análise de despesas, estatísticas e exportação para contabilidade</p>
+                    </div>
                 </div>
                 
                 {relatorio && (
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
                         <button 
                             onClick={exportToCSV}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-colors text-sm font-medium focus:ring-2 focus:ring-emerald-500/50"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all text-sm font-bold focus:ring-2 focus:ring-emerald-500/50 active:scale-95"
                         >
                             <FileSpreadsheet size={18} />
                             Exportar CSV
