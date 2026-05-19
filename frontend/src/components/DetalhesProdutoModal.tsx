@@ -11,6 +11,7 @@ interface Produto {
     preco?: number;
     categoria?: string;
     descricao?: string;
+    ativo?: boolean;
     fornecedores?: { id: number; nome: string }[];
     fornecedorPreferencial?: { id: number; nome: string } | null;
     precosFornecedores?: { fornecedorId: number; preco: number }[];
@@ -28,6 +29,7 @@ interface DetalhesProdutoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onEdit?: () => void;
+    onReativar?: (id: number) => void;
     produto: Produto;
 }
 
@@ -35,7 +37,7 @@ const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(value);
 };
 
-export default function DetalhesProdutoModal({ isOpen, onClose, onEdit, produto }: DetalhesProdutoModalProps) {
+export default function DetalhesProdutoModal({ isOpen, onClose, onEdit, onReativar, produto }: DetalhesProdutoModalProps) {
     if (!isOpen || !produto) return null;
 
     const isCritico = produto.stock <= produto.stockMinimo;
@@ -74,7 +76,17 @@ export default function DetalhesProdutoModal({ isOpen, onClose, onEdit, produto 
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        {onEdit && (
+                        {produto.ativo === false && onReativar && (
+                            <button
+                                onClick={() => { onClose(); onReativar(produto.id); }}
+                                className="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 text-xs font-bold rounded-lg transition-colors mr-2 flex items-center gap-1.5"
+                                title="Reativar produto"
+                            >
+                                <CheckCircle2 size={14} />
+                                Reativar
+                            </button>
+                        )}
+                        {onEdit && produto.ativo !== false && (
                             <button
                                 onClick={() => { onClose(); onEdit(); }}
                                 className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-colors"
