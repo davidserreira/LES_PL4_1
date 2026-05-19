@@ -844,18 +844,18 @@ const Fornecedores = () => {
                                     </div>
 
                                     {/* Produtos Fornecidos */}
-                                    <div className="relative overflow-hidden rounded-2xl border border-indigo-100/90 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 p-4 shadow-sm ring-1 ring-indigo-500/[0.06]">
+                                    <div className="relative overflow-hidden rounded-2xl border border-indigo-100/90 dark:border-slate-700 bg-gradient-to-br from-white via-indigo-50/30 to-violet-50/40 dark:from-slate-800/50 dark:via-slate-800/30 dark:to-slate-900/40 p-4 shadow-sm ring-1 ring-indigo-500/[0.06] dark:ring-slate-700/50">
                                         <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-indigo-400/10 blur-2xl" />
                                         <div className="pointer-events-none absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-violet-400/10 blur-2xl" />
                                         <div className="relative flex flex-wrap items-center justify-between gap-3">
-                                            <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900/70 flex items-center gap-2">
-                                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-sm ring-1 ring-indigo-100 text-indigo-600">
+                                            <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900/70 dark:text-indigo-300 flex items-center gap-2">
+                                                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-indigo-500/10 shadow-sm ring-1 ring-indigo-100 dark:ring-indigo-500/20 text-indigo-600 dark:text-indigo-400">
                                                     <Package size={16} strokeWidth={2} />
                                                 </span>
                                                 Produtos
                                             </h3>
                                             {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 && (
-                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-white dark:bg-slate-800/80 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur-sm">
+                                                <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 dark:border-indigo-500/30 bg-white dark:bg-indigo-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300 shadow-sm backdrop-blur-sm">
                                                     <Package size={12} className="text-indigo-500" />
                                                     {detalhesFornecedor.produtos.length}{' '}
                                                     {detalhesFornecedor.produtos.length === 1 ? 'artigo' : 'artigos'}
@@ -873,10 +873,10 @@ const Fornecedores = () => {
                                                     return (
                                                         <div
                                                             key={prod.id}
-                                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-300 transition-all group"
+                                                            className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-500/50 transition-all group"
                                                         >
                                                             <div className="flex items-center gap-4 flex-1">
-                                                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+                                                                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg flex items-center justify-center shrink-0">
                                                                     <Package size={20} />
                                                                 </div>
                                                                 <div className="min-w-0">
@@ -894,7 +894,7 @@ const Fornecedores = () => {
                                                                 </div>
                                                             </div>
 
-                                                            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 p-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50 group-hover:border-indigo-100 group-hover:bg-indigo-50/30 transition-colors">
+                                                            <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-lg border border-slate-100 dark:border-slate-700/50 group-hover:border-indigo-100 dark:group-hover:border-indigo-500/30 group-hover:bg-indigo-50/30 dark:group-hover:bg-indigo-500/10 transition-colors">
                                                                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pl-2">Preço:</span>
                                                                 <div className="relative w-28">
                                                                     <DollarSign className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={12} />
