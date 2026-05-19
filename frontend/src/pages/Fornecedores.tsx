@@ -16,7 +16,7 @@ interface Fornecedor {
     contacto: string;
     email: string;
     estado: boolean;
-    categoria: string;
+    categorias: string[];
     observacoes?: string;
     criadoEm: string;
     produtos?: {
@@ -38,7 +38,7 @@ interface Fornecedor {
     diasEntrega?: string | null;
 }
 
-type SortField = 'id' | 'nome' | 'categoria' | 'contacto' | 'estado';
+type SortField = 'id' | 'nome' | 'contacto' | 'estado';
 type SortOrder = 'asc' | 'desc';
 
 interface Toast {
@@ -102,7 +102,7 @@ const Fornecedores = () => {
             f.nif.toLowerCase().includes(query) ||
             f.contacto.toLowerCase().includes(query) ||
             f.email.toLowerCase().includes(query) ||
-            f.categoria.toLowerCase().includes(query);
+            f.categorias.some(c => c.toLowerCase().includes(query));
 
         // Status Filter
         const matchesStatus =
@@ -111,7 +111,7 @@ const Fornecedores = () => {
                     f.estado === false;
 
         // Category Filter
-        const matchesCategory = filterCategoria === '' || f.categoria === filterCategoria;
+        const matchesCategory = filterCategoria === '' || f.categorias.includes(filterCategoria);
 
         return matchesSearch && matchesStatus && matchesCategory;
     });
@@ -516,12 +516,10 @@ const Fornecedores = () => {
                                         </div>
                                     </th>
                                     <th
-                                        onClick={() => handleSort('categoria')}
-                                        className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 dark:bg-slate-700/50 transition-colors group select-none"
+                                        className="px-6 py-3 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest text-left select-none"
                                     >
                                         <div className="flex items-center gap-2">
-                                            Categoria
-                                            {getSortIcon('categoria')}
+                                            Categorias
                                         </div>
                                     </th>
                                     <th
@@ -564,9 +562,13 @@ const Fornecedores = () => {
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-left">
-                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400">
-                                                {fornecedor.categoria}
-                                            </span>
+                                            <div className="flex flex-wrap gap-1">
+                                                {fornecedor.categorias.map(cat => (
+                                                    <span key={cat} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-400">
+                                                        {cat}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-5 text-left">
                                             <span className="font-medium text-slate-600 dark:text-slate-400">
@@ -690,7 +692,7 @@ const Fornecedores = () => {
                                             ID: {detalhesFornecedor.id}
                                         </span>
                                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 tracking-wider">
-                                            {detalhesFornecedor.categoria}
+                                            {detalhesFornecedor.categorias.join(', ')}
                                         </span>
                                         <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 tracking-wider">
                                             {detalhesFornecedor.email}
@@ -763,7 +765,7 @@ const Fornecedores = () => {
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Tipo de Produtos</p>
-                                                    <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{detalhesFornecedor.categoria}</p>
+                                                    <p className="text-lg font-bold text-slate-900 dark:text-slate-100">{detalhesFornecedor.categorias.join(', ')}</p>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-0.5">Estado</p>

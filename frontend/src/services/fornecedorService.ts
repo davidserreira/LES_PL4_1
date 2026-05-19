@@ -10,7 +10,7 @@ export const fornecedorService = {
         nif: string;
         contacto: string;
         email: string;
-        categoria: string;
+        categorias: string[];
         observacoes?: string;
         produtoIds?: number[];
     }) => {
@@ -30,7 +30,7 @@ export const fornecedorService = {
         nif: string;
         contacto: string;
         email: string;
-        categoria: string;
+        categorias: string[];
         observacoes?: string;
         estado?: boolean;
         valorMinimoEncomenda?: number;
