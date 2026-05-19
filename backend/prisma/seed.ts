@@ -1,50 +1,86 @@
-import { Role } from '@prisma/client';
+import { Role, EstadoEncomenda, PrioridadePedido, TipoPedido } from '@prisma/client';
 import prisma from '../src/lib/prisma';
 
-async function main() {
-    console.log('🌱 Iniciando o seeding da base de dados...');
+const SEED_TAG = '[SEED-DEMO]';
 
-    // 1. Criar Utilizadores Gestores
-    const gestor = await prisma.utilizador.upsert({
-        where: { username: 'gestor' },
-        update: { password: '1234' },
-        create: {
-            username: 'gestor',
-            password: '1234',
-            role: Role.RESPONSAVEL_STOCK
+async function ensureProduto(
+    nome: string,
+    data: {
+        stock: number;
+        stockMinimo: number;
+        preco: number;
+        categoria: string;
+        descricao: string;
+        fornecedorIds: number[];
+        fornecedorPreferencialId?: number;
+        precosFornecedores?: { fornecedorId: number; preco: number }[];
+    }
+) {
+    const existing = await prisma.produto.findFirst({ where: { nome } });
+    const fornecedorLinks = data.fornecedorIds.map((id) => ({ id }));
+    const scalar = {
+        stock: data.stock,
+        stockMinimo: data.stockMinimo,
+        preco: data.preco,
+        categoria: data.categoria,
+        descricao: data.descricao,
+        fornecedorPreferencialId: data.fornecedorPreferencialId ?? data.fornecedorIds[0],
+    };
+
+    const produto = existing
+        ? await prisma.produto.update({
+              where: { id: existing.id },
+              data: { ...scalar, fornecedores: { set: fornecedorLinks } },
+          })
+        : await prisma.produto.create({
+              data: { nome, ...scalar, fornecedores: { connect: fornecedorLinks } },
+          });
+
+    if (data.precosFornecedores) {
+        for (const pf of data.precosFornecedores) {
+            await prisma.produtoFornecedor.upsert({
+                where: {
+                    produtoId_fornecedorId: { produtoId: produto.id, fornecedorId: pf.fornecedorId },
+                },
+                update: { preco: pf.preco },
+                create: { produtoId: produto.id, fornecedorId: pf.fornecedorId, preco: pf.preco },
+            });
         }
-    });
-    console.log(`✅ Utilizador: Gestor de Stock (${gestor.id})`);
+    }
 
+    return produto;
+}
+
+async function main() {
+    console.log('🌱 Iniciando seed de dados de demonstração...\n');
+
+    // ─── Utilizadores ───────────────────────────────────────────────
     const admin = await prisma.utilizador.upsert({
         where: { username: 'admin' },
-        update: { password: '1234' },
-        create: {
-            username: 'admin',
-            password: '1234',
-            role: Role.ADMINISTRADOR
-        }
+        update: { password: '1234', ativo: true },
+        create: { username: 'admin', password: '1234', role: Role.ADMINISTRADOR },
     });
-    console.log(`✅ Utilizador: Admin (${admin.id})`);
-
+    const gestor = await prisma.utilizador.upsert({
+        where: { username: 'gestor' },
+        update: { password: '1234', ativo: true },
+        create: { username: 'gestor', password: '1234', role: Role.RESPONSAVEL_STOCK },
+    });
     const financeiro = await prisma.utilizador.upsert({
         where: { username: 'financeiro' },
-        update: { password: '1234' },
-        create: {
-            username: 'financeiro',
-            password: '1234',
-            role: Role.RESPONSAVEL_FINANCEIRO
-        }
+        update: { password: '1234', ativo: true },
+        create: { username: 'financeiro', password: '1234', role: Role.RESPONSAVEL_FINANCEIRO },
     });
-    console.log(`✅ Utilizador: Financeiro (${financeiro.id})`);
+    console.log('✅ Utilizadores: admin / gestor / financeiro (password: 1234)');
 
-    // 2. Criar Fornecedores de teste
+    // ─── Fornecedores ───────────────────────────────────────────────
     const fornecedorA = await prisma.fornecedor.upsert({
         where: { nif: '123456789' },
         update: {
-            valorMinimoEncomenda: 80.00,
+            nome: 'PetFood Elite Lda',
+            estado: true,
+            valorMinimoEncomenda: 80,
             prazoMedioEntrega: 3,
-            custoTransporte: 12.00
+            custoTransporte: 12,
         },
         create: {
             nome: 'PetFood Elite Lda',
@@ -54,18 +90,21 @@ async function main() {
             estado: true,
             categoria: 'Alimentação',
             observacoes: 'Fornecedor principal de rações premium.',
-            valorMinimoEncomenda: 80.00,
+            valorMinimoEncomenda: 80,
             prazoMedioEntrega: 3,
-            custoTransporte: 12.00
-        }
+            custoTransporte: 12,
+            metodoPagamento: 'Transferência 30 dias',
+        },
     });
 
     const fornecedorB = await prisma.fornecedor.upsert({
         where: { nif: '987654321' },
         update: {
-            valorMinimoEncomenda: 150.00,
+            nome: 'VetPharma SA',
+            estado: true,
+            valorMinimoEncomenda: 150,
             prazoMedioEntrega: 7,
-            custoTransporte: 25.00
+            custoTransporte: 25,
         },
         create: {
             nome: 'VetPharma SA',
@@ -75,138 +114,413 @@ async function main() {
             estado: true,
             categoria: 'Medicamentos',
             observacoes: 'Material cirúrgico e vacinação.',
-            valorMinimoEncomenda: 150.00,
+            valorMinimoEncomenda: 150,
             prazoMedioEntrega: 7,
-            custoTransporte: 25.00
-        }
-    });
-    
-    await prisma.avaliacao.upsert({
-        where: { fornecedorId_utilizadorId: { fornecedorId: fornecedorA.id, utilizadorId: admin.id } },
-        update: {},
-        create: { fornecedorId: fornecedorA.id, utilizadorId: admin.id, qualidade: 5, pontualidade: 4, preco: 4, comunicacao: 5, conformidade: 5 }
+            custoTransporte: 25,
+            metodoPagamento: 'Multibanco',
+        },
     });
 
-    await prisma.avaliacao.upsert({
-        where: { fornecedorId_utilizadorId: { fornecedorId: fornecedorB.id, utilizadorId: admin.id } },
-        update: {},
-        create: { fornecedorId: fornecedorB.id, utilizadorId: admin.id, qualidade: 4, pontualidade: 3, preco: 2, comunicacao: 4, conformidade: 5 }
+    const fornecedorC = await prisma.fornecedor.upsert({
+        where: { nif: '501234567' },
+        update: { nome: 'Animália Distribuição', estado: true, valorMinimoEncomenda: 50, prazoMedioEntrega: 5 },
+        create: {
+            nome: 'Animália Distribuição',
+            nif: '501234567',
+            contacto: '934567890',
+            email: 'comercial@animalia.pt',
+            estado: true,
+            categoria: 'Higiene',
+            observacoes: 'Champôs, sprays e acessórios de higiene.',
+            valorMinimoEncomenda: 50,
+            prazoMedioEntrega: 5,
+            custoTransporte: 8,
+        },
     });
 
-    console.log(`✅ Fornecedores criados e Avaliados.`);
+    const fornecedorD = await prisma.fornecedor.upsert({
+        where: { nif: '502987654' },
+        update: { nome: 'VetCare Equipamentos', estado: false, valorMinimoEncomenda: 200, prazoMedioEntrega: 14 },
+        create: {
+            nome: 'VetCare Equipamentos',
+            nif: '502987654',
+            contacto: '218765432',
+            email: 'vendas@vetcare.pt',
+            estado: false,
+            categoria: 'Equipamento',
+            observacoes: 'Fornecedor inativo — útil para testar filtros.',
+            valorMinimoEncomenda: 200,
+            prazoMedioEntrega: 14,
+            custoTransporte: 35,
+        },
+    });
 
-    // 3. Criar Produtos de teste
-    const produtosExistentes = await prisma.produto.count();
+    for (const [forn, scores] of [
+        [fornecedorA, { qualidade: 5, pontualidade: 4, preco: 4, comunicacao: 5, conformidade: 5 }],
+        [fornecedorB, { qualidade: 4, pontualidade: 3, preco: 2, comunicacao: 4, conformidade: 5 }],
+        [fornecedorC, { qualidade: 4, pontualidade: 5, preco: 4, comunicacao: 3, conformidade: 4 }],
+    ] as const) {
+        await prisma.avaliacao.upsert({
+            where: { fornecedorId_utilizadorId: { fornecedorId: forn.id, utilizadorId: admin.id } },
+            update: scores,
+            create: { fornecedorId: forn.id, utilizadorId: admin.id, comentario: SEED_TAG, ...scores },
+        });
+    }
+    console.log('✅ 4 fornecedores (3 ativos, 1 inativo) + avaliações');
 
-    if (produtosExistentes === 0) {
-        // Criar produtos associados a fornecedores
-        await prisma.produto.create({
-            data: {
-                nome: 'Ração Cães Adultos 15kg',
-                stock: 5,
-                stockMinimo: 10,
-                preco: 45.99,
-                categoria: 'Alimentação',
-                descricao: 'Ração grain-free para porte médio.',
-                fornecedores: { connect: [{ id: fornecedorA.id }] }
-            }
-        });
-        await prisma.produto.create({
-            data: {
-                nome: 'Vacina Antirrábica',
-                stock: 20,
-                stockMinimo: 15,
-                preco: 12.50,
-                categoria: 'Medicamentos',
-                descricao: 'Vacina anual dose individual.',
-                fornecedores: { connect: [{ id: fornecedorB.id }] }
-            }
-        });
-        await prisma.produto.create({
-            data: {
-                nome: 'Coleira Antiparasitária (Cães Grandes)',
-                stock: 2,
-                stockMinimo: 5,
-                preco: 28.50,
-                categoria: 'Acessórios',
-                descricao: 'Proteção eficaz contra carraças e pulgas durante 6 meses.',
-                fornecedores: { connect: [{ id: fornecedorA.id }, { id: fornecedorB.id }] }
-            }
-        });
-        await prisma.produto.create({
-            data: {
-                nome: 'Comprimidos Desparasitantes',
-                stock: 50,
-                stockMinimo: 20,
-                preco: 8.00,
-                categoria: 'Medicamentos',
-                descricao: 'Caixa com 10 pastilhas.',
-                fornecedores: { connect: [{ id: fornecedorB.id }] }
-            }
-        });
-        await prisma.produto.create({
-            data: {
-                nome: 'Biscoitos Dentais',
-                stock: 8,
-                stockMinimo: 20,
-                preco: 4.50,
-                categoria: 'Snacks',
-                descricao: 'Limpa o tártaro ao mesmo tempo que recompensa o cão.',
-                fornecedores: { connect: [{ id: fornecedorA.id }] }
-            }
-        });
-        console.log(`✅ Foram inseridos 5 Produtos de teste, associados a fornecedores.`);
-    } else {
-        console.log(`⚠️ Já existem ${produtosExistentes} Produtos na base de dados. Nenhuma ração/produto novo adicionado.`);
+    // ─── Produtos ───────────────────────────────────────────────────
+    const p1 = await ensureProduto('Ração Cães Adultos 15kg', {
+        stock: 5,
+        stockMinimo: 10,
+        preco: 45.99,
+        categoria: 'Alimentação',
+        descricao: 'Ração grain-free porte médio — stock baixo.',
+        fornecedorIds: [fornecedorA.id, fornecedorC.id],
+        fornecedorPreferencialId: fornecedorA.id,
+        precosFornecedores: [
+            { fornecedorId: fornecedorA.id, preco: 45.99 },
+            { fornecedorId: fornecedorC.id, preco: 47.5 },
+        ],
+    });
+    const p2 = await ensureProduto('Vacina Antirrábica', {
+        stock: 20,
+        stockMinimo: 15,
+        preco: 12.5,
+        categoria: 'Medicamentos',
+        descricao: 'Vacina anual dose individual.',
+        fornecedorIds: [fornecedorB.id],
+        precosFornecedores: [{ fornecedorId: fornecedorB.id, preco: 12.5 }],
+    });
+    const p3 = await ensureProduto('Coleira Antiparasitária (Cães Grandes)', {
+        stock: 2,
+        stockMinimo: 5,
+        preco: 28.5,
+        categoria: 'Acessórios',
+        descricao: 'Proteção 6 meses — stock crítico.',
+        fornecedorIds: [fornecedorA.id, fornecedorB.id],
+        fornecedorPreferencialId: fornecedorA.id,
+        precosFornecedores: [
+            { fornecedorId: fornecedorA.id, preco: 28.5 },
+            { fornecedorId: fornecedorB.id, preco: 31.0 },
+        ],
+    });
+    const p4 = await ensureProduto('Comprimidos Desparasitantes', {
+        stock: 50,
+        stockMinimo: 20,
+        preco: 8.0,
+        categoria: 'Medicamentos',
+        descricao: 'Caixa com 10 pastilhas.',
+        fornecedorIds: [fornecedorB.id],
+    });
+    const p5 = await ensureProduto('Biscoitos Dentais', {
+        stock: 8,
+        stockMinimo: 20,
+        preco: 4.5,
+        categoria: 'Snacks',
+        descricao: 'Stock abaixo do mínimo.',
+        fornecedorIds: [fornecedorA.id],
+    });
+    const p6 = await ensureProduto('Champô Hipoalergénico 500ml', {
+        stock: 30,
+        stockMinimo: 10,
+        preco: 14.9,
+        categoria: 'Higiene',
+        descricao: 'Para pele sensível.',
+        fornecedorIds: [fornecedorC.id],
+        precosFornecedores: [{ fornecedorId: fornecedorC.id, preco: 14.9 }],
+    });
+    const p7 = await ensureProduto('Ração Gatos Indoor 10kg', {
+        stock: 18,
+        stockMinimo: 8,
+        preco: 38.0,
+        categoria: 'Alimentação',
+        descricao: 'Controlo de bolas de pelo.',
+        fornecedorIds: [fornecedorA.id],
+    });
+    const p8 = await ensureProduto('Seringas Descartáveis (cx 100)', {
+        stock: 12,
+        stockMinimo: 25,
+        preco: 22.0,
+        categoria: 'Material clínico',
+        descricao: 'Stock a repor.',
+        fornecedorIds: [fornecedorB.id, fornecedorD.id],
+        fornecedorPreferencialId: fornecedorB.id,
+    });
+    const p9 = await ensureProduto('Termómetro Digital Veterinário', {
+        stock: 6,
+        stockMinimo: 3,
+        preco: 19.99,
+        categoria: 'Equipamento',
+        descricao: 'Leitura rápida.',
+        fornecedorIds: [fornecedorD.id],
+    });
+    const p10 = await ensureProduto('Spray Antisséptico 250ml', {
+        stock: 40,
+        stockMinimo: 15,
+        preco: 9.5,
+        categoria: 'Higiene',
+        descricao: 'Uso clínico diário.',
+        fornecedorIds: [fornecedorC.id, fornecedorB.id],
+    });
+    console.log('✅ 10 produtos (vários níveis de stock + preços por fornecedor)');
+
+    // ─── Pedidos e encomendas de demonstração ─────────────────────────
+    const seedPedidos = await prisma.pedidoCompra.count({
+        where: { observacoes: { contains: SEED_TAG } },
+    });
+
+    if (seedPedidos > 0) {
+        console.log(`⚠️  Já existem ${seedPedidos} pedidos ${SEED_TAG}. A saltar pedidos/encomendas.`);
+        console.log('\n🎉 Seed concluído (dados base atualizados).');
+        return;
     }
 
-    // 4. Criar um Pedido de Compra e Encomenda se não existir nenhum
-    const pedidosExistentes = await prisma.pedidoCompra.count();
-    if (pedidosExistentes === 0) {
-        const produto1 = await prisma.produto.findFirst({ where: { nome: 'Ração Cães Adultos 15kg' } });
-        const produto2 = await prisma.produto.findFirst({ where: { nome: 'Biscoitos Dentais' } });
+    const linha = (produtoId: number, qtd: number, preco: number, fornecedorId: number) => ({
+        produtoId,
+        quantidade: qtd,
+        precoUnitario: preco,
+        valorTotal: qtd * preco,
+        fornecedorId,
+    });
 
-        if (produto1 && produto2) {
-            const pedido = await prisma.pedidoCompra.create({
-                data: {
-                    estado: 'PROCESSADO',
-                    prioridade: 'NORMAL',
-                    tipo: 'MANUAL',
-                    valorTotalEstimado: (2 * produto1.preco) + (5 * produto2.preco),
-                    criadoPorId: gestor.id,
-                    observacoes: 'Pedido gerado automaticamente no seed',
-                    linhas: {
-                        create: [
-                            { produtoId: produto1.id, quantidade: 2, precoUnitario: produto1.preco, valorTotal: 2 * produto1.preco, fornecedorId: fornecedorA.id },
-                            { produtoId: produto2.id, quantidade: 5, precoUnitario: produto2.preco, valorTotal: 5 * produto2.preco, fornecedorId: fornecedorA.id }
-                        ]
-                    }
-                }
-            });
-            console.log(`✅ Pedido de Compra criado (${pedido.id})`);
+    // RASCUNHO
+    await prisma.pedidoCompra.create({
+        data: {
+            estado: 'RASCUNHO',
+            prioridade: 'NORMAL',
+            tipo: 'MANUAL',
+            valorTotalEstimado: 2 * p7.preco,
+            criadoPorId: gestor.id,
+            observacoes: `${SEED_TAG} Rascunho — editar e confirmar`,
+            linhas: { create: [linha(p7.id, 2, p7.preco, fornecedorA.id)] },
+        },
+    });
 
-            const encomenda = await prisma.encomenda.create({
-                data: {
-                    codigoFormatado: 'EC-2026-001',
-                    estado: 'ENVIADA',
-                    valorTotal: pedido.valorTotalEstimado,
-                    fornecedorId: fornecedorA.id,
-                    pedidoCompraId: pedido.id,
-                    observacoes: 'Encomenda de teste.',
-                    dataEntregaPrevista: new Date(new Date().setDate(new Date().getDate() + 3)),
-                    linhas: {
-                        create: [
-                            { produtoId: produto1.id, quantidade: 2, precoUnitario: produto1.preco, valorTotal: 2 * produto1.preco },
-                            { produtoId: produto2.id, quantidade: 5, precoUnitario: produto2.preco, valorTotal: 5 * produto2.preco }
-                        ]
-                    }
-                }
-            });
-            console.log(`✅ Encomenda de Teste criada (${encomenda.codigoFormatado})`);
-        }
-    }
+    // PENDENTE (aprovar / recusar)
+    await prisma.pedidoCompra.create({
+        data: {
+            estado: 'PENDENTE',
+            prioridade: 'ALTA',
+            tipo: 'AUTOMATICO',
+            valorTotalEstimado: 10 * p1.preco + 20 * p5.preco,
+            criadoPorId: gestor.id,
+            observacoes: `${SEED_TAG} Pendente — aguarda aprovação`,
+            linhas: {
+                create: [
+                    linha(p1.id, 10, p1.preco, fornecedorA.id),
+                    linha(p5.id, 20, p5.preco, fornecedorA.id),
+                ],
+            },
+        },
+    });
 
-    console.log('🎉 Seeding concluído com sucesso!');
+    // APROVADO (gerar encomendas)
+    await prisma.pedidoCompra.create({
+        data: {
+            estado: 'APROVADO',
+            prioridade: 'URGENTE',
+            tipo: 'MANUAL',
+            valorTotalEstimado: 5 * p3.preco + 3 * p2.preco,
+            criadoPorId: admin.id,
+            observacoes: `${SEED_TAG} Aprovado — testar geração de encomendas`,
+            linhas: {
+                create: [
+                    linha(p3.id, 5, p3.preco, fornecedorA.id),
+                    linha(p2.id, 3, p2.preco, fornecedorB.id),
+                ],
+            },
+        },
+    });
+
+    // RECUSADO / CANCELADO (histórico)
+    await prisma.pedidoCompra.create({
+        data: {
+            estado: 'RECUSADO',
+            prioridade: 'NORMAL',
+            tipo: 'MANUAL',
+            valorTotalEstimado: p9.preco,
+            criadoPorId: financeiro.id,
+            observacoes: `${SEED_TAG} Recusado — exemplo histórico`,
+            linhas: { create: [linha(p9.id, 1, p9.preco, fornecedorD.id)] },
+        },
+    });
+    await prisma.pedidoCompra.create({
+        data: {
+            estado: 'CANCELADO',
+            prioridade: 'NORMAL',
+            tipo: 'MANUAL',
+            valorTotalEstimado: 4 * p6.preco,
+            criadoPorId: gestor.id,
+            observacoes: `${SEED_TAG} Cancelado — exemplo histórico`,
+            linhas: { create: [linha(p6.id, 4, p6.preco, fornecedorC.id)] },
+        },
+    });
+
+    // PROCESSADO + encomendas em vários estados
+    const pedidoProcessado = await prisma.pedidoCompra.create({
+        data: {
+            estado: 'PROCESSADO',
+            prioridade: 'NORMAL',
+            tipo: 'MANUAL',
+            valorTotalEstimado: 4 * p1.preco + 6 * p5.preco + 2 * p2.preco,
+            criadoPorId: gestor.id,
+            observacoes: `${SEED_TAG} Processado — com encomendas em vários estados`,
+            linhas: {
+                create: [
+                    linha(p1.id, 4, p1.preco, fornecedorA.id),
+                    linha(p5.id, 6, p5.preco, fornecedorA.id),
+                    linha(p2.id, 2, p2.preco, fornecedorB.id),
+                ],
+            },
+        },
+    });
+
+    const totalA = 4 * p1.preco + 6 * p5.preco;
+    const totalB = 2 * p2.preco;
+    const entrega = new Date();
+    entrega.setDate(entrega.getDate() + 5);
+
+    await prisma.encomenda.create({
+        data: {
+            codigoFormatado: 'EC-SEED-001',
+            estado: EstadoEncomenda.ENVIADA,
+            valorTotal: totalA,
+            fornecedorId: fornecedorA.id,
+            pedidoCompraId: pedidoProcessado.id,
+            observacoes: `${SEED_TAG} Encomenda enviada — PetFood`,
+            dataEntregaPrevista: entrega,
+            linhas: {
+                create: [
+                    { produtoId: p1.id, quantidade: 4, precoUnitario: p1.preco, valorTotal: 4 * p1.preco, quantidadeRecebida: 0 },
+                    { produtoId: p5.id, quantidade: 6, precoUnitario: p5.preco, valorTotal: 6 * p5.preco, quantidadeRecebida: 0 },
+                ],
+            },
+        },
+    });
+
+    await prisma.encomenda.create({
+        data: {
+            codigoFormatado: 'EC-SEED-002',
+            estado: EstadoEncomenda.EMITIDA,
+            valorTotal: totalB,
+            fornecedorId: fornecedorB.id,
+            pedidoCompraId: pedidoProcessado.id,
+            observacoes: `${SEED_TAG} Encomenda emitida — VetPharma`,
+            dataEntregaPrevista: entrega,
+            linhas: {
+                create: [
+                    { produtoId: p2.id, quantidade: 2, precoUnitario: p2.preco, valorTotal: totalB, quantidadeRecebida: 0 },
+                ],
+            },
+        },
+    });
+
+    // Pedido só para receção parcial / total
+    const pedidoRececao = await prisma.pedidoCompra.create({
+        data: {
+            estado: 'PROCESSADO',
+            prioridade: 'ALTA',
+            tipo: 'MANUAL',
+            valorTotalEstimado: 15 * p4.preco + 10 * p6.preco,
+            criadoPorId: admin.id,
+            observacoes: `${SEED_TAG} Processado — testar receção de stock`,
+            linhas: {
+                create: [
+                    linha(p4.id, 15, p4.preco, fornecedorB.id),
+                    linha(p6.id, 10, p6.preco, fornecedorC.id),
+                ],
+            },
+        },
+    });
+
+    await prisma.encomenda.create({
+        data: {
+            codigoFormatado: 'EC-SEED-003',
+            estado: EstadoEncomenda.ENTREGUE_PARCIAL,
+            valorTotal: 15 * p4.preco,
+            fornecedorId: fornecedorB.id,
+            pedidoCompraId: pedidoRececao.id,
+            observacoes: `${SEED_TAG} Receção parcial`,
+            dataEntregaPrevista: entrega,
+            linhas: {
+                create: [
+                    {
+                        produtoId: p4.id,
+                        quantidade: 15,
+                        precoUnitario: p4.preco,
+                        valorTotal: 15 * p4.preco,
+                        quantidadeRecebida: 8,
+                    },
+                ],
+            },
+        },
+    });
+
+    await prisma.encomenda.create({
+        data: {
+            codigoFormatado: 'EC-SEED-004',
+            estado: EstadoEncomenda.ENTREGUE,
+            valorTotal: 10 * p6.preco,
+            fornecedorId: fornecedorC.id,
+            pedidoCompraId: pedidoRececao.id,
+            observacoes: `${SEED_TAG} Entregue total`,
+            dataEntregaReal: new Date(),
+            dataEntregaPrevista: entrega,
+            linhas: {
+                create: [
+                    {
+                        produtoId: p6.id,
+                        quantidade: 10,
+                        precoUnitario: p6.preco,
+                        valorTotal: 10 * p6.preco,
+                        quantidadeRecebida: 10,
+                    },
+                ],
+            },
+        },
+    });
+
+    await prisma.encomenda.create({
+        data: {
+            codigoFormatado: 'EC-SEED-005',
+            estado: EstadoEncomenda.CANCELADA,
+            valorTotal: 3 * p8.preco,
+            fornecedorId: fornecedorB.id,
+            pedidoCompraId: pedidoRececao.id,
+            observacoes: `${SEED_TAG} Encomenda cancelada`,
+            linhas: {
+                create: [
+                    { produtoId: p8.id, quantidade: 3, precoUnitario: p8.preco, valorTotal: 3 * p8.preco, quantidadeRecebida: 0 },
+                ],
+            },
+        },
+    });
+
+    await prisma.encomenda.create({
+        data: {
+            codigoFormatado: 'EC-SEED-006',
+            estado: EstadoEncomenda.ENCERRADA,
+            valorTotal: 5 * p10.preco,
+            fornecedorId: fornecedorC.id,
+            pedidoCompraId: pedidoRececao.id,
+            observacoes: `${SEED_TAG} Encomenda encerrada`,
+            dataEntregaReal: new Date(),
+            linhas: {
+                create: [
+                    { produtoId: p10.id, quantidade: 5, precoUnitario: p10.preco, valorTotal: 5 * p10.preco, quantidadeRecebida: 5 },
+                ],
+            },
+        },
+    });
+
+    console.log('✅ Pedidos: RASCUNHO, PENDENTE, APROVADO, PROCESSADO, RECUSADO, CANCELADO');
+    console.log('✅ Encomendas: EMITIDA, ENVIADA, ENTREGUE_PARCIAL, ENTREGUE, CANCELADA, ENCERRADA');
+
+    console.log('\n🎉 Seed concluído com sucesso!');
+    console.log('\n📋 Credenciais de teste:');
+    console.log('   admin      / 1234  (Administrador)');
+    console.log('   gestor     / 1234  (Gestor stock)');
+    console.log('   financeiro / 1234  (Financeiro)');
 }
 
 main()
