@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, Clock, Truck, HandCoins, CalendarDays, Edit, DollarSign, FileText, Database, Package, Pill } from 'lucide-react';
+import { Plus, Factory, AlertCircle, CheckCircle2, X, Search, MoreVertical, ArrowUpDown, ArrowUp, ArrowDown, Filter, ChevronDown, Clock, Truck, HandCoins, CalendarDays, Edit, DollarSign, FileText, Database, Package, Pill, Pencil } from 'lucide-react';
 import { fornecedorService } from '../services/fornecedorService';
 import CriarFornecedorModal from '../components/CriarFornecedorModal';
 import EditarFornecedorModal from '../components/EditarFornecedorModal';
@@ -206,16 +206,18 @@ const Fornecedores = () => {
                     >
                         Ver Detalhes
                     </button>
-                    <button
-                        onClick={() => {
-                            setFornecedorAEditar(fornecedor);
-                            setOpenDropdownId(null);
-                            setDropdownAnchor(null);
-                        }}
-                        className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400 transition-colors"
-                    >
-                        Editar Fornecedor
-                    </button>
+                    {user?.role === 'ADMINISTRADOR' && (
+                        <button
+                            onClick={() => {
+                                setFornecedorAEditar(fornecedor);
+                                setOpenDropdownId(null);
+                                setDropdownAnchor(null);
+                            }}
+                            className="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 hover:text-blue-600 dark:text-blue-400 transition-colors"
+                        >
+                            Editar Fornecedor
+                        </button>
+                    )}
                     <button
                         onClick={() => {
                             setFornecedorAAvaliar({ id: fornecedor.id, nome: fornecedor.nome });
@@ -240,6 +242,14 @@ const Fornecedores = () => {
             </div>,
             document.body
         );
+    };
+
+    const handleEditFromDetalhes = () => {
+        if (!detalhesFornecedor) return;
+        const fornecedor = detalhesFornecedor;
+        setDetalhesFornecedor(null);
+        setActiveTab('geral');
+        setFornecedorAEditar(fornecedor);
     };
 
     const handleToggleEstado = async (id: number, currentEstado: boolean) => {
@@ -688,12 +698,25 @@ const Fornecedores = () => {
                                     </div>
                                 </div>
                             </div>
-                            <button 
-                                onClick={() => { setDetalhesFornecedor(null); setActiveTab('geral'); }}
-                                className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
-                            >
-                                <X size={20} />
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                                {user?.role === 'ADMINISTRADOR' && (
+                                    <button
+                                        type="button"
+                                        onClick={handleEditFromDetalhes}
+                                        className="p-2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-colors"
+                                        title="Editar fornecedor"
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => { setDetalhesFornecedor(null); setActiveTab('geral'); }}
+                                    className="p-2 text-slate-400 hover:text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:bg-slate-700 rounded-lg transition-colors"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
                         </div>
 
                         {/* Tabs Header */}
