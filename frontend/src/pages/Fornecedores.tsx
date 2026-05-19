@@ -850,9 +850,9 @@ const Fornecedores = () => {
                                         <div className="relative flex flex-wrap items-center justify-between gap-3">
                                             <h3 className="text-xs font-bold uppercase tracking-widest text-indigo-900/70 flex items-center gap-2">
                                                 <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-sm ring-1 ring-indigo-100 text-indigo-600">
-                                                    <Pill size={16} strokeWidth={2} />
+                                                    <Package size={16} strokeWidth={2} />
                                                 </span>
-                                                Medicamentos e produtos
+                                                Produtos
                                             </h3>
                                             {detalhesFornecedor.produtos && detalhesFornecedor.produtos.length > 0 && (
                                                 <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-white dark:bg-slate-800/80 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-700 shadow-sm backdrop-blur-sm">
@@ -877,7 +877,7 @@ const Fornecedores = () => {
                                                         >
                                                             <div className="flex items-center gap-4 flex-1">
                                                                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center shrink-0">
-                                                                    <Pill size={20} />
+                                                                    <Package size={20} />
                                                                 </div>
                                                                 <div className="min-w-0">
                                                                     <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">
