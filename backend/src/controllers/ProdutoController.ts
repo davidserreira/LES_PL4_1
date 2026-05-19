@@ -152,33 +152,62 @@ export const updateProduto = async (req: Request, res: Response): Promise<any> =
     }
 };
 
-export const deleteProduto = async (req: Request, res: Response) => {
+export const deleteProduto = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
-        const force = req.query.force === 'true';
+        const parsedId = parseInt(id);
 
-        if (force) {
-            // Se forçado, apaga primeiro as LinhasPedidoCompra associadas
-            await prisma.linhaPedidoCompra.deleteMany({
-                where: { produtoId: parseInt(id) }
+        const produto = await prisma.produto.findUnique({
+            where: { id: parsedId },
+            include: {
+                linhasPedido: { select: { id: true } },
+                linhasEncomenda: { select: { id: true } }
+            }
+        });
+
+        if (!produto) {
+            return res.status(404).json({ error: 'Produto não encontrado' });
+        }
+
+        if (produto.linhasPedido.length > 0 || produto.linhasEncomenda.length > 0) {
+            // Se estiver associado a pedidos ou encomendas, inativar o produto em vez de o apagar
+            await prisma.produto.update({
+                where: { id: parsedId },
+                data: { ativo: false }
+            });
+            return res.status(200).json({ 
+                message: 'Produto inativado pois está associado a encomendas.', 
+                code: 'INACTIVATED' 
             });
         }
+
+        // Não tem encomendas, podemos apagar em definitivo. 
+        // Remover relações primeiro
+        await prisma.produtoFornecedor.deleteMany({
+            where: { produtoId: parsedId }
+        });
 
         await prisma.produto.delete({
-            where: { id: parseInt(id) }
+            where: { id: parsedId }
         });
-        res.status(204).send();
+
+        return res.status(204).send();
     } catch (error: any) {
-        if (error.code === 'P2003') {
-            return res.status(409).json({ error: 'Produto associado a pedidos', code: 'HAS_RELATIONS' });
-        }
         console.error('Erro ao eliminar produto:', error);
-        if (error.code === 'P2003') {
-            return res.status(409).json({ 
-                error: 'Não é possível eliminar este produto pois está associado a pedidos.',
-                code: 'HAS_RELATIONS'
-            });
-        }
-        res.status(500).json({ error: 'Erro ao eliminar produto', details: error.message });
+        return res.status(500).json({ error: 'Erro ao eliminar produto', details: error.message });
+    }
+};
+
+export const reativarProduto = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const produto = await prisma.produto.update({
+            where: { id: parseInt(id) },
+            data: { ativo: true }
+        });
+        return res.json(produto);
+    } catch (error: any) {
+        console.error('Erro ao reativar produto:', error);
+        return res.status(500).json({ error: 'Erro ao reativar produto', details: error.message });
     }
 };

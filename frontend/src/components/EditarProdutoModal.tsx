@@ -32,7 +32,7 @@ interface EditarProdutoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    onDelete: (id: number, force?: boolean) => Promise<boolean | void> | void;
+    onDelete: (id: number) => Promise<boolean | void> | void;
     produto: Produto;
 }
 
@@ -66,7 +66,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
     // Deletion visual state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
     const categoryRef = useRef<HTMLDivElement>(null);
@@ -127,7 +126,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             setError(null);
             setIsCategoryOpen(false);
             setShowDeleteConfirm(false);
-            setShowForceDeleteConfirm(false);
             setDeleteLoading(false);
             setIsFornecedoresOpen(false);
         }
@@ -260,12 +258,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                     disabled={deleteLoading}
                                     onClick={async () => {
                                         setDeleteLoading(true);
-                                        const success = await onDelete(produto.id, false);
+                                        await onDelete(produto.id);
                                         setDeleteLoading(false);
-                                        if (success === false) {
-                                            setShowDeleteConfirm(false);
-                                            setShowForceDeleteConfirm(true);
-                                        }
                                     }}
                                     className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
                                 >
@@ -562,52 +556,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 </form>
             </div>
 
-            {/* Confirm Force Delete Modal */}
-            {showForceDeleteConfirm && (
-                <div 
-                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200"
-                    onMouseDown={(e) => {
-                        if (e.target === e.currentTarget) {
-                            setShowForceDeleteConfirm(false);
-                        }
-                    }}
-                >
-                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6">
-                            <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
-                                <AlertTriangle size={24} className="text-red-600 dark:text-red-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Atenção!</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Este produto está associado a uma ou mais encomendas. Tem a certeza que pretende apagá-lo? Será também removido das referidas encomendas.
-                            </p>
-                        </div>
-                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setShowForceDeleteConfirm(false)}
-                                disabled={deleteLoading}
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50 focus:outline-none"
-                            >
-                                Voltar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    setDeleteLoading(true);
-                                    await onDelete(produto.id, true);
-                                    setDeleteLoading(false);
-                                    setShowForceDeleteConfirm(false);
-                                }}
-                                disabled={deleteLoading}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-red-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 outline-none"
-                            >
-                                {deleteLoading ? 'A apagar...' : 'Sim, Apagar Mesmo'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
