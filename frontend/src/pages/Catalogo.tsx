@@ -20,7 +20,6 @@ interface Produto {
     preco?: number;
     categoria?: string;
     descricao?: string;
-    ativo?: boolean;
     criadoEm: string;
     fornecedores?: { id: number; nome: string }[];
     fornecedorPreferencial?: { id: number; nome: string } | null;
@@ -179,32 +178,20 @@ const Catalogo = () => {
         fetchProdutos();
     }, []);
 
-    const handleDelete = async (id: number): Promise<boolean | void> => {
+    const handleDelete = async (id: number, force?: boolean): Promise<boolean | void> => {
         try {
-            const result = await produtoService.delete(id);
-            if (result && result.code === 'INACTIVATED') {
-                showToast(result.message || 'Produto inativado pois está associado a encomendas.', 'success');
-            } else {
-                showToast('Produto eliminado com sucesso.', 'success');
-            }
+            await produtoService.delete(id, force);
+            showToast('Produto eliminado com sucesso.', 'success');
             setProductToEdit(null);
             fetchProdutos();
             return true;
         } catch (error: any) {
+            if (error.response?.data?.code === 'HAS_RELATIONS' && !force) {
+                return false;
+            }
             console.error('Erro ao eliminar produto:', error);
             showToast('Erro ao eliminar o produto. Tente novamente.', 'error');
-            return false;
-        }
-    };
-
-    const handleReativar = async (id: number) => {
-        try {
-            await produtoService.reativar(id);
-            showToast('Produto reativado com sucesso.', 'success');
-            fetchProdutos();
-        } catch (error) {
-            console.error('Erro ao reativar produto:', error);
-            showToast('Erro ao reativar o produto.', 'error');
+            return true;
         }
     };
 
@@ -520,7 +507,7 @@ const Catalogo = () => {
                                                             ? 'bg-blue-50 dark:bg-blue-500/10 cursor-pointer'
                                                             : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/60 cursor-pointer'
                                                         : 'hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900/50 cursor-pointer'
-                                                } ${produto.ativo === false ? 'opacity-60 bg-slate-50/50 dark:bg-slate-900/50' : ''}`}
+                                                }`}
                                                 style={isSelectionMode && isSelected ? { boxShadow: 'inset 3px 0 0 #3b82f6' } : isSelectionMode ? { boxShadow: 'inset 3px 0 0 transparent' } : {}}
                                             >
                                                 <td className="px-6 py-5">
@@ -533,12 +520,7 @@ const Catalogo = () => {
                                                             <Package size={20} />
                                                         </div>
                                                         <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`block font-bold text-slate-900 dark:text-slate-100 ${produto.ativo === false ? 'line-through text-slate-500 dark:text-slate-500' : ''}`}>{produto.nome}</span>
-                                                                {produto.ativo === false && (
-                                                                    <span className="text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 px-1.5 py-0.5 rounded font-bold uppercase">Inativo</span>
-                                                                )}
-                                                            </div>
+                                                            <span className="block font-bold text-slate-900 dark:text-slate-100">{produto.nome}</span>
                                                             {produto.descricao && (
                                                                 <span className="text-[11px] text-slate-400 font-medium truncate max-w-[200px] block">{produto.descricao}</span>
                                                             )}
@@ -634,27 +616,23 @@ const Catalogo = () => {
 
                                                                         <div className="my-1 border-t border-slate-100 dark:border-slate-700/50" />
 
-                                                                        {/* Editar Produto (apenas se ativo) */}
-                                                                        {produto.ativo !== false && (
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); setOpenRowMenuId(null); setProductToEdit(produto); }}
-                                                                                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
-                                                                            >
-                                                                                <Pencil size={15} className="text-slate-400 flex-shrink-0" />
-                                                                                Editar Produto
-                                                                            </button>
-                                                                        )}
+                                                                        {/* Editar Produto */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); setOpenRowMenuId(null); setProductToEdit(produto); }}
+                                                                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
+                                                                        >
+                                                                            <Pencil size={15} className="text-slate-400 flex-shrink-0" />
+                                                                            Editar Produto
+                                                                        </button>
 
-                                                                        {/* Criar Pedido (apenas se ativo) */}
-                                                                        {produto.ativo !== false && (
-                                                                            <button
-                                                                                onClick={(e) => { e.stopPropagation(); handleRowCriarPedido(produto); }}
-                                                                                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
-                                                                            >
-                                                                                <ShoppingCart size={15} className="text-slate-400 flex-shrink-0" />
-                                                                                Criar Pedido
-                                                                            </button>
-                                                                        )}
+                                                                        {/* Criar Pedido */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); handleRowCriarPedido(produto); }}
+                                                                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
+                                                                        >
+                                                                            <ShoppingCart size={15} className="text-slate-400 flex-shrink-0" />
+                                                                            Criar Pedido
+                                                                        </button>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -749,7 +727,6 @@ const Catalogo = () => {
                     setProductToView(null);
                     if (p) setProductToEdit(p);
                 }}
-                onReativar={handleReativar}
                 produto={productToView!}
             />
 
