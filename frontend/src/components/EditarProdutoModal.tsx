@@ -32,7 +32,7 @@ interface EditarProdutoModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess: () => void;
-    onDelete: (id: number, force?: boolean) => Promise<boolean | void> | void;
+    onDelete: (id: number) => Promise<boolean | void> | void;
     produto: Produto;
 }
 
@@ -58,7 +58,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     
     // Fornecedores State
-    const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean }[]>([]);
+    const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean; categorias?: string[] }[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
     const [fornecedorPrecos, setFornecedorPrecos] = useState<Record<number, string>>({});
     const [fornecedorPreferencialId, setFornecedorPreferencialId] = useState<number | null>(null);
@@ -66,7 +66,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
     // Deletion visual state
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [showForceDeleteConfirm, setShowForceDeleteConfirm] = useState(false);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
     const categoryRef = useRef<HTMLDivElement>(null);
@@ -90,6 +89,19 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             setFornecedorPreferencialId(selectedFornecedores[0]);
         }
     }, [selectedFornecedores, fornecedorPreferencialId]);
+
+    // Keep only valid suppliers when category changes
+    useEffect(() => {
+        if (fornecedores.length === 0) return;
+        setSelectedFornecedores(prev => {
+            if (!categoria) return [];
+            const validIds = prev.filter(id => {
+                const f = fornecedores.find(f => f.id === id);
+                return f ? (f.categorias && f.categorias.includes(categoria)) : true;
+            });
+            return validIds.length !== prev.length ? validIds : prev;
+        });
+    }, [categoria, fornecedores]);
 
     useEffect(() => {
         if (isOpen && produto) {
@@ -127,7 +139,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
             setError(null);
             setIsCategoryOpen(false);
             setShowDeleteConfirm(false);
-            setShowForceDeleteConfirm(false);
             setDeleteLoading(false);
             setIsFornecedoresOpen(false);
         }
@@ -219,6 +230,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
     const SelectedCategoryIcon = CATEGORIES.find(c => c.name === categoria)?.icon || Tag;
 
+    const fornecedoresFiltrados = fornecedores.filter(f => categoria && f.categorias && f.categorias.includes(categoria));
+
     return (
         <div
             className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}
@@ -260,12 +273,8 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                     disabled={deleteLoading}
                                     onClick={async () => {
                                         setDeleteLoading(true);
-                                        const success = await onDelete(produto.id, false);
+                                        await onDelete(produto.id);
                                         setDeleteLoading(false);
-                                        if (success === false) {
-                                            setShowDeleteConfirm(false);
-                                            setShowForceDeleteConfirm(true);
-                                        }
                                     }}
                                     className="text-xs px-2 py-1 bg-red-500 text-white font-bold rounded hover:bg-red-600 transition-colors shadow-sm disabled:opacity-50"
                                 >
@@ -398,8 +407,12 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
 
                             {isFornecedoresOpen && (
                                 <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200 max-h-48 overflow-y-auto custom-scrollbar">
-                                    {fornecedores.length > 0 ? (
-                                        fornecedores.map((fornecedor) => {
+                                    {!categoria ? (
+                                        <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center italic">
+                                            Selecione uma categoria primeiro.
+                                        </div>
+                                    ) : fornecedoresFiltrados.length > 0 ? (
+                                        fornecedoresFiltrados.map((fornecedor) => {
                                             const isSelected = selectedFornecedores.includes(fornecedor.id);
                                             return (
                                                 <button
@@ -437,7 +450,7 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                                         })
                                     ) : (
                                         <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center italic">
-                                            Nenhum fornecedor ativo disponível.
+                                            Nenhum fornecedor ativo suporta esta categoria.
                                         </div>
                                     )}
                                 </div>
@@ -562,52 +575,6 @@ const EditarProdutoModal = ({ isOpen, onClose, onSuccess, onDelete, produto }: E
                 </form>
             </div>
 
-            {/* Confirm Force Delete Modal */}
-            {showForceDeleteConfirm && (
-                <div 
-                    className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4 animate-in fade-in duration-200"
-                    onMouseDown={(e) => {
-                        if (e.target === e.currentTarget) {
-                            setShowForceDeleteConfirm(false);
-                        }
-                    }}
-                >
-                    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6">
-                            <div className="w-12 h-12 rounded-full bg-red-50 dark:bg-red-500/10 flex items-center justify-center mb-4">
-                                <AlertTriangle size={24} className="text-red-600 dark:text-red-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Atenção!</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Este produto está associado a uma ou mais encomendas. Tem a certeza que pretende apagá-lo? Será também removido das referidas encomendas.
-                            </p>
-                        </div>
-                        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700/50 flex items-center justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setShowForceDeleteConfirm(false)}
-                                disabled={deleteLoading}
-                                className="px-4 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:text-slate-200 transition-colors disabled:opacity-50 focus:outline-none"
-                            >
-                                Voltar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={async () => {
-                                    setDeleteLoading(true);
-                                    await onDelete(produto.id, true);
-                                    setDeleteLoading(false);
-                                    setShowForceDeleteConfirm(false);
-                                }}
-                                disabled={deleteLoading}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-red-500 focus:ring-offset-1 flex items-center gap-2 disabled:opacity-50 outline-none"
-                            >
-                                {deleteLoading ? 'A apagar...' : 'Sim, Apagar Mesmo'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

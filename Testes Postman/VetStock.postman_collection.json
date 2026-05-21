@@ -1,0 +1,822 @@
+{
+  "info": {
+    "_postman_id": "108bc710-6cce-45e5-a5a1-0a2865739288",
+    "name": "VetStock",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "39571414",
+    "_collection_link": "https://go.postman.co/collection/39571414-108bc710-6cce-45e5-a5a1-0a2865739288?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Create product",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"nome\": \"Produto de Teste\",\r\n  \"stock\": 10,\r\n  \"stockMinimo\": 5,\r\n  \"preco\": 12.50\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/produtos",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "produtos"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Create product",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Produto de Teste\",\r\n  \"stock\": 10,\r\n  \"stockMinimo\": 5,\r\n  \"preco\": 12.50\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/produtos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "produtos"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "264"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"108-DEM1Ua2RYLzCBkFIJIbbfFpbmD4\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 11:54:43 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"id\": 17,\n    \"nome\": \"Produto de Teste\",\n    \"ativo\": true,\n    \"criadoEm\": \"2026-05-21T11:54:43.141Z\",\n    \"stock\": 10,\n    \"stockMinimo\": 5,\n    \"categoria\": null,\n    \"descricao\": null,\n    \"preco\": 12.5,\n    \"fornecedorPreferencialId\": null,\n    \"fornecedores\": [],\n    \"fornecedorPreferencial\": null,\n    \"precosFornecedores\": []\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete product",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/produtos/17",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "produtos",
+            "17"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Delete product",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/produtos/17",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "produtos",
+                "17"
+              ]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 11:54:59 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Create fornecedor",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"nome\": \"Distribuidora Vet\",\r\n  \"nif\": \"987654322\",\r\n  \"contacto\": \"919876543\",\r\n  \"email\": \"geral@distribuidoravet.pt\",\r\n  \"categorias\": [\"Medicamentos\", \"Acessórios\"]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/fornecedores",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "fornecedores"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Create fornecedor",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"nome\": \"Distribuidora Vet\",\r\n  \"nif\": \"987654322\",\r\n  \"contacto\": \"919876543\",\r\n  \"email\": \"geral@distribuidoravet.pt\",\r\n  \"categorias\": [\"Medicamentos\", \"Acessórios\"]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/fornecedores",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "fornecedores"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "345"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"159-Fi/N7nv3AdfZqMf9LZcJOaLD4xo\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 11:55:46 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"id\": 9,\n    \"nome\": \"Distribuidora Vet\",\n    \"nif\": \"987654322\",\n    \"contacto\": \"919876543\",\n    \"categorias\": [\n        \"Medicamentos\",\n        \"Acessórios\"\n    ],\n    \"criadoEm\": \"2026-05-21T11:55:46.021Z\",\n    \"email\": \"geral@distribuidoravet.pt\",\n    \"estado\": true,\n    \"observacoes\": null,\n    \"custoTransporte\": null,\n    \"diasEntrega\": null,\n    \"metodoPagamento\": null,\n    \"prazoMedioEntrega\": null,\n    \"valorMinimoEncomenda\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete fornecedor",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/fornecedores/9/estado",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "fornecedores",
+            "9",
+            "estado"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Delete fornecedor",
+          "originalRequest": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/fornecedores/9/estado",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "fornecedores",
+                "9",
+                "estado"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "346"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"15a-61SdIRVueM1RqCRxrL3mUEdTZi8\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 11:58:27 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"id\": 9,\n    \"nome\": \"Distribuidora Vet\",\n    \"nif\": \"987654322\",\n    \"contacto\": \"919876543\",\n    \"categorias\": [\n        \"Medicamentos\",\n        \"Acessórios\"\n    ],\n    \"criadoEm\": \"2026-05-21T11:55:46.021Z\",\n    \"email\": \"geral@distribuidoravet.pt\",\n    \"estado\": false,\n    \"observacoes\": null,\n    \"custoTransporte\": null,\n    \"diasEntrega\": null,\n    \"metodoPagamento\": null,\n    \"prazoMedioEntrega\": null,\n    \"valorMinimoEncomenda\": null\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create user",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"username\": \"NovoGestor\",\r\n  \"password\": \"password123\",\r\n  \"role\": \"RESPONSAVEL_FINANCEIRO\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/utilizadores",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "utilizadores"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Create user",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"username\": \"NovoGestor\",\r\n  \"password\": \"password123\",\r\n  \"role\": \"RESPONSAVEL_FINANCEIRO\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/utilizadores",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "utilizadores"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "102"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"66-YUcAs3JAGlsFzw6d06YqWOknmiM\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 12:00:48 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"id\": 4,\n    \"password\": \"password123\",\n    \"role\": \"RESPONSAVEL_FINANCEIRO\",\n    \"username\": \"NovoGestor\",\n    \"ativo\": true\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete user",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:3000/api/utilizadores/4",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "utilizadores",
+            "4"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Delete user",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:3000/api/utilizadores/4",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "utilizadores",
+                "4"
+              ]
+            }
+          },
+          "status": "No Content",
+          "code": 204,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 12:01:44 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": null
+        }
+      ]
+    },
+    {
+      "name": "Create pedido",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"criadoPorId\": 1,\r\n  \"tipo\": \"MANUAL\",\r\n  \"prioridade\": \"ALTA\",\r\n  \"linhas\": [\r\n    {\r\n      \"produtoId\": 2,\r\n      \"quantidade\": 10,\r\n      \"precoUnitario\": 15.50\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/pedidos",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "pedidos"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Create pedido",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"criadoPorId\": 1,\r\n  \"tipo\": \"MANUAL\",\r\n  \"prioridade\": \"ALTA\",\r\n  \"linhas\": [\r\n    {\r\n      \"produtoId\": 2,\r\n      \"quantidade\": 10,\r\n      \"precoUnitario\": 15.50\r\n    }\r\n  ]\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/pedidos",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "pedidos"
+              ]
+            }
+          },
+          "status": "Created",
+          "code": 201,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "718"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"2ce-5YZoit4pcmqJcp/E383I3B//dSs\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 12:03:03 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"id\": 11,\n    \"estado\": \"PENDENTE\",\n    \"atualizadoEm\": \"2026-05-21T12:03:03.125Z\",\n    \"criadoEm\": \"2026-05-21T12:03:03.125Z\",\n    \"criadoPorId\": 1,\n    \"valorTotalEstimado\": 125,\n    \"prioridade\": \"ALTA\",\n    \"tipo\": \"MANUAL\",\n    \"observacoes\": null,\n    \"revertido\": false,\n    \"linhas\": [\n        {\n            \"id\": 30,\n            \"pedidoCompraId\": 11,\n            \"produtoId\": 2,\n            \"quantidade\": 10,\n            \"precoUnitario\": 12.5,\n            \"valorTotal\": 125,\n            \"fornecedorId\": null,\n            \"produto\": {\n                \"id\": 2,\n                \"nome\": \"Vacina Antirrábica\",\n                \"ativo\": true,\n                \"criadoEm\": \"2026-05-19T20:32:56.334Z\",\n                \"stock\": 20,\n                \"stockMinimo\": 15,\n                \"categoria\": \"Medicamentos\",\n                \"descricao\": \"Vacina anual dose individual.\",\n                \"preco\": 12.5,\n                \"fornecedorPreferencialId\": 3\n            }\n        }\n    ],\n    \"criadoPor\": {\n        \"id\": 1,\n        \"password\": \"1234\",\n        \"role\": \"ADMINISTRADOR\",\n        \"username\": \"admin\",\n        \"ativo\": true\n    },\n    \"codigoFormatado\": \"PM-2026-011\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Delete rascunho",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"role\": \"ADMINISTRADOR\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/pedidos/1/rascunho",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "pedidos",
+            "1",
+            "rascunho"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Delete rascunho",
+          "originalRequest": {
+            "method": "DELETE",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"role\": \"ADMINISTRADOR\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/pedidos/1/rascunho",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "pedidos",
+                "1",
+                "rascunho"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "16"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"10-oV4hJxRVSENxc/wX8+mA4/Pe4tA\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 12:06:04 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"success\": true\n}"
+        }
+      ]
+    },
+    {
+      "name": "Create avaliacao",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"utilizadorId\": 1,\r\n  \"qualidade\": 5,\r\n  \"pontualidade\": 4,\r\n  \"comunicacao\": 5,\r\n  \"preco\": 3,\r\n  \"conformidade\": 5,\r\n  \"comentario\": \"Excelente serviço.\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/fornecedores/2/avaliacoes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "fornecedores",
+            "2",
+            "avaliacoes"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "Create avaliacao",
+          "originalRequest": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"utilizadorId\": 1,\r\n  \"qualidade\": 5,\r\n  \"pontualidade\": 4,\r\n  \"comunicacao\": 5,\r\n  \"preco\": 3,\r\n  \"conformidade\": 5,\r\n  \"comentario\": \"Excelente serviço.\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "http://localhost:3000/api/fornecedores/2/avaliacoes",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "port": "3000",
+              "path": [
+                "api",
+                "fornecedores",
+                "2",
+                "avaliacoes"
+              ]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": null,
+          "header": [
+            {
+              "key": "X-Powered-By",
+              "value": "Express"
+            },
+            {
+              "key": "Access-Control-Allow-Origin",
+              "value": "*"
+            },
+            {
+              "key": "Content-Type",
+              "value": "application/json; charset=utf-8"
+            },
+            {
+              "key": "Content-Length",
+              "value": "207"
+            },
+            {
+              "key": "ETag",
+              "value": "W/\"cf-ZfzFODPSn0XgiW6qNCgGrt326F0\""
+            },
+            {
+              "key": "Date",
+              "value": "Thu, 21 May 2026 12:07:19 GMT"
+            },
+            {
+              "key": "Connection",
+              "value": "keep-alive"
+            },
+            {
+              "key": "Keep-Alive",
+              "value": "timeout=5"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n    \"id\": 1,\n    \"fornecedorId\": 2,\n    \"comentario\": \"Excelente serviço.\",\n    \"dataCriacao\": \"2026-05-19T20:32:55.547Z\",\n    \"comunicacao\": 5,\n    \"conformidade\": 5,\n    \"pontualidade\": 4,\n    \"preco\": 3,\n    \"qualidade\": 5,\n    \"utilizadorId\": 1,\n    \"updated\": true\n}"
+        }
+      ]
+    }
+  ]
+}
