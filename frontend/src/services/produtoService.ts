@@ -35,12 +35,8 @@ export const produtoService = {
         const response = await api.put(`/produtos/${id}`, produto);
         return response.data;
     },
-    delete: async (id: number) => {
-        const response = await api.delete(`/produtos/${id}`);
-        return response.data;
-    },
-    reativar: async (id: number) => {
-        const response = await api.patch(`/produtos/${id}/reativar`);
+    delete: async (id: number, force: boolean = false) => {
+        const response = await api.delete(`/produtos/${id}${force ? '?force=true' : ''}`);
         return response.data;
     }
 };

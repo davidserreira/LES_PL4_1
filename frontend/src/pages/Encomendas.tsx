@@ -260,8 +260,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
             {/* ── Header Principal (Premium Box) ── */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 mb-6 gap-4 relative z-40">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-50 dark:bg-amber-500/10 rounded-lg">
-                        <PackageCheck className="text-amber-600 dark:text-amber-400" size={24} />
+                    <div className="p-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-lg">
+                        <PackageCheck className="text-emerald-600 dark:text-emerald-400" size={24} />
                     </div>
                     <div>
                         <h1 className="text-2xl font-black text-slate-800 dark:text-slate-200 tracking-tight">Encomendas</h1>

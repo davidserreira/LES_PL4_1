@@ -36,7 +36,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
     const [isCategoryOpen, setIsCategoryOpen] = useState(false);
     
     // Fornecedores State
-    const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean; categorias?: string[] }[]>([]);
+    const [fornecedores, setFornecedores] = useState<{ id: number; nome: string; estado: boolean }[]>([]);
     const [selectedFornecedores, setSelectedFornecedores] = useState<number[]>([]);
     const [fornecedorPrecos, setFornecedorPrecos] = useState<Record<number, string>>({});
     const [fornecedorPreferencialId, setFornecedorPreferencialId] = useState<number | null>(null);
@@ -54,18 +54,6 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
             setFornecedorPreferencialId(selectedFornecedores[0]);
         }
     }, [selectedFornecedores, fornecedorPreferencialId]);
-
-    // Keep only valid suppliers when category changes
-    useEffect(() => {
-        setSelectedFornecedores(prev => {
-            if (!categoria) return [];
-            const validIds = prev.filter(id => {
-                const f = fornecedores.find(f => f.id === id);
-                return f && f.categorias && f.categorias.includes(categoria);
-            });
-            return validIds.length !== prev.length ? validIds : prev;
-        });
-    }, [categoria, fornecedores]);
 
     // Fetch active suppliers when modal opens
     useEffect(() => {
@@ -182,8 +170,6 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
     };
 
     const SelectedCategoryIcon = CATEGORIES.find(c => c.name === categoria)?.icon || Tag;
-
-    const fornecedoresFiltrados = fornecedores.filter(f => categoria && f.categorias && f.categorias.includes(categoria));
 
     return (
         <div
@@ -325,12 +311,8 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
 
                             {isFornecedoresOpen && (
                                 <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200 max-h-48 overflow-y-auto custom-scrollbar">
-                                    {!categoria ? (
-                                        <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center italic">
-                                            Selecione uma categoria primeiro.
-                                        </div>
-                                    ) : fornecedoresFiltrados.length > 0 ? (
-                                        fornecedoresFiltrados.map((fornecedor) => {
+                                    {fornecedores.length > 0 ? (
+                                        fornecedores.map((fornecedor) => {
                                             const isSelected = selectedFornecedores.includes(fornecedor.id);
                                             return (
                                                 <button
@@ -368,7 +350,7 @@ const CriarProdutoModal = ({ isOpen, onClose, onSuccess }: CriarProdutoModalProp
                                         })
                                     ) : (
                                         <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400 text-center italic">
-                                            Nenhum fornecedor ativo suporta esta categoria.
+                                            Nenhum fornecedor ativo disponível.
                                         </div>
                                     )}
                                 </div>

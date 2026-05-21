@@ -12,7 +12,7 @@ interface Fornecedor {
     contacto: string;
     email: string;
     estado: boolean;
-    categorias: string[];
+    categoria: string;
     observacoes?: string;
     criadoEm: string;
     produtos?: { id: number; nome: string }[];
@@ -38,7 +38,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
     const [nif, setNif] = useState('');
     const [contacto, setContacto] = useState('');
     const [email, setEmail] = useState('');
-    const [categorias, setCategorias] = useState<string[]>([]);
+    const [categoria, setCategoria] = useState('');
     const [observacoes, setObservacoes] = useState('');
     const [estado, setEstado] = useState(true);
 
@@ -62,7 +62,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
             setNif(fornecedor.nif);
             setContacto(fornecedor.contacto);
             setEmail(fornecedor.email);
-            setCategorias(fornecedor.categorias || []);
+            setCategoria(fornecedor.categoria);
             setObservacoes(fornecedor.observacoes || '');
             setEstado(fornecedor.estado);
             setProdutoIds(fornecedor.produtos?.map(p => p.id) || []);
@@ -73,16 +73,6 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                 .catch(err => console.error('Erro ao carregar produtos', err));
         }
     }, [isOpen, fornecedor]);
-
-    useEffect(() => {
-        setProdutoIds(prev => {
-            const validIds = prev.filter(id => {
-                const p = produtosLista.find(prod => prod.id === id);
-                return p && (!p.categoria || categorias.includes(p.categoria));
-            });
-            return validIds.length !== prev.length ? validIds : prev;
-        });
-    }, [categorias, produtosLista]);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -124,8 +114,8 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
             setError('O email é obrigatório.');
             return;
         }
-        if (categorias.length === 0) {
-            setError('É obrigatório selecionar pelo menos uma categoria.');
+        if (!categoria) {
+            setError('A categoria é obrigatória.');
             return;
         }
 
@@ -153,7 +143,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                 nif,
                 contacto,
                 email,
-                categorias,
+                categoria,
                 observacoes: observacoes || undefined,
                 estado,
                 produtoIds,
@@ -170,7 +160,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
         }
     };
 
-    const produtosFiltrados = produtosLista.filter(p => !p.categoria || categorias.includes(p.categoria));
+    const SelectedCategoryIcon = CATEGORIES.find(c => c.name === categoria)?.icon || Tag;
 
     return (
         <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-all duration-300 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
@@ -241,16 +231,16 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                         </div>
 
                         <div className="space-y-1.5 pt-1 relative" ref={categoryRef}>
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Categorias de Fornecimento *</label>
+                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-0.5">Categoria de Fornecimento *</label>
                             <button
                                 type="button"
                                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                                 className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-600/5 focus:border-blue-600 outline-none transition-all flex items-center justify-between text-sm group"
                             >
                                 <div className="flex items-center gap-2">
-                                    <Tag size={16} className={categorias.length > 0 ? "text-blue-500" : "text-slate-400"} />
-                                    <span className={categorias.length > 0 ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
-                                        {categorias.length > 0 ? categorias.join(', ') : "Selecionar categorias..."}
+                                    <SelectedCategoryIcon size={16} className={categoria ? CATEGORIES.find(c => c.name === categoria)?.color : "text-slate-400"} />
+                                    <span className={categoria ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
+                                        {categoria || "Selecionar categoria..."}
                                     </span>
                                 </div>
                                 <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`} />
@@ -259,25 +249,18 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                             {isCategoryOpen && (
                                 <div className="absolute top-[calc(100%+4px)] left-0 w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 py-1.5 animate-in fade-in zoom-in-95 duration-200">
                                     {CATEGORIES.map((item) => (
-                                        <label
+                                        <button
                                             key={item.name}
-                                            className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 dark:bg-blue-500/10 cursor-pointer transition-colors text-sm ${categorias.includes(item.name) ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-medium' : 'text-slate-600 dark:text-slate-400'}`}
+                                            type="button"
+                                            onClick={() => {
+                                                setCategoria(item.name);
+                                                setIsCategoryOpen(false);
+                                            }}
+                                            className={`w-full px-4 py-2 flex items-center gap-3 hover:bg-blue-50 dark:bg-blue-500/10 transition-colors text-sm ${categoria === item.name ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 font-medium' : 'text-slate-600 dark:text-slate-400'}`}
                                         >
-                                            <input
-                                                type="checkbox"
-                                                checked={categorias.includes(item.name)}
-                                                onChange={() => {
-                                                    if (categorias.includes(item.name)) {
-                                                        setCategorias(categorias.filter(c => c !== item.name));
-                                                    } else {
-                                                        setCategorias([...categorias, item.name]);
-                                                    }
-                                                }}
-                                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600"
-                                            />
                                             <item.icon size={16} className={item.color} />
                                             {item.name}
-                                        </label>
+                                        </button>
                                     ))}
                                 </div>
                             )}
@@ -355,12 +338,8 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                         
                         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
                             <div className="max-h-48 overflow-y-auto custom-scrollbar p-2">
-                                {categorias.length === 0 ? (
-                                    <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400 italic">
-                                        Selecione pelo menos uma categoria acima para ver os produtos disponíveis.
-                                    </div>
-                                ) : produtosFiltrados.length > 0 ? (
-                                    produtosFiltrados.map(produto => (
+                                {produtosLista.length > 0 ? (
+                                    produtosLista.map(produto => (
                                         <label key={produto.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 rounded-lg cursor-pointer transition-colors group">
                                             <div className="relative flex items-center">
                                                 <input
@@ -390,7 +369,7 @@ const EditarFornecedorModal = ({ isOpen, fornecedor, onClose, onSuccess }: Edita
                                     ))
                                 ) : (
                                     <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400 italic">
-                                        Nenhum produto encontrado para as categorias selecionadas.
+                                        Nenhum produto disponível no sistema.
                                     </div>
                                 )}
                             </div>

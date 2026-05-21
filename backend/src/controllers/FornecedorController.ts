@@ -51,22 +51,14 @@ export const getFornecedores = async (req: Request, res: Response) => {
 
 export const createFornecedor = async (req: Request, res: Response) => {
     try {
-        const { nome, nif, contacto, email, categorias, observacoes, produtoIds } = req.body;
+        const { nome, nif, contacto, email, categoria, observacoes, produtoIds } = req.body;
 
         // Basic validation
         if (!nome) return res.status(400).json({ error: 'O nome é obrigatório' });
         if (!nif) return res.status(400).json({ error: 'O NIF é obrigatório' });
         if (!contacto) return res.status(400).json({ error: 'O contacto telefónico é obrigatório' });
         if (!email) return res.status(400).json({ error: 'O email é obrigatório' });
-        if (!categorias || !Array.isArray(categorias) || categorias.length === 0) return res.status(400).json({ error: 'É obrigatório selecionar pelo menos uma categoria' });
-
-        if (produtoIds && produtoIds.length > 0) {
-            const produtos = await prisma.produto.findMany({ where: { id: { in: produtoIds } } });
-            const invalidProdutos = produtos.filter(p => !p.categoria || !categorias.includes(p.categoria));
-            if (invalidProdutos.length > 0) {
-                return res.status(400).json({ error: 'Apenas produtos das categorias selecionadas podem ser associados a este fornecedor.' });
-            }
-        }
+        if (!categoria) return res.status(400).json({ error: 'A categoria é obrigatória' });
 
         const fornecedor = await prisma.fornecedor.create({
             data: {
@@ -74,7 +66,7 @@ export const createFornecedor = async (req: Request, res: Response) => {
                 nif,
                 contacto,
                 email,
-                categorias,
+                categoria,
                 observacoes: observacoes || null,
                 produtos: produtoIds && produtoIds.length > 0 ? {
                     connect: produtoIds.map((id: number) => ({ id }))
@@ -146,7 +138,7 @@ export const updateFornecedor = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         const { 
-            nome, nif, contacto, email, categorias, observacoes, estado,
+            nome, nif, contacto, email, categoria, observacoes, estado,
             valorMinimoEncomenda, 
             prazoMedioEntrega, 
             custoTransporte, 
@@ -167,15 +159,7 @@ export const updateFornecedor = async (req: Request, res: Response) => {
         if (!nif) return res.status(400).json({ error: 'O NIF é obrigatório' });
         if (!contacto) return res.status(400).json({ error: 'O contacto telefónico é obrigatório' });
         if (!email) return res.status(400).json({ error: 'O email é obrigatório' });
-        if (!categorias || !Array.isArray(categorias) || categorias.length === 0) return res.status(400).json({ error: 'É obrigatório selecionar pelo menos uma categoria' });
-
-        if (produtoIds && produtoIds.length > 0) {
-            const produtos = await prisma.produto.findMany({ where: { id: { in: produtoIds } } });
-            const invalidProdutos = produtos.filter(p => !p.categoria || !categorias.includes(p.categoria));
-            if (invalidProdutos.length > 0) {
-                return res.status(400).json({ error: 'Apenas produtos das categorias selecionadas podem ser associados a este fornecedor.' });
-            }
-        }
+        if (!categoria) return res.status(400).json({ error: 'A categoria é obrigatória' });
 
         const updated = await prisma.fornecedor.update({
             where: { id: parseInt(id) },
@@ -184,7 +168,7 @@ export const updateFornecedor = async (req: Request, res: Response) => {
                 nif,
                 contacto,
                 email,
-                categorias,
+                categoria,
                 observacoes: observacoes ?? existing.observacoes,
                 estado: typeof estado === 'boolean' ? estado : existing.estado,
                 valorMinimoEncomenda: valorMinimoEncomenda !== undefined ? valorMinimoEncomenda : existing.valorMinimoEncomenda,
