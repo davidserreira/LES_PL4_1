@@ -14,6 +14,9 @@ export const mapPedidoToDTO = (pedido: any) => ({
 
 export const createPedidoCompra = async (req: Request, res: Response): Promise<any> => {
     try {
+        // [COMENTÁRIO ESTUDANTE]: Aqui recebemos os dados enviados pelo formulário do Frontend.
+        // O sistema distingue entre um pedido gravado como 'RASCUNHO' (pode estar incompleto) 
+        // e um pedido formal ('PENDENTE'), que exige que todos os produtos e quantidades sejam válidos.
         const { criadoPorId, linhas, prioridade, estado, observacoes, tipo } = req.body;
         const isDraft = estado === 'RASCUNHO';
 
@@ -67,6 +70,8 @@ export const createPedidoCompra = async (req: Request, res: Response): Promise<a
         });
 
         // Criação atómica: Cabeçalho + Linhas
+        // [COMENTÁRIO ESTUDANTE]: O Prisma permite criar o registo pai (Pedido) e os registos filhos (Linhas) 
+        // numa única operação (nested writes), o que garante que nunca ficamos com um pedido sem linhas na base de dados.
         const pedido = await prisma.pedidoCompra.create({
             data: {
                 estado: isDraft ? 'RASCUNHO' : 'PENDENTE',
@@ -232,6 +237,9 @@ export const cancelarPedido = async (req: Request, res: Response): Promise<any> 
 
 export const aprovarPedido = async (req: Request, res: Response): Promise<any> => {
     try {
+        // [COMENTÁRIO ESTUDANTE]: Esta é uma das funções mais importantes do processo.
+        // Só um 'ADMINISTRADOR' ou 'RESPONSAVEL_FINANCEIRO' pode aceder.
+        // Aqui, transformamos um pedido genérico numa intenção de compra associada a fornecedores específicos.
         const id = Number(req.params.id);
         const { userId, role, linhasAprovadas } = req.body;
 
@@ -271,6 +279,9 @@ export const aprovarPedido = async (req: Request, res: Response): Promise<any> =
         }
 
         // Executar a "Aprovação" numa Transação de Base de Dados para consistência relacional
+        // [COMENTÁRIO ESTUDANTE]: Usamos uma Transação (prisma.$transaction) porque vamos modificar 
+        // a tabela PedidoCompra e a tabela LinhaPedidoCompra em simultâneo. 
+        // Se houver algum erro a meio, o banco de dados faz "rollback" e nenhuma alteração é guardada, prevenindo dados corrompidos.
         const pedidoAtualizado = await prisma.$transaction(async (tx) => {
             const approvedLineIds = linhasAprovadas.map((l: any) => l.id);
 

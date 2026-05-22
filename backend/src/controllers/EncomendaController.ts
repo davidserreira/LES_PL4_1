@@ -254,6 +254,9 @@ export const atualizarEstado = async (req: Request, res: Response) => {
 
 // PATCH /encomendas/:id/receber
 export const receberEncomenda = async (req: Request, res: Response) => {
+    // [COMENTÁRIO ESTUDANTE]: Função responsável por dar entrada de stock físico no sistema.
+    // Recebemos um array de 'itens' indicando quantas unidades chegaram de facto à clínica.
+    // Pode haver "Receção Parcial" (chegou menos do que o pedido) ou "Receção Total".
     const id = Number(req.params.id);
     const { itens } = req.body;
 
@@ -309,6 +312,8 @@ export const receberEncomenda = async (req: Request, res: Response) => {
                 });
 
                 // Incrementar stock do produto apenas com a quantidade nova desta receção
+                // [COMENTÁRIO ESTUDANTE]: Aqui é onde ocorre o aumento real do inventário.
+                // Apenas incrementamos a diferença (qtdEfetiva) para garantir que não duplicamos stock caso o Gestor submeta várias receções parciais da mesma encomenda ao longo da semana.
                 await tx.produto.update({
                     where: { id: linha.produtoId },
                     data: { stock: { increment: qtdEfetiva } }
@@ -318,6 +323,8 @@ export const receberEncomenda = async (req: Request, res: Response) => {
             }
 
             // Reler todas as linhas atualizadas para avaliar se está completa
+            // [COMENTÁRIO ESTUDANTE]: Após guardar as quantidades, verificamos de forma automática se todas as linhas atingiram o limite pedido.
+            // Se sim, o estado avança para 'ENTREGUE'. Se ainda faltar alguma unidade, fica em 'ENTREGUE_PARCIAL'.
             const linhasAtualizadas = await tx.linhaEncomenda.findMany({
                 where: { encomendaId: id }
             });
