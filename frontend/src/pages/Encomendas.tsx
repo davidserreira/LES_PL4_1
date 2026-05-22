@@ -520,6 +520,8 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                     </div>
                 ) : (
                     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                        {/* [COMENTÁRIO ESTUDANTE]: A tabela de encomendas foi desenhada com larguras fixas (colgroup) 
+                            para garantir que as colunas não "saltam" quando os dados mudam, dando um aspeto mais profissional. */}
                         <table className="w-full text-sm text-left table-fixed">
                             <colgroup>
                                 <col style={{ width: '12%' }} />  {/* Código */}
@@ -627,6 +629,9 @@ export default function Encomendas({ user }: { user: Utilizador }) {
                                                 <div className="flex items-center justify-end gap-3" onClick={(e) => e.stopPropagation()}>
                                                     
                                                     {/* PRIMARY ACTIONS ZONE */}
+                                                    {/* [COMENTÁRIO ESTUDANTE]: Aqui definimos quais os botões de ação que aparecem para cada encomenda
+                                                        dependendo do seu estado (isEmitida, isEnviada, etc.) e do cargo do utilizador (isAdmin). 
+                                                        Isto garante que um utilizador normal não consegue cancelar encomendas a meio do trânsito. */}
                                                     <div className="flex items-center justify-end gap-1.5 min-w-[140px]">
                                                         {podeCancelar && (
                                                             <button
