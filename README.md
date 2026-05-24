@@ -60,8 +60,7 @@ Este método permite que os programadores façam alterações ao código com atu
 Para evitar conflitos de portas com os servidores locais que vai iniciar a seguir, ative apenas a base de dados PostgreSQL e o pgAdmin no Docker:
 1.  No terminal da raiz do projeto, garanta que os restantes contentores estão desligados:
     ```bash
-    docker compose stop frontend backend
-    # (Ou: docker-compose stop frontend backend)
+    docker-compose stop frontend backend
     ```
 2.  *(A base de dados continuará a correr isolada em segundo plano na porta local `5433`).*
 
