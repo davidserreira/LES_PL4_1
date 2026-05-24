@@ -12,6 +12,10 @@ RUN npm install
 # Copy source files
 COPY . .
 
+# URL da API relativo — o Nginx faz proxy para o contentor backend
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build application
 RUN npm run build
 
