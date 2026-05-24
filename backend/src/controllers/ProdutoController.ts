@@ -152,7 +152,7 @@ export const updateProduto = async (req: Request, res: Response): Promise<any> =
     }
 };
 
-export const deleteProduto = async (req: Request, res: Response) => {
+export const deleteProduto = async (req: Request, res: Response): Promise<any> => {
     try {
         const { id } = req.params;
         const force = req.query.force === 'true';
@@ -170,15 +170,34 @@ export const deleteProduto = async (req: Request, res: Response) => {
         res.status(204).send();
     } catch (error: any) {
         if (error.code === 'P2003') {
-            return res.status(409).json({ error: 'Produto associado a pedidos', code: 'HAS_RELATIONS' });
-        }
-        console.error('Erro ao eliminar produto:', error);
-        if (error.code === 'P2003') {
-            return res.status(409).json({ 
-                error: 'Não é possível eliminar este produto pois está associado a pedidos.',
-                code: 'HAS_RELATIONS'
+            // Em vez de retornar erro, inativa o produto
+            const produtoInativado = await prisma.produto.update({
+                where: { id: parseInt(req.params.id) },
+                data: { ativo: false }
+            });
+            return res.status(200).json({ 
+                message: 'Produto inativado por estar associado a pedidos.',
+                code: 'HAS_RELATIONS',
+                produto: produtoInativado
             });
         }
+        console.error('Erro ao eliminar produto:', error);
         res.status(500).json({ error: 'Erro ao eliminar produto', details: error.message });
     }
 };
+
+export const reativarProduto = async (req: Request, res: Response): Promise<any> => {
+    try {
+        const { id } = req.params;
+        const produto = await prisma.produto.update({
+            where: { id: parseInt(id) },
+            data: { ativo: true },
+            include: { fornecedores: true, fornecedorPreferencial: true, precosFornecedores: true }
+        });
+        return res.json(produto);
+    } catch (error: any) {
+        console.error('Erro ao reativar produto:', error);
+        res.status(500).json({ error: 'Erro ao reativar produto', details: error.message });
+    }
+};
+
