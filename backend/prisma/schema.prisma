@@ -21,7 +21,7 @@ model Produto {
   nome            String
   criadoEm        DateTime            @default(now())
   stock           Float               @default(0)
-  ativo           Boolean             @default(true)
+  ativo           Boolean             @default(false)
   stockMinimo     Float               @default(0)
   categoria       String?
   descricao       String?

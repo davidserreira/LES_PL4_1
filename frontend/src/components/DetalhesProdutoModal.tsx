@@ -8,6 +8,7 @@ interface Produto {
     nome: string;
     stock: number;
     stockMinimo: number;
+    ativo?: boolean;
     preco?: number;
     categoria?: string;
     descricao?: string;
@@ -64,6 +65,15 @@ export default function DetalhesProdutoModal({ isOpen, onClose, onEdit, produto 
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-200 dark:bg-slate-700/70 text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                                     ID: {produto.id}
                                 </span>
+                                {produto.ativo === false ? (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-100 dark:bg-red-500/10 text-red-600 dark:text-red-400 uppercase tracking-wider border border-red-200 dark:border-red-500/20">
+                                        Inativo
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 uppercase tracking-wider border border-emerald-200 dark:border-emerald-500/20">
+                                        Ativo
+                                    </span>
+                                )}
                                 {produto.categoria && (
                                     <span className="inline-flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 font-medium">
                                         <Tag size={12} className="text-slate-400" />
