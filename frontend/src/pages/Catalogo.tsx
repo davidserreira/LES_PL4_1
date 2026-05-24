@@ -294,10 +294,10 @@ const Catalogo = () => {
                                     <MoreHorizontal size={20} />
                                 </button>
                                 {isActionsMenuOpen && (
-                                    <div className="absolute top-[calc(100%+8px)] right-0 w-60 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-30 py-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                    <div className="absolute top-[calc(100%+8px)] right-0 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150">
                                         <button
                                             onClick={() => { setIsActionsMenuOpen(false); setIsModalOpen(true); }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors text-left"
                                         >
                                             <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400">
                                                 <Package size={16} />
@@ -307,10 +307,10 @@ const Catalogo = () => {
                                                 <p className="text-[11px] text-slate-400 font-medium">Novo item no stock</p>
                                             </div>
                                         </button>
-                                        <div className="my-1 border-t border-slate-100 dark:border-slate-700/50" />
+                                        <div className="my-1 border-t border-slate-100 dark:border-slate-700/40" />
                                         <button
                                             onClick={() => { setIsActionsMenuOpen(false); setIsHistoricoModalOpen(true); }}
-                                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:bg-slate-900 transition-colors text-left"
+                                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg transition-colors text-left"
                                         >
                                             <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                                                 <History size={16} />

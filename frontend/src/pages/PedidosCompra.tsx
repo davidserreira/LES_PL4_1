@@ -349,6 +349,9 @@ export default function PedidosCompra() {
         }
     };
 
+    // [COMENTÁRIO ESTUDANTE]: Este hook é executado sempre que a página carrega.
+    // É responsável por ir buscar (fetch) os dados à API e guardar no "State" (setPedidos).
+    // Usamos uma flag 'cancelled' para prevenir problemas caso o utilizador feche a página antes do fetch acabar.
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
@@ -402,6 +405,9 @@ export default function PedidosCompra() {
         setOpenDropdownId(openDropdownId === id ? null : id);
     };
 
+    // [COMENTÁRIO ESTUDANTE]: Aqui está o "motor" das abas e da pesquisa.
+    // O useMemo assegura que esta filtragem complexa (por Cargo, Estado, Pesquisa por texto) 
+    // só corre de novo quando um dos filtros mudar, poupando imensa memória no browser.
     const filteredPedidos = useMemo(() => {
         let result = pedidos;
 
@@ -631,6 +637,8 @@ export default function PedidosCompra() {
                 }}
             />
 
+            {/* [COMENTÁRIO ESTUDANTE]: Este componente ModalAprovarPedido lida com a atribuição final de fornecedores.
+                Passamos-lhe o 'selectedPedido' para ele saber o que vai aprovar. Quando fechar e for sucesso, chamamos fetchPedidos() para atualizar a tabela na hora. */}
             <ModalAprovarPedido
                 isOpen={isAprovarModalOpen}
                 pedido={selectedPedido}

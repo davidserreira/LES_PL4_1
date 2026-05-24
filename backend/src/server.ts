@@ -11,12 +11,17 @@ import utilizadorRoutes from './routes/utilizadorRoutes';
 import pedidoCompraRoutes from './routes/pedidoCompraRoutes';
 import encomendaRoutes from './routes/encomendaRoutes';
 import relatorioRoutes from './routes/relatorioRoutes';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './lib/swagger';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Documentação da API (Swagger)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/produtos', produtoRoutes);
 app.use('/api/fornecedores', fornecedorRoutes);
