@@ -220,10 +220,15 @@ const Dashboard = () => {
     useEffect(() => {
         if (!loading) {
             setTimeout(() => {
-                pedidoCompraService.getAll().then(pRaw => {
+                Promise.all([
+                    pedidoCompraService.getAll(),
+                    produtoService.getAll()
+                ]).then(([pRaw, prodRaw]) => {
                     const p = pRaw.filter((x: any) => x.estado !== 'RASCUNHO');
                     if (visible.statusPie) renderPieChart(p);
                     if (visible.areaLine) renderAreaLineChart(p, chartDays);
+                    if (visible.stockBar) renderBarChart(prodRaw.slice(0, 8));
+                    if (visible.bubble) renderBubbleChart(prodRaw.slice(0, Math.min(prodRaw.length, 30)));
                 });
             }, 100);
         }
