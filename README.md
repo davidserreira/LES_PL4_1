@@ -43,7 +43,13 @@ Este é o método recomendado para professores e utilizadores que queiram rodar 
     ```
 3.  *O Docker irá descarregar as imagens, injetar as variáveis de ambiente, executar as migrações estruturais do Prisma, popular os dados de demonstração (seed) e ligar os servidores.*
 
-### 3. Aceder aos Serviços Locais
+### 3. Atualizar os Contentores (Após alterações no código)
+Se alterar o código (seja no frontend ou backend) e quiser que o Docker assuma essas alterações, adicione a flag `--build`:
+```bash
+docker-compose up --build -d
+```
+
+### 4. Aceder aos Serviços Locais
 Após o arranque completo do Docker, os serviços locais estarão disponíveis:
 *   🖥️ **Interface Cliente (React SPA):** **[http://localhost:8080](http://localhost:8080)**
 *   🔌 **API Backend (Express):** **[http://localhost:3000](http://localhost:3000)**
