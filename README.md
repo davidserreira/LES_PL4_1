@@ -39,8 +39,7 @@ Este é o método recomendado para professores e utilizadores que queiram rodar 
 1.  Abra o terminal na **pasta raiz** do projeto.
 2.  Execute o comando para compilar e arrancar todos os serviços em segundo plano:
     ```bash
-    docker compose up --build -d
-    # (Caso o seu terminal dê erro de "unknown flag", tente a versão autônoma: docker-compose up --build -d)
+    docker-compose up --build -d
     ```
 3.  *O Docker irá descarregar as imagens, injetar as variáveis de ambiente, executar as migrações estruturais do Prisma, popular os dados de demonstração (seed) e ligar os servidores.*
 
