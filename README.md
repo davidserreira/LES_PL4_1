@@ -110,3 +110,33 @@ Caso as tabelas percam os dados de demonstração:
 Se precisar de visualizar ou editar rapidamente os registos do PostgreSQL sem ter de abrir o pesado *pgAdmin*:
 1.  No terminal do backend, execute: `npx prisma studio`
 2.  Aceda a **[http://localhost:5555](http://localhost:5555)** no browser.
+
+---
+
+## 🆘 Resolução de Problemas Frequentes (Troubleshooting)
+
+Durante o *setup* ou primeiro deploy do projeto, podem surgir problemas derivados de discrepâncias de sincronização na base de dados. Abaixo encontram-se as soluções rápidas para os erros mais comuns:
+
+### 1. Erro nas Migrações: `ERROR: column "..." already exists`
+* **Sintoma:** Ao tentar arrancar o backend ou executar o `migrate dev`, a consola devolve um erro indicando que a migração falhou porque uma coluna já existe.
+* **Causa:** Conflitos no histórico local de migrações ou ficheiros de migração corrompidos/duplicados no ambiente local.
+* **Solução:** Realize um *reset* forçado da base de dados. O Prisma irá limpar todas as tabelas, reaplicar as migrações limpamente e popular os dados de demonstração automaticamente.
+  ```bash
+  # Na pasta backend
+  npx prisma migrate reset --force
+  ```
+
+### 2. Erro no Seed / Prisma Client: `The column "(not available)" does not exist`
+* **Sintoma:** Ao rodar a aplicação ou o seed, recebe-se um erro de execução do tipo `ColumnNotFound` do Prisma.
+* **Causa:** O ficheiro `schema.prisma` (a teoria) está mais atualizado que as tabelas físicas no PostgreSQL (a prática), e o Prisma Client não consegue aceder a essas novas colunas.
+* **Solução:** Sincronize a estrutura gerando uma nova migração diferencial e regenerando o cliente Node.js:
+  ```bash
+  # 1. Regenerar o Prisma Client com a declaração atual
+  npx prisma generate
+
+  # 2. Analisar o schema.prisma, detetar as colunas em falta e injetar no PostgreSQL
+  npx prisma migrate dev --name sync_schema_fields
+
+  # 3. Rodar o script de seed novamente
+  npx prisma db seed
+  ```
