@@ -1,6 +1,6 @@
-# 🐾 StockVet - Gestão de Compras e Stocks
+# 🐾 VetStock - Gestão de Compras e Stocks
 
-O **StockVet** é uma plataforma corporativa *fullstack* concebida para a gestão logística de compras, contratos de fornecedores, receção de encomendas e controlo físico de existências numa clínica veterinária. 
+O **VetStock** é uma plataforma corporativa *fullstack* concebida para a gestão logística de compras, contratos de fornecedores, receção de encomendas e controlo físico de existências numa clínica veterinária. 
 
 ## 🌐 Acesso em Produção (Online)
 A aplicação foi projetada utilizando uma **Arquitetura Cloud Distribuída (Micro-PaaS/Jamstack)**, de forma a separar responsabilidades, maximizar a escalabilidade e minimizar custos operacionais:
